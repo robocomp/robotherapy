@@ -23,10 +23,26 @@
 */
 SpecificWorker::SpecificWorker(TuplePrx tprx) : GenericWorker(tprx)
 {
+	playTimer = new QTimer();
+	playForward = true;
+	this->stop_playing();
+	connect(this->fwd1_btn, SIGNAL(clicked()), this, SLOT(nextFrame()));
+	connect(this->fwd5_btn, SIGNAL(clicked()), this, SLOT(next5Frames()));
+	connect(this->bwd1_btn, SIGNAL(clicked()), this, SLOT(prevFrame()));
+	connect(this->bwd5_btn, SIGNAL(clicked()), this, SLOT(prev5Frames()));
+	connect(this->start_btn, SIGNAL(clicked()), this, SLOT(startFrame()));
+	connect(this->end_btn, SIGNAL(clicked()), this, SLOT(endFrame()));
+	connect(this->playTimer, SIGNAL(timeout()), this, SLOT(playTimerTimeout()));
+	connect(this->play_btn, SIGNAL(clicked()), this, SLOT(start_playing()));
+	connect(this->stop_btn, SIGNAL(clicked()), this, SLOT(stop_playing()));
+	connect(this->pause_btn, SIGNAL(clicked()), this, SLOT(stop_playing()));
+	connect(this->reverse_chck, SIGNAL(stateChanged(int)), this, SLOT(reverse_playing(int)));
+
 
 #ifdef USE_QTGUI
 	innerModelViewer = NULL;
-	osgView = new OsgView(this);
+	osgView = new OsgView();
+	this->osgLayout->addWidget(osgView);
 	osgGA::TrackballManipulator *tb = new osgGA::TrackballManipulator;
 	osg::Vec3d eye(osg::Vec3(4000.,4000.,-1000.));
 	osg::Vec3d center(osg::Vec3(0.,0.,-0.));
@@ -49,24 +65,18 @@ bool SpecificWorker::setParams(RoboCompCommonBehavior::ParameterList params)
 {
 //       THE FOLLOWING IS JUST AN EXAMPLE
 //	To use innerModelPath parameter you should uncomment specificmonitor.cpp readConfig method content
-//	try
-//	{
+	try
+	{
 //		RoboCompCommonBehavior::Parameter par = params.at("InnerModelPath");
 //		std::string innermodel_path = par.value;
-//		innerModel = new InnerModel(innermodel_path);
-//	}
-//	catch(std::exception e) { qFatal("Error reading config params"); }
+		innerModel = std::make_shared<InnerModel>(); //InnerModel creation example
+	}
+	catch(std::exception e) { qFatal("Error reading config params %s",e.what()); }
 
 
 #ifdef USE_QTGUI
-	innerModel = new InnerModel(); //InnerModel creation example
 	innerModelViewer = new InnerModelViewer (innerModel, "root", osgView->getRootGroup(), true);
 #endif
-
-
-	
-
-
 	return true;
 }
 
@@ -76,6 +86,8 @@ void SpecificWorker::initialize(int period)
 	this->Period = period;
 	timer.start(Period);
 }
+
+
 
 void SpecificWorker::compute()
 {
@@ -99,3 +111,70 @@ void SpecificWorker::compute()
 
 
 
+void  SpecificWorker::nextFrame()
+{
+	this->forwardFrames(1);
+}
+
+void  SpecificWorker::next5Frames()
+{
+	this->forwardFrames(5);
+}
+
+void  SpecificWorker::prevFrame()
+{
+	this->forwardFrames(-1);
+}
+
+void  SpecificWorker::prev5Frames()
+{
+	this->forwardFrames(-5);
+}
+
+void  SpecificWorker::startFrame()
+{
+	this->frames_slider->setValue(this->frames_slider->minimum());
+}
+
+void  SpecificWorker::endFrame()
+{
+	this->frames_slider->setValue(this->frames_slider->maximum());
+}
+
+void  SpecificWorker::forwardFrames(int numFrames)
+{
+	this->frames_slider->setValue(this->frames_slider->value()+numFrames);
+}
+
+void  SpecificWorker::playTimerTimeout()
+{
+	if(playForward)
+	{
+		this->nextFrame();
+	}
+	else
+	{
+		this->prevFrame();
+	}
+}
+
+void  SpecificWorker::start_playing()
+{
+	this->play_btn->setEnabled(false);
+	this->stop_btn->setEnabled(true);
+	this->pause_btn->setEnabled(true);
+	this->playTimer->start(1000);
+}
+
+void  SpecificWorker::stop_playing()
+{
+	this->play_btn->setEnabled(true);
+	this->stop_btn->setEnabled(false);
+	this->pause_btn->setEnabled(false);
+	this->playTimer->stop();
+}
+
+void  SpecificWorker::reverse_playing(int state)
+{
+	playForward = (state == 0);
+}

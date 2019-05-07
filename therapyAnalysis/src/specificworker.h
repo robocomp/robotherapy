@@ -29,6 +29,7 @@
 
 #include <genericworker.h>
 #include <innermodel/innermodel.h>
+#include <QTimer>
 #ifdef USE_QTGUI
 	#include <osgviewer/osgview.h>
 	#include <innermodel/innermodelviewer.h>
@@ -41,14 +42,28 @@ public:
 	SpecificWorker(TuplePrx tprx);
 	~SpecificWorker();
 	bool setParams(RoboCompCommonBehavior::ParameterList params);
+	void forwardFrames(int numFrames);
 
 
 public slots:
 	void compute();
 	void initialize(int period);
+	void nextFrame();
+	void next5Frames();
+	void prevFrame();
+	void prev5Frames();
+	void startFrame();
+	void endFrame();
+	void playTimerTimeout();
+	void start_playing();
+	void stop_playing();
+	void reverse_playing(int state);
+
 
 private:
-	InnerModel *innerModel;
+	std::shared_ptr<InnerModel> innerModel;
+	QTimer *playTimer;
+	bool playForward;
 #ifdef USE_QTGUI
 	OsgView *osgView;
 	InnerModelViewer *innerModelViewer;

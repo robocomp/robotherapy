@@ -1,8 +1,7 @@
 CommonBehavior.Endpoints=tcp -p 10000
 
 
-
-InnerModelPath = innermodel.xml
+InnerModelPath=innermodel.xml
 
 Ice.Warn.Connections=0
 Ice.Trace.Network=0

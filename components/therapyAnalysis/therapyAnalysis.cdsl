@@ -1,12 +1,12 @@
+import "HumanTracker.idsl";
 
 Component therapyAnalysis
 {
     Communications
     {
-
+        requires HumanTracker;
     };
 	language Cpp11;
 	gui Qt(QMainWindow);
 	options InnerModelViewer;
 };
-

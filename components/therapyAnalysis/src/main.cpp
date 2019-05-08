@@ -133,12 +133,29 @@ int ::therapyAnalysis::run(int argc, char* argv[])
 
 	int status=EXIT_SUCCESS;
 
+	HumanTrackerPrxPtr humantracker_proxy;
 
 	string proxy, tmp;
 	initialize();
 
 
-	tprx = std::tuple<>();
+	try
+	{
+		if (not GenericMonitor::configGetString(communicator(), prefix, "HumanTrackerProxy", proxy, ""))
+		{
+			cout << "[" << PROGRAM_NAME << "]: Can't read configuration for proxy HumanTrackerProxy\n";
+		}
+		humantracker_proxy = Ice::uncheckedCast<HumanTrackerPrx>( communicator()->stringToProxy( proxy ) );
+	}
+	catch(const Ice::Exception& ex)
+	{
+		cout << "[" << PROGRAM_NAME << "]: Exception creating proxy HumanTracker: " << ex;
+		return EXIT_FAILURE;
+	}
+	rInfo("HumanTrackerProxy initialized Ok!");
+
+
+	tprx = std::make_tuple(humantracker_proxy);
 	SpecificWorker *worker = new SpecificWorker(tprx);
 	//Monitor thread
 	SpecificMonitor *monitor = new SpecificMonitor(worker,communicator());

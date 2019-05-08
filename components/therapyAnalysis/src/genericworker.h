@@ -32,13 +32,15 @@
 
 #include <CommonBehavior.h>
 
+#include <HumanTracker.h>
 
 #define CHECK_PERIOD 5000
 #define BASIC_PERIOD 100
 
 using namespace std;
+using namespace RoboCompHumanTracker;
 
-using TuplePrx = std::tuple<>;
+using TuplePrx = std::tuple<RoboCompHumanTracker::HumanTrackerPrxPtr>;
 
 
 class GenericWorker :
@@ -59,6 +61,7 @@ public:
 	QMutex *mutex;
 
 
+	HumanTrackerPrxPtr humantracker_proxy;
 
 
 protected:

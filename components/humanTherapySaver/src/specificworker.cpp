@@ -78,9 +78,11 @@ void SpecificWorker::initialize(int period)
 void SpecificWorker::compute()
 {
 
-//    printJointsFromAstra();
+    printJointsFromAstra();
+
 //    saveJointsFromAstra();
-    paintJointsFromFile();
+//    paintJointsFromFile();
+
 
 
 #ifdef USE_QTGUI
@@ -95,7 +97,24 @@ void SpecificWorker::compute()
 void SpecificWorker::printJointsFromAstra()
 {
 
-    	try {
+
+    qDebug()<<"----ANGLES----";
+    auto caca = innerModel->getTransformationMatrix(mapJointMesh["RightElbow"],mapJointMesh["MidSpine"]);
+//    auto rs = innerModel->getTransform(mapJointMesh["RightShoulder"]);
+    auto re = innerModel->getTransform(mapJointMesh["RightElbow"]);
+//    auto rh = innerModel->getTransform(mapJointMesh["RightHand"]);
+
+//    qDebug() <<"Right shoulder "<< rs->getRxValue() << rs->getRyValue()<< rs->getRzValue()  ;
+    caca.print("caca");
+qDebug() <<"Right elbow "<< re->getRxValue() << re->getRyValue()<< re->getRzValue()  ;
+//    qDebug() <<"Right hand "<< rh->getRxValue() << rh->getRyValue()<< rh->getRzValue()  ;
+
+//    qDebug()<<"Elbow angle"<< innerModel->getTransform("XN_SKEL_RIGHT_ELBOW")->getRxValue();
+
+
+
+    try
+    {
 		PersonList users;
 		humantracker_proxy->getUsersList(users);
 
@@ -106,10 +125,13 @@ void SpecificWorker::printJointsFromAstra()
             }
 
             PaintSkeleton(person.second);
+
 		}
 	}
 
 	catch(...) {}
+
+
 }
 
 
@@ -285,16 +307,36 @@ void SpecificWorker::saveJointsFromAstra()
 
 }
 
+void SpecificWorker::saveJointsMatrixRot(string TypeJoint, float x,float y,float z,float rx,float ry,float rz, bool endline)
+{
+    fstream jointfile;
+    jointfile.open ( "rotations.txt" , ios::app);
+
+    if (endline)
+    {
+        jointfile <<endl;
+    }
+
+    else
+    {
+        jointfile << TypeJoint <<"#" << x <<" "<< y <<" "<< z <<" "<<rx <<" "<< ry <<" "<< rz;
+        jointfile << "#";
+    }
+
+    jointfile.close();
+}
 
 void SpecificWorker::PaintSkeleton (TPerson &person) {
 
-    qDebug()<<__FUNCTION__;
+//    qDebug()<<__FUNCTION__;
 
     CalculateJointRotations(person);
 
-    for (auto dictionaryNamesIt : mapJointMesh) {
+    for (auto dictionaryNamesIt : mapJointMesh)
+    {
 
-        try {
+        try
+        {
             Pose3D pose;
             string idJoint = dictionaryNamesIt.first;
             QString TypeJoint = dictionaryNamesIt.second;
@@ -312,16 +354,22 @@ void SpecificWorker::PaintSkeleton (TPerson &person) {
                     {
 //                        qDebug()<< "Actualizando " << QString::fromStdString(idJoint);
                         innerModel->updateTransformValues(TypeJoint,pose.x,pose.y,pose.z,pose.rx,pose.ry,pose.rz);
+
+                        saveJointsMatrixRot(idJoint,pose.x,pose.y,pose.z,pose.rx,pose.ry,pose.rz, false);
+
                     }
                 }
 
             }
         }
+
         catch (...) {
             qDebug()<<"Error in PaintSkeleton";
         }
-
     }
+
+    saveJointsMatrixRot(" ",0,0,0,0,0,0, true);
+
 
     innerModel->update();
     innerModelViewer->update();
@@ -373,7 +421,7 @@ void SpecificWorker::CalculateJointRotations (TPerson &p) {
     {
 //        qDebug()<<"-------------------------------- LOWER TRUNK --------------------------------";
 
-        mapJointRotations["BaseSpine"]=RTMatFromJointPosition (mapJointRotations["MidSpine"],p.joints["BaseSpine"],p.joints["MidSpine"] ,p.joints["BaseSpine"], 2);
+        mapJointRotations["BaseSpine"]=RTMatFromJointPosition ( mapJointRotations["MidSpine"],p.joints["BaseSpine"],p.joints["MidSpine"] ,p.joints["BaseSpine"], 2);
 
         mapJointRotations["LeftHip"]=RTMatFromJointPosition (mapJointRotations["MidSpine"]*mapJointRotations["BaseSpine"],p.joints["LeftHip"],p.joints["LeftKnee"],p.joints["LeftHip"], 2);
         mapJointRotations["RightHip"]=RTMatFromJointPosition (mapJointRotations["MidSpine"]*mapJointRotations["BaseSpine"],p.joints["RightHip"],p.joints["RightKnee"],p.joints["RightHip"], 2);
@@ -444,7 +492,7 @@ RTMat SpecificWorker::RTMatFromJointPosition (RTMat rS,jointPos p1, jointPos p2,
 
 bool SpecificWorker::RotateTorso (const QVec &lshoulder, const QVec &rshoulder) {
 
-    qDebug()<<__FUNCTION__;
+//    qDebug()<<__FUNCTION__;
 
     QVec eje = lshoulder - rshoulder;	//Calculamos el eje que va de un hombro a otro
 

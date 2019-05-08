@@ -88,6 +88,7 @@ public slots:
     vector<string>split(const string& str, const string& delim);
     void saveJointsFromAstra();
     void printJointsFromAstra();
+    void saveJointsMatrixRot(string TypeJoint, float x,float y,float z,float rx,float ry,float rz,bool endline);
 
 private:
     std::shared_ptr<InnerModel> innerModel;

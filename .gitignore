@@ -1,2 +1,6 @@
 
 therapyAnalysis/\.idea/
+
+*.new
+
+components/therapyAnalysis/\.idea/

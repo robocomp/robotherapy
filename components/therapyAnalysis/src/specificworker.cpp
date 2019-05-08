@@ -176,5 +176,10 @@ void  SpecificWorker::stop_playing()
 
 void  SpecificWorker::reverse_playing(int state)
 {
-	playForward = (state == 0);
+	this->playForward = (state == 0);
+}
+
+void   SpecificWorker::update_metrics(int state) {
+
+	
 }

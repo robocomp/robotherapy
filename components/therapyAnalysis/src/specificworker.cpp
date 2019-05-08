@@ -35,7 +35,7 @@ SpecificWorker::SpecificWorker(TuplePrx tprx) : GenericWorker(tprx)
 	connect(this->playTimer, SIGNAL(timeout()), this, SLOT(playTimerTimeout()));
 	connect(this->play_btn, SIGNAL(clicked()), this, SLOT(start_playing()));
 	connect(this->stop_btn, SIGNAL(clicked()), this, SLOT(stop_playing()));
-	connect(this->pause_btn, SIGNAL(clicked()), this, SLOT(stop_playing()));
+	connect(this->pause_btn, SIGNAL(clicked()), this, SLOT(pause_playing()));
 	connect(this->reverse_chck, SIGNAL(stateChanged(int)), this, SLOT(reverse_playing(int)));
 
 
@@ -144,6 +144,7 @@ void  SpecificWorker::endFrame()
 void  SpecificWorker::forwardFrames(int numFrames)
 {
 	this->frames_slider->setValue(this->frames_slider->value()+numFrames);
+	this->update_metrics();
 }
 
 void  SpecificWorker::playTimerTimeout()
@@ -164,6 +165,16 @@ void  SpecificWorker::start_playing()
 	this->stop_btn->setEnabled(true);
 	this->pause_btn->setEnabled(true);
 	this->playTimer->start(1000);
+	this->update_metrics();
+}
+
+void  SpecificWorker::pause_playing()
+{
+	this->play_btn->setEnabled(true);
+	this->stop_btn->setEnabled(false);
+	this->pause_btn->setEnabled(false);
+	this->playTimer->stop();
+	this->update_metrics();
 }
 
 void  SpecificWorker::stop_playing()
@@ -172,6 +183,8 @@ void  SpecificWorker::stop_playing()
 	this->stop_btn->setEnabled(false);
 	this->pause_btn->setEnabled(false);
 	this->playTimer->stop();
+	this->startFrame();
+	this->update_metrics();
 }
 
 void  SpecificWorker::reverse_playing(int state)
@@ -179,7 +192,6 @@ void  SpecificWorker::reverse_playing(int state)
 	this->playForward = (state == 0);
 }
 
-void   SpecificWorker::update_metrics(int state) {
-
-	
+void SpecificWorker::update_metrics() {
+	qDebug()<<"Updating metrics";
 }

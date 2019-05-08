@@ -33,6 +33,7 @@
 #include <innermodel/innermodel.h>
 #include <qmat/qrtmat.h>
 #include <fstream>
+#include <unistd.h>
 
 #ifdef USE_QTGUI
 	#include <osgviewer/osgview.h>

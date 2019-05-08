@@ -78,9 +78,9 @@ void SpecificWorker::initialize(int period)
 void SpecificWorker::compute()
 {
 
-    printJointsFromAstra();
+//    printJointsFromAstra();
 //    saveJointsFromAstra();
-//    paintJointsFromFile();
+    paintJointsFromFile();
 
 
 #ifdef USE_QTGUI
@@ -152,7 +152,7 @@ bool SpecificWorker::checkNecessaryJoints(TPerson &person)
     {
         if(!joints.count(upT))
         {
-            qDebug()<< "Falta " << QString::fromStdString(upT);
+//            qDebug()<< "Falta " << QString::fromStdString(upT);
             upperTrunkFound = false;
             break;
         }
@@ -167,7 +167,7 @@ bool SpecificWorker::checkNecessaryJoints(TPerson &person)
     {
         if(!joints.count(lwT))
         {
-            qDebug()<< "Falta " << QString::fromStdString(lwT);
+//            qDebug()<< "Falta " << QString::fromStdString(lwT);
             lowerTrunkFound = false;
             break;
         }
@@ -186,7 +186,7 @@ bool SpecificWorker::checkNecessaryJoints(TPerson &person)
 void SpecificWorker::paintJointsFromFile(){
 
     ifstream file;
-    file.open("/home/robocomp/robocomp/components/human-detection/components/humanGame/joints.txt");
+    file.open("/home/robocomp/robocomp/components/robotherapy/components/humanTherapySaver/joints.txt");
 
     if (!file) {
         cout << "Unable to open file";
@@ -310,7 +310,7 @@ void SpecificWorker::PaintSkeleton (TPerson &person) {
                 {
                     if (SetPoses (pose, idJoint))
                     {
-                        qDebug()<< "Actualizando " << QString::fromStdString(idJoint);
+//                        qDebug()<< "Actualizando " << QString::fromStdString(idJoint);
                         innerModel->updateTransformValues(TypeJoint,pose.x,pose.y,pose.z,pose.rx,pose.ry,pose.rz);
                     }
                 }
@@ -324,15 +324,17 @@ void SpecificWorker::PaintSkeleton (TPerson &person) {
     }
 
     innerModel->update();
-
     innerModelViewer->update();
+
     osgView->frame();
     osgView->autoResize();
 
-    innerModel->save("SavedInnerModel.xml");
+//    innerModel->save("SavedInnerModel.xml");
 
     upperTrunkFound = false;
     lowerTrunkFound = false;
+
+    usleep(1000);
 
 }
 
@@ -346,7 +348,7 @@ void SpecificWorker::CalculateJointRotations (TPerson &p) {
 
     if (upperTrunkFound)
     {
-        qDebug()<<"-------------------------------- UPPER TRUNK --------------------------------";
+//        qDebug()<<"-------------------------------- UPPER TRUNK --------------------------------";
 
         mapJointRotations["MidSpine"] = RTMatFromJointPosition (orbbec,p.joints["MidSpine"],p.joints["Neck"], p.joints["MidSpine"], 2);
         mapJointRotations["Neck"] = RTMatFromJointPosition (mapJointRotations["MidSpine"],p.joints["Neck"],p.joints["Head"],p.joints["Neck"], 2);
@@ -369,7 +371,7 @@ void SpecificWorker::CalculateJointRotations (TPerson &p) {
 
     if (lowerTrunkFound)
     {
-        qDebug()<<"-------------------------------- LOWER TRUNK --------------------------------";
+//        qDebug()<<"-------------------------------- LOWER TRUNK --------------------------------";
 
         mapJointRotations["BaseSpine"]=RTMatFromJointPosition (mapJointRotations["MidSpine"],p.joints["BaseSpine"],p.joints["MidSpine"] ,p.joints["BaseSpine"], 2);
 

@@ -1,0 +1,14 @@
+CommonBehavior.Endpoints=tcp -p 10000
+
+
+# Proxies for required interfaces
+HumanTrackerProxy = humantracker:tcp -h localhost -p 11666
+RGBDProxy = rgbd:tcp -h localhost -p 10097
+
+
+
+InnerModelPath = /home/robocomp/robocomp/components/robotherapy/etc/innermodel/humanColor.xml
+
+Ice.Warn.Connections=0
+Ice.Trace.Network=0
+Ice.Trace.Protocol=0

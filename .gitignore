@@ -4,3 +4,9 @@ therapyAnalysis/\.idea/
 *.new
 
 components/therapyAnalysis/\.idea/
+
+components/humanTherapySaver/\.idea/
+
+components/humanTherapySaver/cmake-build-debug/
+
+components/humanTherapySaver/SavedInnerModel\.xml

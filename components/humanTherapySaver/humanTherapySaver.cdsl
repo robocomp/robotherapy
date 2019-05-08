@@ -1,0 +1,14 @@
+import "HumanTracker.idsl";
+import "RGBD.idsl";
+
+Component humanTherapySaver
+{
+    Communications
+    {
+        requires HumanTracker,RGBD;
+    };
+	language Cpp;
+	gui Qt(QWidget);
+	options InnerModelViewer;
+};
+

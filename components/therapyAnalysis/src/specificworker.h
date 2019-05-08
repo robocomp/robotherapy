@@ -57,7 +57,9 @@ public slots:
 	void playTimerTimeout();
 	void start_playing();
 	void stop_playing();
+	void pause_playing();
 	void reverse_playing(int state);
+	void update_metrics();
 
 
 private:

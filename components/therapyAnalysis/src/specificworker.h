@@ -88,13 +88,21 @@ public slots:
 	void update_metrics();
 	void record_mode();
 	void playback_mode();
+	void record();
+	void visualizeRecordingToggled(bool);
+	void loadFileClicked();
 
 
 private:
 	std::shared_ptr<InnerModel> innerModel;
 	QTimer *playTimer;
 	bool playForward;
+	bool recording;
+	bool visualizeRecording;
+	int framesRecorded;
 	float get_rand_float(float HI, float LO);
+	void updateFramesRecorded();
+
 
 //	=============== Capture Methods ===========
 	void relateJointsMeshes();
@@ -104,9 +112,9 @@ private:
 	bool RotateTorso (const QVec &lshoulder, const QVec &rshoulder); //This method allows to rotate the torso from the position and rotation of the shoulders
 	bool SetPoses (Pose3D &pose, string joint);
 	bool checkNecessaryJoints(TPerson &person);
-	void paintJointsFromFile();
+	void paintJointsFromFile(QString );
 	vector<string>split(const string& str, const string& delim);
-	void saveJointsFromAstra();
+	void saveJointsFromAstra(QString string);
 	void printJointsFromAstra();
 #ifdef USE_QTGUI
 	OsgView *osgView;

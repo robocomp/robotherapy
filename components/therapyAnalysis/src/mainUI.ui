@@ -303,17 +303,21 @@
            </widget>
           </item>
           <item row="0" column="2">
-           <widget class="QPushButton" name="pushButton">
+           <widget class="QPushButton" name="record_btn">
             <property name="text">
              <string>Record</string>
             </property>
            </widget>
           </item>
           <item row="1" column="2">
-           <widget class="QLCDNumber" name="lcdNumber"/>
+           <widget class="QLCDNumber" name="framesRecorded_lcd">
+            <property name="segmentStyle">
+             <enum>QLCDNumber::Flat</enum>
+            </property>
+           </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QLineEdit" name="lineEdit">
+           <widget class="QLineEdit" name="filePath_lnedit">
             <property name="placeholderText">
              <string>path/to/save/file.txt</string>
             </property>
@@ -332,6 +336,13 @@
             </property>
            </spacer>
           </item>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="visualizeRecording_chck">
+            <property name="text">
+             <string>Visualize Recording</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </item>
        </layout>
@@ -340,7 +351,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QStatusBar" name="status"/>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
     <rect>

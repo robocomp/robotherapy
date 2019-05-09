@@ -24,7 +24,9 @@
 SpecificWorker::SpecificWorker(TuplePrx tprx) : GenericWorker(tprx)
 {
 	playTimer = new QTimer();
+	framesRecorded = 0;
 	playForward = true;
+	recording = false;
 	this->stop_playing();
 	auto palette = this->angle1_lcd->palette();
 	palette.setColor(palette.WindowText, QColor(Qt::darkRed));
@@ -49,6 +51,7 @@ SpecificWorker::SpecificWorker(TuplePrx tprx) : GenericWorker(tprx)
 	this->bwd5_btn->setText("<<-5");
 
 
+	connect(this->loadFile_action, SIGNAL(triggered()), this, SLOT(loadFileClicked()));
 	connect(this->fwd1_action, SIGNAL(triggered()), this, SLOT(nextFrame()));
 	connect(this->fwd5_action, SIGNAL(triggered()), this, SLOT(next5Frames()));
 	connect(this->bwd1_action, SIGNAL(triggered()), this, SLOT(prevFrame()));
@@ -62,6 +65,9 @@ SpecificWorker::SpecificWorker(TuplePrx tprx) : GenericWorker(tprx)
 	connect(this->reverse_chck, SIGNAL(stateChanged(int)), this, SLOT(reverse_playing(int)));
 	connect(this->recordMode_action, SIGNAL(triggered()), this, SLOT(record_mode()));
 	connect(this->playbackMode_action, SIGNAL(triggered()), this, SLOT(playback_mode()));
+	connect(this->record_btn, SIGNAL(clicked()), this, SLOT(record()));
+	connect(this->reverse_chck, SIGNAL(stateChanged(int)), this, SLOT(reverse_playing(int)));
+	connect(this->visualizeRecording_chck, SIGNAL(toggled(bool)), this, SLOT(visualizeRecordingToggled(bool)));
 
 
 #ifdef USE_QTGUI
@@ -93,9 +99,9 @@ bool SpecificWorker::setParams(RoboCompCommonBehavior::ParameterList params)
 //	To use innerModelPath parameter you should uncomment specificmonitor.cpp readConfig method content
 	try
 	{
-//		RoboCompCommonBehavior::Parameter par = params.at("InnerModelPath");
-//		std::string innermodel_path = par.value;
-		innerModel = std::make_shared<InnerModel>(); //InnerModel creation example
+		RoboCompCommonBehavior::Parameter par = params.at("InnerModelPath");
+		std::string innermodel_path = par.value;
+		innerModel = std::make_shared<InnerModel>(innermodel_path); //InnerModel creation example
 	}
 	catch(std::exception e) { qFatal("Error reading config params %s",e.what()); }
 
@@ -117,6 +123,11 @@ void SpecificWorker::initialize(int period)
 
 void SpecificWorker::compute()
 {
+
+	if(recording)
+	{
+		saveJointsFromAstra(QString());
+	}
 	//computeCODE
 //	QMutexLocker locker(mutex); 
 // 	try
@@ -250,6 +261,36 @@ void SpecificWorker::record_mode() {
 	this->osgLayout_2->addWidget(this->osgView);
 }
 
+void SpecificWorker::record() {
+	if(recording) {
+		this->recording = false;
+		this->record_btn->setText("Record");
+		qDebug()<<"Stopping Recording...";
+	} else{
+		this->recording = true;
+		this->record_btn->setText("Stop");
+		qDebug()<<"Starting Recording...";
+	}
+
+}
+
+void SpecificWorker::updateFramesRecorded()
+{
+	this->framesRecorded++;
+	this->framesRecorded_lcd->display(this->framesRecorded);
+}
+
+void SpecificWorker::visualizeRecordingToggled(bool state)
+{
+	this->visualizeRecording = state;
+}
+
+void  SpecificWorker::loadFileClicked()
+{
+	this->playback_mode();
+	this->paintJointsFromFile(QString());
+}
+
 //========================= Capture and save code ======================
 void SpecificWorker::relateJointsMeshes()
 {
@@ -319,10 +360,10 @@ bool SpecificWorker::checkNecessaryJoints(TPerson &person)
 
 }
 
-void SpecificWorker::paintJointsFromFile(){
+void SpecificWorker::paintJointsFromFile(QString filepath_i = QString()){
 
 	ifstream file;
-	file.open("/home/robocomp/robocomp/components/robotherapy/components/humanTherapySaver/joints.txt");
+	file.open("/home/robocomp/robocomp/components/robotherapy/components/therapyAnalysis/grabado.txt");
 
 	if (!file) {
 		cout << "Unable to open file";
@@ -384,19 +425,61 @@ vector<string> SpecificWorker::split(const string& str, const string& delim)
 }
 
 
-void SpecificWorker::saveJointsFromAstra()
+void SpecificWorker::saveJointsFromAstra(QString filepath_i = QString())
 {
+	QString filepath;
+	if(filepath_i.isEmpty())
+	{
+		if(!this->filePath_lnedit->text().isEmpty())
+		{
+			filepath = this->filePath_lnedit->text();
+		}
+		else
+		{
+			if(QMessageBox::warning(
+					this,
+					tr("Save path problem"),
+					tr("You have to set a valid path to record to a file"),
+
+					QMessageBox::Ok,
+
+					QMessageBox::Ok ) == QMessageBox::Ok)
+			{
+				this->record_mode();
+				this->filePath_lnedit->setFocus();
+				QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),
+																"",
+																tr("Recordings (*.txt *.rec *.save)"));
+				this->filePath_lnedit->setText(fileName);
+				filepath = fileName;
+			}
+		}
+	}
+	else
+	{
+		filepath = filepath_i;
+	}
 
 	fstream jointfile;
-	jointfile.open ( "joints.txt" , ios::app);
+	jointfile.open( filepath.toStdString() , ios::app);
 
 	try
 	{
 		PersonList users;
 		humantracker_proxy-> getUsersList(users);
+		if(visualizeRecording)
+		{
+
+			for (auto person : users)
+			{
+				if(checkNecessaryJoints(person.second)) {
+					PaintSkeleton(person.second);
+				}
+			}
+		}
 
 		if(users.size()== 0)
-			return;
+			this->status->showMessage("No human detected...");
 
 		for (auto u : users)
 		{
@@ -413,6 +496,8 @@ void SpecificWorker::saveJointsFromAstra()
 		}
 
 		jointfile <<endl;
+		this->updateFramesRecorded();
+		this->status->showMessage("Saved "+QString::number(this->framesRecorded)+" frames - Visualize = "+QString::number(visualizeRecording));
 	}
 
 	catch(...) {}

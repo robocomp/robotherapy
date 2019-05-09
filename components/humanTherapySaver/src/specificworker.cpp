@@ -50,8 +50,6 @@ SpecificWorker::~SpecificWorker()
 
 bool SpecificWorker::setParams(RoboCompCommonBehavior::ParameterList params)
 {
-//       THE FOLLOWING IS JUST AN EXAMPLE
-//	To use innerModelPath parameter you should uncomment specificmonitor.cpp readConfig method content
 	try
 	{
 		RoboCompCommonBehavior::Parameter par = params.at("InnerModelPath");
@@ -72,7 +70,7 @@ void SpecificWorker::initialize(int period)
 {
 	std::cout << "Initialize worker" << std::endl;
 	this->Period = period;
-	timer.start(Period);
+	timer.start(40);
 }
 
 void SpecificWorker::compute()
@@ -97,22 +95,6 @@ void SpecificWorker::compute()
 void SpecificWorker::printJointsFromAstra()
 {
 
-
-    qDebug()<<"----ANGLES----";
-    auto caca = innerModel->getTransformationMatrix(mapJointMesh["RightElbow"],mapJointMesh["MidSpine"]);
-//    auto rs = innerModel->getTransform(mapJointMesh["RightShoulder"]);
-    auto re = innerModel->getTransform(mapJointMesh["RightElbow"]);
-//    auto rh = innerModel->getTransform(mapJointMesh["RightHand"]);
-
-//    qDebug() <<"Right shoulder "<< rs->getRxValue() << rs->getRyValue()<< rs->getRzValue()  ;
-    caca.print("caca");
-qDebug() <<"Right elbow "<< re->getRxValue() << re->getRyValue()<< re->getRzValue()  ;
-//    qDebug() <<"Right hand "<< rh->getRxValue() << rh->getRyValue()<< rh->getRzValue()  ;
-
-//    qDebug()<<"Elbow angle"<< innerModel->getTransform("XN_SKEL_RIGHT_ELBOW")->getRxValue();
-
-
-
     try
     {
 		PersonList users;
@@ -125,13 +107,60 @@ qDebug() <<"Right elbow "<< re->getRxValue() << re->getRyValue()<< re->getRzValu
             }
 
             PaintSkeleton(person.second);
+            obtainFeatures();
 
-		}
+            upperTrunkFound = false;
+            lowerTrunkFound = false;
+
+        }
 	}
 
 	catch(...) {}
 
+}
 
+void SpecificWorker::obtainFeatures()
+{
+    if(!upperTrunkFound) return;
+
+    ofstream file;
+    file.open ( "features.txt" , ios::app);
+
+    timeval curTime;
+    gettimeofday(&curTime, NULL);
+    int milli = curTime.tv_usec / 1000;
+
+    char buffer [80];
+    strftime(buffer, 80, "%H:%M:%S", localtime(&curTime.tv_sec));
+    char currentTime[84] = "";
+    sprintf(currentTime, "%s:%d", buffer, milli);
+
+
+    qDebug()<<"Left "<<getElbowAngle("Left")<<getShoulderAngle("Left");
+    qDebug()<<"Right "<<getElbowAngle("Right")<<getShoulderAngle("Right");
+
+    file << currentTime << ";"<< getElbowAngle("Left") << ";" << getShoulderAngle("Left")<<";"<<getElbowAngle("Right")<<";"<<getShoulderAngle("Right")<<"\n";
+    file.close();
+
+}
+//side must be "Right" or "Left"
+float SpecificWorker::getElbowAngle(std::string side)
+{
+    return qRadiansToDegrees(innerModel->getTransform(mapJointMesh[side+"Elbow"])->getRxValue());
+}
+float SpecificWorker::getShoulderAngle(std::string side)
+{
+    float shoulderElevation = innerModel->getTranslationVectorTo(mapJointMesh["MidSpine"],mapJointMesh[side+"Shoulder"]).z();
+    float elbowElevation = innerModel->getTranslationVectorTo(mapJointMesh["MidSpine"],mapJointMesh[side+"Elbow"]).z();
+    float shoulderAngle = innerModel->getTransform(mapJointMesh[side+"Shoulder"])->getRyValue();
+
+    if (side == "Right")
+        shoulderAngle = -shoulderAngle;
+
+    if(elbowElevation > shoulderElevation)
+        return qRadiansToDegrees((M_PI + shoulderAngle));
+    else
+        return qRadiansToDegrees(-shoulderAngle);
 }
 
 
@@ -179,9 +208,8 @@ bool SpecificWorker::checkNecessaryJoints(TPerson &person)
             break;
         }
         else
-        {
             upperTrunkFound = true;
-        }
+
 
     }
 
@@ -194,7 +222,7 @@ bool SpecificWorker::checkNecessaryJoints(TPerson &person)
             break;
         }
         else
-        {lowerTrunkFound = true;}
+            lowerTrunkFound = true;
 
     }
 
@@ -247,7 +275,10 @@ void SpecificWorker::paintJointsFromFile(){
         }
 
         PaintSkeleton(person);
+        obtainFeatures();
 
+        upperTrunkFound = false;
+        lowerTrunkFound = false;
     }
 
 }
@@ -307,21 +338,15 @@ void SpecificWorker::saveJointsFromAstra()
 
 }
 
-void SpecificWorker::saveJointsMatrixRot(string TypeJoint, float x,float y,float z,float rx,float ry,float rz, bool endline)
+void SpecificWorker::saveJointsMatrixRot(bool endline, string TypeJoint, float x,float y,float z,float rx,float ry,float rz)
 {
     fstream jointfile;
     jointfile.open ( "rotations.txt" , ios::app);
 
     if (endline)
-    {
         jointfile <<endl;
-    }
-
     else
-    {
-        jointfile << TypeJoint <<"#" << x <<" "<< y <<" "<< z <<" "<<rx <<" "<< ry <<" "<< rz;
-        jointfile << "#";
-    }
+        jointfile << TypeJoint << "#" << x << " " << y << " " << z << " " << rx << " " << ry << " " << rz << "#";
 
     jointfile.close();
 }
@@ -355,7 +380,7 @@ void SpecificWorker::PaintSkeleton (TPerson &person) {
 //                        qDebug()<< "Actualizando " << QString::fromStdString(idJoint);
                         innerModel->updateTransformValues(TypeJoint,pose.x,pose.y,pose.z,pose.rx,pose.ry,pose.rz);
 
-                        saveJointsMatrixRot(idJoint,pose.x,pose.y,pose.z,pose.rx,pose.ry,pose.rz, false);
+                        saveJointsMatrixRot(false,idJoint,pose.x,pose.y,pose.z,pose.rx,pose.ry,pose.rz);
 
                     }
                 }
@@ -368,7 +393,7 @@ void SpecificWorker::PaintSkeleton (TPerson &person) {
         }
     }
 
-    saveJointsMatrixRot(" ",0,0,0,0,0,0, true);
+    saveJointsMatrixRot(true); //To end the line
 
 
     innerModel->update();
@@ -379,8 +404,6 @@ void SpecificWorker::PaintSkeleton (TPerson &person) {
 
 //    innerModel->save("SavedInnerModel.xml");
 
-    upperTrunkFound = false;
-    lowerTrunkFound = false;
 
     usleep(1000);
 

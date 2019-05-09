@@ -34,15 +34,20 @@
 #include <qmat/qrtmat.h>
 #include <fstream>
 #include <unistd.h>
+#include <chrono>
 
 #ifdef USE_QTGUI
 	#include <osgviewer/osgview.h>
 	#include <innermodel/innermodelviewer.h>
 #endif
 
+using namespace std::chrono;
+
 class SpecificWorker : public GenericWorker
 {
 Q_OBJECT
+
+
 
 map<string,QString> mapJointMesh; //Mapa que relaciona el nombre de las partes con los meshs
 map<string,RTMat> mapJointRotations; //Mapa que guarda las rotaciones calculadas
@@ -70,8 +75,10 @@ public:
 	SpecificWorker(MapPrx& mprx);
 	~SpecificWorker();
 	bool setParams(RoboCompCommonBehavior::ParameterList params);
+    bool firstDetected = true;
 
-
+    float getShoulderAngle(std::string side);
+    float getElbowAngle(std::string side);
 
 public slots:
 	void compute();
@@ -88,7 +95,8 @@ public slots:
     vector<string>split(const string& str, const string& delim);
     void saveJointsFromAstra();
     void printJointsFromAstra();
-    void saveJointsMatrixRot(string TypeJoint, float x,float y,float z,float rx,float ry,float rz,bool endline);
+    void saveJointsMatrixRot(bool endline, string TypeJoint = " ", float x = 0,float y = 0,float z = 0,float rx = 0,float ry = 0,float rz = 0);
+    void obtainFeatures();
 
 private:
     std::shared_ptr<InnerModel> innerModel;

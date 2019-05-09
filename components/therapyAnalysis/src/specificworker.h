@@ -59,6 +59,7 @@ class SpecificWorker : public GenericWorker
 	using jointPos = std::vector<float> ;
 	vector<string> upperTrunk = {"MidSpine","Head", "Neck", "LeftShoulder", "RightShoulder","LeftElbow","RightElbow" , "LeftHand", "RightHand" };
 	vector<string> lowerTrunk = {"MidSpine", "BaseSpine" ,"LeftHip","RightHip","LeftKnee","RightKnee","LeftFoot","RightFoot" };
+	vector<TPerson> loadedTraining;
 
 	bool upperTrunkFound = false;
 	bool lowerTrunkFound = false;
@@ -91,6 +92,8 @@ public slots:
 	void record();
 	void visualizeRecordingToggled(bool);
 	void loadFileClicked();
+	void framesSliderMoved(int value);
+	void changePlayFps(double value);
 
 
 private:
@@ -100,8 +103,10 @@ private:
 	bool recording;
 	bool visualizeRecording;
 	int framesRecorded;
+	float playFps;
 	float get_rand_float(float HI, float LO);
 	void updateFramesRecorded();
+	void restartPlayTimer();
 
 
 //	=============== Capture Methods ===========
@@ -112,7 +117,7 @@ private:
 	bool RotateTorso (const QVec &lshoulder, const QVec &rshoulder); //This method allows to rotate the torso from the position and rotation of the shoulders
 	bool SetPoses (Pose3D &pose, string joint);
 	bool checkNecessaryJoints(TPerson &person);
-	void paintJointsFromFile(QString );
+	void loadTrainingFromFile(QString);
 	vector<string>split(const string& str, const string& delim);
 	void saveJointsFromAstra(QString string);
 	void printJointsFromAstra();

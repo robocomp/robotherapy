@@ -68,6 +68,8 @@ SpecificWorker::SpecificWorker(TuplePrx tprx) : GenericWorker(tprx)
 	connect(this->record_btn, SIGNAL(clicked()), this, SLOT(record()));
 	connect(this->reverse_chck, SIGNAL(stateChanged(int)), this, SLOT(reverse_playing(int)));
 	connect(this->visualizeRecording_chck, SIGNAL(toggled(bool)), this, SLOT(visualizeRecordingToggled(bool)));
+	connect(this->frames_slider, SIGNAL(valueChanged(int)), this, SLOT(framesSliderMoved(int)));
+	connect(this->fps_spnbox, SIGNAL(valueChanged(double)), this, SLOT(changePlayFps(double)));
 
 
 #ifdef USE_QTGUI
@@ -83,6 +85,8 @@ SpecificWorker::SpecificWorker(TuplePrx tprx) : GenericWorker(tprx)
 	osgView->setCameraManipulator(tb);
 #endif
 	this->playback_mode();
+	this->relateJointsMeshes();
+	playFps = this->fps_spnbox->value();
 }
 
 /**
@@ -201,7 +205,7 @@ void  SpecificWorker::start_playing()
 	this->play_btn->setEnabled(false);
 	this->stop_btn->setEnabled(true);
 	this->pause_btn->setEnabled(true);
-	this->playTimer->start(1000);
+	this->playTimer->start(1000/playFps);
 	this->update_metrics();
 }
 
@@ -271,7 +275,6 @@ void SpecificWorker::record() {
 		this->record_btn->setText("Stop");
 		qDebug()<<"Starting Recording...";
 	}
-
 }
 
 void SpecificWorker::updateFramesRecorded()
@@ -285,10 +288,30 @@ void SpecificWorker::visualizeRecordingToggled(bool state)
 	this->visualizeRecording = state;
 }
 
-void  SpecificWorker::loadFileClicked()
+void SpecificWorker::loadFileClicked()
 {
 	this->playback_mode();
-	this->paintJointsFromFile(QString());
+	this->loadTrainingFromFile(QString());
+	this->frames_slider->setMaximum(this->loadedTraining.size()-1);
+}
+
+void SpecificWorker::changePlayFps(double value)
+{
+	this->playFps = value;
+	this->restartPlayTimer();
+}
+
+void SpecificWorker::restartPlayTimer()
+{
+	this->playTimer->stop();
+	this->playTimer->start(1000/playFps);
+}
+
+void SpecificWorker::framesSliderMoved(int value)
+{
+	this->update_metrics();
+	auto person = this->loadedTraining[value];
+	this->PaintSkeleton(person);
 }
 
 //========================= Capture and save code ======================
@@ -360,10 +383,10 @@ bool SpecificWorker::checkNecessaryJoints(TPerson &person)
 
 }
 
-void SpecificWorker::paintJointsFromFile(QString filepath_i = QString()){
+void SpecificWorker::loadTrainingFromFile(QString filepath_i = QString()){
 
 	ifstream file;
-	file.open("/home/robocomp/robocomp/components/robotherapy/components/therapyAnalysis/grabado.txt");
+	file.open("/home/robocomp/robocomp/components/robotherapy/components/humanTherapySaver/joints.txt");
 
 	if (!file) {
 		cout << "Unable to open file";
@@ -385,7 +408,7 @@ void SpecificWorker::paintJointsFromFile(QString filepath_i = QString()){
 			if(joints.size()== 4)
 			{
 				joint poses;
-				poses.push_back( QString::fromStdString(joints[1]).toFloat());
+				poses.push_back(QString::fromStdString(joints[1]).toFloat());
 				poses.push_back(QString::fromStdString(joints[2]).toFloat());
 				poses.push_back(QString::fromStdString(joints[3]).toFloat());
 
@@ -398,10 +421,12 @@ void SpecificWorker::paintJointsFromFile(QString filepath_i = QString()){
 		if(!checkNecessaryJoints(person))
 		{
 			qDebug()<<"No se han encontrado todos los joints necesarios";
-			continue;
+		}
+		else
+		{
+			loadedTraining.push_back(person);
 		}
 
-//		PaintSkeleton(person);
 
 	}
 
@@ -509,40 +534,72 @@ void SpecificWorker::saveJointsFromAstra(QString filepath_i = QString())
 
 void SpecificWorker::PaintSkeleton (TPerson &person) {
 
-	qDebug()<<__FUNCTION__;
-
+	this->status->showMessage(__FUNCTION__);
+	checkNecessaryJoints(person);
+	this->status->showMessage(QString::fromStdString(__FUNCTION__)+": Checked necessary joints");
 	CalculateJointRotations(person);
+	this->status->showMessage(QString::fromStdString(__FUNCTION__)+": Calculated rotations");
 
-	for (auto dictionaryNamesIt : mapJointMesh) {
-
-		try {
-			Pose3D pose;
-			string idJoint = dictionaryNamesIt.first;
-			QString TypeJoint = dictionaryNamesIt.second;
-
-			auto joints = person.joints;
-
-			if (joints.find(idJoint) != joints.end()) //Si se encuentra el joint
-			{
-				auto itUp = std::find(upperTrunk.begin(), upperTrunk.end(), idJoint);
-				auto itLw = std::find(lowerTrunk.begin(), lowerTrunk.end(), idJoint);
-
-				if ((itUp != upperTrunk.end() and upperTrunkFound) or (itLw  != lowerTrunk.end() and lowerTrunkFound)) //Se comprueba que si el joint pertenece al tronco X se haya encontrado todo eltronco antes de actualizar
-				{
-					if (SetPoses (pose, idJoint))
-					{
-//                        qDebug()<< "Actualizando " << QString::fromStdString(idJoint);
-						innerModel->updateTransformValues(TypeJoint,pose.x,pose.y,pose.z,pose.rx,pose.ry,pose.rz);
-					}
-				}
-
-			}
-		}
-		catch (...) {
-			qDebug()<<"Error in PaintSkeleton";
-		}
-
+	//Se comprueba que si el joint pertenece al tronco X se haya encontrado todo eltronco antes de actualizar
+	if(!upperTrunkFound and !lowerTrunkFound)
+	{
+		this->status->showMessage("Full body not found");
+		return;
 	}
+
+	for (auto personJoints : person.joints) {
+
+		Pose3D pose;
+		string idJoint = personJoints.first;
+		if(mapJointRotations.count(idJoint) > 0) {
+			QString TypeJoint = mapJointMesh[idJoint];
+			auto itUp = std::find(upperTrunk.begin(), upperTrunk.end(), idJoint);
+			auto itLw = std::find(lowerTrunk.begin(), lowerTrunk.end(), idJoint);
+			if (itUp != upperTrunk.end() and itLw != lowerTrunk.end()) {
+				this->status->showMessage("Joint " + QString::fromStdString(idJoint) + " is not upper not lower");
+			}
+
+			if (SetPoses(pose, idJoint)) {
+				innerModel->updateTransformValues(TypeJoint, pose.x, pose.y, pose.z, pose.rx, pose.ry, pose.rz);
+			} else {
+				this->status->showMessage("Error updating pose for joint " + QString::fromStdString(idJoint));
+			}
+		} else{
+//			this->status->showMessage("Trying to update not used joint " + QString::fromStdString(idJoint));
+		}
+	}
+
+//	for (auto dictionaryNamesIt : mapJointMesh) {
+//
+//		try {
+//			Pose3D pose;
+//			string idJoint = dictionaryNamesIt.first;
+//			QString TypeJoint = dictionaryNamesIt.second;
+//			auto joints = person.joints;
+//
+//
+//			if (joints.find(idJoint) != joints.end()) //Si se encuentra el joint
+//			{
+//
+//				if (SetPoses (pose, idJoint))
+//				{
+////                        qDebug()<< "Actualizando " << QString::fromStdString(idJoint);
+//					innerModel->updateTransformValues(TypeJoint,pose.x,pose.y,pose.z,pose.rx,pose.ry,pose.rz);
+//				} else{
+//					this->status->showMessage("Error updating skeleton for joint "+QString::fromStdString(idJoint));
+//				}
+//
+//			}
+//			else
+//			{
+//				this->status->showMessage(QString::fromStdString(__FUNCTION__)+": "+QString::fromStdString(idJoint)+" not found in person joints");
+//			}
+//		}
+//		catch (...) {
+//			this->status->showMessage("Error in PaintSkeleton");
+//		}
+//
+//	}
 
 	innerModel->update();
 	innerModelViewer->update();
@@ -554,9 +611,6 @@ void SpecificWorker::PaintSkeleton (TPerson &person) {
 
 	upperTrunkFound = false;
 	lowerTrunkFound = false;
-
-	usleep(1000);
-
 }
 
 void SpecificWorker::CalculateJointRotations (TPerson &p) {
@@ -602,10 +656,6 @@ void SpecificWorker::CalculateJointRotations (TPerson &p) {
 		mapJointRotations["RightFoot"]=RTMatFromJointPosition(mapJointRotations["MidSpine"]*mapJointRotations["BaseSpine"]*mapJointRotations["RightHip"]*mapJointRotations["RightKnee"],p.joints["RightFoot"],p.joints["RightKnee"],p.joints["RightFoot"], 2);
 
 	}
-
-
-	qDebug()<<"  ";
-	qDebug()<<"  ";
 }
 
 

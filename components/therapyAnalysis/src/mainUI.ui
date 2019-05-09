@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>579</width>
-    <height>429</height>
+    <width>822</width>
+    <height>537</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,7 +18,7 @@
     <item>
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="playback_page">
        <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -144,19 +144,6 @@
          </layout>
         </item>
         <item>
-         <spacer name="verticalSpacer">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>144</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
          <widget class="QGroupBox" name="groupBox_2">
           <property name="title">
            <string>Playing controls</string>
@@ -228,6 +215,23 @@
                 </size>
                </property>
               </spacer>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="fps_spnbox">
+               <property name="maximum">
+                <double>30.000000000000000</double>
+               </property>
+               <property name="value">
+                <double>1.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_4">
+               <property name="text">
+                <string>fps</string>
+               </property>
+              </widget>
              </item>
              <item>
               <widget class="QToolButton" name="play_btn">
@@ -357,7 +361,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>579</width>
+     <width>822</width>
      <height>20</height>
     </rect>
    </property>

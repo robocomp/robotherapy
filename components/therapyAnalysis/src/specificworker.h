@@ -30,13 +30,39 @@
 #include <genericworker.h>
 #include <innermodel/innermodel.h>
 #include <QTimer>
+#include <fstream>
+#include <unistd.h>
+
 #ifdef USE_QTGUI
 	#include <osgviewer/osgview.h>
 	#include <innermodel/innermodelviewer.h>
 #endif
 
+
+
+struct Pose3D
+{
+	float x;
+	float y;
+	float z;
+	float rx;
+	float ry;
+	float rz;
+};
+
 class SpecificWorker : public GenericWorker
 {
+
+	map<string,QString> mapJointMesh; //Mapa que relaciona el nombre de las partes con los meshs
+	map<string,RTMat> mapJointRotations; //Mapa que guarda las rotaciones calculadas
+
+	using jointPos = std::vector<float> ;
+	vector<string> upperTrunk = {"MidSpine","Head", "Neck", "LeftShoulder", "RightShoulder","LeftElbow","RightElbow" , "LeftHand", "RightHand" };
+	vector<string> lowerTrunk = {"MidSpine", "BaseSpine" ,"LeftHip","RightHip","LeftKnee","RightKnee","LeftFoot","RightFoot" };
+
+	bool upperTrunkFound = false;
+	bool lowerTrunkFound = false;
+
 Q_OBJECT
 public:
 	SpecificWorker(TuplePrx tprx);
@@ -60,15 +86,40 @@ public slots:
 	void pause_playing();
 	void reverse_playing(int state);
 	void update_metrics();
+	void record_mode();
+	void playback_mode();
+	void record();
+	void visualizeRecordingToggled(bool);
+	void loadFileClicked();
 
 
 private:
 	std::shared_ptr<InnerModel> innerModel;
 	QTimer *playTimer;
 	bool playForward;
+	bool recording;
+	bool visualizeRecording;
+	int framesRecorded;
+	float get_rand_float(float HI, float LO);
+	void updateFramesRecorded();
+
+
+//	=============== Capture Methods ===========
+	void relateJointsMeshes();
+	void PaintSkeleton (RoboCompHumanTracker::TPerson &person);
+	void CalculateJointRotations (RoboCompHumanTracker::TPerson &person);
+	RTMat RTMatFromJointPosition (RTMat rS, jointPos p1, jointPos p2, jointPos translation, int axis); //This method calculates the rotation of a Joint given some points
+	bool RotateTorso (const QVec &lshoulder, const QVec &rshoulder); //This method allows to rotate the torso from the position and rotation of the shoulders
+	bool SetPoses (Pose3D &pose, string joint);
+	bool checkNecessaryJoints(TPerson &person);
+	void paintJointsFromFile(QString );
+	vector<string>split(const string& str, const string& delim);
+	void saveJointsFromAstra(QString string);
+	void printJointsFromAstra();
 #ifdef USE_QTGUI
 	OsgView *osgView;
 	InnerModelViewer *innerModelViewer;
+
 #endif
 
 };

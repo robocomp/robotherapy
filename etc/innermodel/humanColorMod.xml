@@ -2,16 +2,15 @@
 	<transform id="world" tx="0" ty="0" tz="0"  rx="0" ry="0" rz="0">
 		<transform id="XN_SKEL_TORSO" tx="0" ty="400" tz="0"  rx="-1.570000052" ry="0" rz="0">
 			<mesh id="jTorso_mesh" file="/home/robocomp/robocomp/files/osgModels/humanColor/jointbox.osg" scale="50" tx="0" ty="0" tz="0" rx="0" ry="0" rz="0" />
-			<mesh id="XN_SKEL_TORSO_mesh" file="/home/robocomp/robocomp/files/osgModels/humanColor/pecho.osg" scale="10" tx="0" ty="0" tz="0" rx="1.570000052" ry="0" rz="0" />
+			<mesh id="XN_SKEL_TORSO_mesh" file="/home/robocomp/robocomp/files/osgModels/humanColor/pecho.osg" scale="8" tx="0" ty="0" tz="0" rx="1.570000052" ry="0" rz="0" />
 
 			<transform id="XN_SKEL_SHOULDER_SPINE" tx="0" ty="0" tz="200"  rx="0" ry="0" rz="0">
 				<mesh id="jShoulderSpine_mesh" file="/home/robocomp/robocomp/files/osgModels/humanColor/jointbox.osg" scale="50" tx="0" ty="0" tz="0" rx="0" ry="0" rz="0" />
 
-				<transform id="XN_SKEL_NECK" tx="0" ty="0" tz="300"  rx="0" ry="0" rz="0">
+				<transform id="XN_SKEL_NECK" tx="0" ty="0" tz="250"  rx="0" ry="0" rz="0">
 				<mesh id="jNECK_mesh" file="/home/robocomp/robocomp/files/osgModels/humanColor/jointbox.osg" scale="50" tx="0" ty="0" tz="0" rx="0" ry="0" rz="0" />
 				<mesh id="XN_SKEL_NECK_mesh" file="/home/robocomp/robocomp/files/osgModels/humanColor/cabeza.osg" scale="10" tx="0" ty="0" tz="75" rx="1.570000052" ry="3.140000105" rz="0" />
 				</transform>
-
 				<transform id="XN_SKEL_LEFT_SHOULDER" tx="-250" ty="0" tz="200"  rx="0" ry="0" rz="0">
 					<axes id = "ejes1"/>
 					<mesh id="jLEFTShoulder_mesh" file="/home/robocomp/robocomp/files/osgModels/humanColor/jointbox.osg" scale="50" tx="0" ty="0" tz="0" rx="0" ry="0" rz="0" />
@@ -40,7 +39,7 @@
 
 			<transform id="XN_SKEL_WAIST" tx="0" ty="0" tz="-200"  rx="0" ry="0" rz="0">
 				<mesh id="jWAIST_mesh" file="/home/robocomp/robocomp/files/osgModels/humanColor/jointbox.osg" scale="50" tx="0" ty="0" tz="0" rx="0" ry="0" rz="0" />
-				<mesh id="XN_SKEL_WAIST_mesh" file="/home/robocomp/robocomp/files/osgModels/humanColor/cintura.osg" scale="10" tx="0" ty="0" tz="0" rx="3.140000105" ry="0" rz="0" />
+				<mesh id="XN_SKEL_WAIST_mesh" file="/home/robocomp/robocomp/files/osgModels/humanColor/cintura.osg" scale="8" tx="0" ty="0" tz="0" rx="3.140000105" ry="0" rz="0" />
 				<transform id="XN_SKEL_LEFT_HIP" tx="-150" ty="0" tz="-200"  rx="-3.140000105" ry="0" rz="0">
 					<mesh id="jLEFTHIP_mesh" file="/home/robocomp/robocomp/files/osgModels/humanColor/jointbox.osg" scale="50" tx="0" ty="0" tz="0" rx="0" ry="0" rz="0" />
 					<mesh id="XN_SKEL_LEFT_HIP_mesh" file="/home/robocomp/robocomp/files/osgModels/humanColor/muslo.osg" scale="8" tx="0" ty="0" tz="0" rx="-3.140000105" ry="0" rz="0" />

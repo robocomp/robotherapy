@@ -395,12 +395,12 @@ void SpecificWorker::obtainFeatures()
 //	sprintf(currentTime, "%s:%d", buffer, milli);
 
 
-	qDebug()<<"Left "<<getElbowAngle("Left")<<getShoulderAngle("Left");
-	qDebug()<<"Right "<<getElbowAngle("Right")<<getShoulderAngle("Right");
-	this->angle1_lcd->display(getElbowAngle("Left"));
-	this->angle2_lcd->display(getElbowAngle("Right"));
-	this->height1_lcd->display(getShoulderAngle("Left"));
-	this->height2_lcd->display(getShoulderAngle("Right"));
+	qDebug()<<"Left "<<getElbowAngleVec("Left")<<getShoulderAngleVec("Left");
+	qDebug()<<"Right "<<getElbowAngleVec("Right")<<getShoulderAngleVec("Right");
+	this->angle1_lcd->display(getElbowAngleVec("Left"));
+	this->angle2_lcd->display(getElbowAngleVec("Right"));
+	this->height1_lcd->display(getShoulderAngleVec("Left"));
+	this->height2_lcd->display(getShoulderAngleVec("Right"));
 
 //	file << currentTime << ";"<< getElbowAngle("Left") << ";" << getShoulderAngle("Left")<<";"<<getElbowAngle("Right")<<";"<<getShoulderAngle("Right")<<"\n";
 //	file.close();
@@ -435,33 +435,68 @@ float SpecificWorker::getShoulderAngle(std::string side)
 		return qRadiansToDegrees(-shoulderAngle);
 }
 
+float SpecificWorker::getElbowAngleVec(std::string side)
+{
+	auto v1  = innerModel->transform(mapJointMesh[side +"Elbow"],mapJointMesh[side+"Hand"]);
+	auto v2  = innerModel->transform(mapJointMesh[side +"Elbow"],mapJointMesh[side+"Shoulder"]);
+
+	return getAngleBetweenVectors(v1,v2);
+
+}
+
+float SpecificWorker::getShoulderAngleVec(std::string side)
+{
+
+	auto v1  = innerModel->transform(mapJointMesh["ShoulderSpine"],mapJointMesh[side +"Hand"]);
+	auto v2  = innerModel->transform(mapJointMesh["ShoulderSpine"],mapJointMesh["BaseSpine"]);
+
+	return getAngleBetweenVectors(v1,v2);
+
+}
+
+
+float SpecificWorker::getAngleBetweenVectors(QVec v1, QVec v2)
+{
+	float mod1 = sqrt(v1.x()*v1.x() + v1.y()*v1.y() + v1.z()*v1.z());
+	float mod2 = sqrt(v2.x()*v2.x() + v2.y()*v2.y() + v2.z()*v2.z());
+
+	auto prod =  v1.x() * v2.x() + v1.y() * v2.y() + v1.z() * v2.z();
+
+	float angle = acos(prod/(mod1*mod2));
+
+	return qRadiansToDegrees(angle);
+}
+
 void SpecificWorker::relateJointsMeshes()
 {
-	mapJointMesh["Neck"] = "XN_SKEL_NECK";
-	mapJointMesh["MidSpine"] = "XN_SKEL_TORSO";
+    mapJointMesh["Neck"] = "XN_SKEL_NECK";
 
-	mapJointMesh["LeftShoulder"] = "XN_SKEL_LEFT_SHOULDER";
-	mapJointMesh["RightShoulder"] = "XN_SKEL_RIGHT_SHOULDER";
+    mapJointMesh["MidSpine"] = "XN_SKEL_TORSO";
+    mapJointMesh["ShoulderSpine"] = "XN_SKEL_SHOULDER_SPINE";
 
-	mapJointMesh["LeftElbow"] = "XN_SKEL_LEFT_ELBOW";
-	mapJointMesh["RightElbow"] = "XN_SKEL_RIGHT_ELBOW";
+    mapJointMesh["LeftShoulder"] = "XN_SKEL_LEFT_SHOULDER";
+    mapJointMesh["RightShoulder"] = "XN_SKEL_RIGHT_SHOULDER";
 
-	mapJointMesh["BaseSpine"] = "XN_SKEL_WAIST";
+    mapJointMesh["LeftElbow"] = "XN_SKEL_LEFT_ELBOW";
+    mapJointMesh["RightElbow"] = "XN_SKEL_RIGHT_ELBOW";
 
-	mapJointMesh["LeftHip"] = "XN_SKEL_LEFT_HIP";
-	mapJointMesh["RightHip"] = "XN_SKEL_RIGHT_HIP";
+    mapJointMesh["BaseSpine"] = "XN_SKEL_WAIST";
 
-	mapJointMesh["LeftHand"] = "XN_SKEL_LEFT_HAND";
-	mapJointMesh["RightHand"] = "XN_SKEL_RIGHT_HAND";
+    mapJointMesh["LeftHip"] = "XN_SKEL_LEFT_HIP";
+    mapJointMesh["RightHip"] = "XN_SKEL_RIGHT_HIP";
 
-	mapJointMesh["LeftKnee"] = "XN_SKEL_LEFT_KNEE";
-	mapJointMesh["RightKnee"] = "XN_SKEL_RIGHT_KNEE";
+    mapJointMesh["LeftHand"] = "XN_SKEL_LEFT_HAND";
+    mapJointMesh["RightHand"] = "XN_SKEL_RIGHT_HAND";
 
-	mapJointMesh["LeftFoot"] = "XN_SKEL_LEFT_FOOT";
-	mapJointMesh["RightFoot"] = "XN_SKEL_RIGHT_FOOT";
+    mapJointMesh["LeftKnee"] = "XN_SKEL_LEFT_KNEE";
+    mapJointMesh["RightKnee"] = "XN_SKEL_RIGHT_KNEE";
+
+    mapJointMesh["LeftFoot"] = "XN_SKEL_LEFT_FOOT";
+    mapJointMesh["RightFoot"] = "XN_SKEL_RIGHT_FOOT";
 
 
 }
+
 
 bool SpecificWorker::checkNecessaryJoints(TPerson &person)
 {
@@ -709,51 +744,54 @@ void SpecificWorker::PaintSkeleton (TPerson &person) {
 //    innerModel->save("SavedInnerModel.xml");
 }
 
+
 void SpecificWorker::CalculateJointRotations (TPerson &p) {
 
-	RTMat orbbec;
+    RTMat orbbec;
 
-	if (upperTrunkFound)
-	{
+    if (upperTrunkFound)
+    {
 //        qDebug()<<"-------------------------------- UPPER TRUNK --------------------------------";
 
-		mapJointRotations["MidSpine"] = RTMatFromJointPosition (orbbec,p.joints["MidSpine"],p.joints["Neck"], p.joints["MidSpine"], 2);
-		mapJointRotations["Neck"] = RTMatFromJointPosition (mapJointRotations["MidSpine"],p.joints["Neck"],p.joints["Head"],p.joints["Neck"], 2);
+        mapJointRotations["MidSpine"] = RTMatFromJointPosition (orbbec,p.joints["MidSpine"],p.joints["ShoulderSpine"], p.joints["MidSpine"], 2);
+        mapJointRotations["ShoulderSpine"] = RTMatFromJointPosition (mapJointRotations["MidSpine"],p.joints["ShoulderSpine"],p.joints["Neck"],p.joints["ShoulderSpine"], 2);
 
-		RTMat LEFT_SHOULDER_PRE_Z =  RTMatFromJointPosition(mapJointRotations["MidSpine"],p.joints["LeftShoulder"],p.joints["LeftElbow"], p.joints["LeftShoulder"], 2);
-		RTMat RIGHT_SHOULDER_PRE_Z = RTMatFromJointPosition(mapJointRotations["MidSpine"],p.joints["RightShoulder"],p.joints["RightElbow"],p.joints["RightShoulder"], 2);
+        mapJointRotations["Neck"] = RTMatFromJointPosition (mapJointRotations["MidSpine"]*mapJointRotations["ShoulderSpine"],p.joints["Neck"],p.joints["Head"],p.joints["Neck"], 2);
 
-		RotateTorso (RIGHT_SHOULDER_PRE_Z.getTr(), LEFT_SHOULDER_PRE_Z.getTr());
+        RTMat LEFT_SHOULDER_PRE_Z =  RTMatFromJointPosition(mapJointRotations["MidSpine"]*mapJointRotations["ShoulderSpine"],p.joints["LeftShoulder"],p.joints["LeftElbow"], p.joints["LeftShoulder"], 2);
+        RTMat RIGHT_SHOULDER_PRE_Z = RTMatFromJointPosition(mapJointRotations["MidSpine"]*mapJointRotations["ShoulderSpine"],p.joints["RightShoulder"],p.joints["RightElbow"],p.joints["RightShoulder"], 2);
 
-		mapJointRotations["LeftShoulder"]=RTMatFromJointPosition (mapJointRotations["MidSpine"],p.joints["LeftShoulder"],p.joints["LeftElbow"],p.joints["LeftShoulder"], 2);
-		mapJointRotations["RightShoulder"] = RTMatFromJointPosition(mapJointRotations["MidSpine"],p.joints["RightShoulder"], p.joints["RightElbow"],p.joints["RightShoulder"], 2);
+        RotateTorso (RIGHT_SHOULDER_PRE_Z.getTr(), LEFT_SHOULDER_PRE_Z.getTr());
 
-		mapJointRotations["LeftElbow"]=RTMatFromJointPosition (mapJointRotations["MidSpine"]*mapJointRotations["LeftShoulder"],p.joints["LeftElbow"],p.joints["LeftHand"],	p.joints["LeftElbow"], 2);
-		mapJointRotations["RightElbow"] = RTMatFromJointPosition (mapJointRotations["MidSpine"]*mapJointRotations["RightShoulder"],p.joints["RightElbow"],p.joints["RightHand"],p.joints["RightElbow"], 2);
+        mapJointRotations["LeftShoulder"]=RTMatFromJointPosition (mapJointRotations["MidSpine"]*mapJointRotations["ShoulderSpine"],p.joints["LeftShoulder"],p.joints["LeftElbow"],p.joints["LeftShoulder"], 2);
+        mapJointRotations["RightShoulder"] = RTMatFromJointPosition(mapJointRotations["MidSpine"]*mapJointRotations["ShoulderSpine"],p.joints["RightShoulder"], p.joints["RightElbow"],p.joints["RightShoulder"], 2);
 
-		mapJointRotations["LeftHand"] = RTMatFromJointPosition(mapJointRotations["MidSpine"]*mapJointRotations["LeftShoulder"]*mapJointRotations["LeftElbow"],p.joints["LeftHand"],p.joints["LeftElbow"],p.joints["LeftHand"], 2);
-		mapJointRotations["RightHand"] = RTMatFromJointPosition(mapJointRotations["MidSpine"]*mapJointRotations["RightShoulder"]*mapJointRotations["RightElbow"],p.joints["RightHand"],p.joints["RightElbow"],p.joints["RightHand"], 2);
+        mapJointRotations["LeftElbow"]=RTMatFromJointPosition (mapJointRotations["MidSpine"]*mapJointRotations["ShoulderSpine"]*mapJointRotations["LeftShoulder"],p.joints["LeftElbow"],p.joints["LeftHand"],	p.joints["LeftElbow"], 2);
+        mapJointRotations["RightElbow"] = RTMatFromJointPosition (mapJointRotations["MidSpine"]*mapJointRotations["ShoulderSpine"]*mapJointRotations["RightShoulder"],p.joints["RightElbow"],p.joints["RightHand"],p.joints["RightElbow"], 2);
 
-	}
+        mapJointRotations["LeftHand"] = RTMatFromJointPosition(mapJointRotations["MidSpine"]*mapJointRotations["ShoulderSpine"]*mapJointRotations["LeftShoulder"]*mapJointRotations["LeftElbow"],p.joints["LeftHand"],p.joints["LeftElbow"],p.joints["LeftHand"], 2);
+        mapJointRotations["RightHand"] = RTMatFromJointPosition(mapJointRotations["MidSpine"]*mapJointRotations["ShoulderSpine"]*mapJointRotations["RightShoulder"]*mapJointRotations["RightElbow"],p.joints["RightHand"],p.joints["RightElbow"],p.joints["RightHand"], 2);
 
-	if (lowerTrunkFound)
-	{
+    }
+
+    if (lowerTrunkFound)
+    {
 //        qDebug()<<"-------------------------------- LOWER TRUNK --------------------------------";
 
-		mapJointRotations["BaseSpine"]=RTMatFromJointPosition (mapJointRotations["MidSpine"],p.joints["BaseSpine"],p.joints["MidSpine"] ,p.joints["BaseSpine"], 2);
+        mapJointRotations["BaseSpine"]=RTMatFromJointPosition ( mapJointRotations["MidSpine"],p.joints["BaseSpine"],p.joints["MidSpine"] ,p.joints["BaseSpine"], 2);
 
-		mapJointRotations["LeftHip"]=RTMatFromJointPosition (mapJointRotations["MidSpine"]*mapJointRotations["BaseSpine"],p.joints["LeftHip"],p.joints["LeftKnee"],p.joints["LeftHip"], 2);
-		mapJointRotations["RightHip"]=RTMatFromJointPosition (mapJointRotations["MidSpine"]*mapJointRotations["BaseSpine"],p.joints["RightHip"],p.joints["RightKnee"],p.joints["RightHip"], 2);
+        mapJointRotations["LeftHip"]=RTMatFromJointPosition (mapJointRotations["MidSpine"]*mapJointRotations["BaseSpine"],p.joints["LeftHip"],p.joints["LeftKnee"],p.joints["LeftHip"], 2);
+        mapJointRotations["RightHip"]=RTMatFromJointPosition (mapJointRotations["MidSpine"]*mapJointRotations["BaseSpine"],p.joints["RightHip"],p.joints["RightKnee"],p.joints["RightHip"], 2);
 
-		mapJointRotations["LeftKnee"]=RTMatFromJointPosition (mapJointRotations["MidSpine"]*mapJointRotations["BaseSpine"]*mapJointRotations["LeftHip"],p.joints["LeftKnee"],p.joints["LeftFoot"],p.joints["LeftKnee"], 2);
-		mapJointRotations["RightKnee"]=RTMatFromJointPosition (mapJointRotations["MidSpine"]*mapJointRotations["BaseSpine"]*mapJointRotations["RightHip"],p.joints["RightKnee"],p.joints["RightFoot"],p.joints["RightKnee"], 2);
+        mapJointRotations["LeftKnee"]=RTMatFromJointPosition (mapJointRotations["MidSpine"]*mapJointRotations["BaseSpine"]*mapJointRotations["LeftHip"],p.joints["LeftKnee"],p.joints["LeftFoot"],p.joints["LeftKnee"], 2);
+        mapJointRotations["RightKnee"]=RTMatFromJointPosition (mapJointRotations["MidSpine"]*mapJointRotations["BaseSpine"]*mapJointRotations["RightHip"],p.joints["RightKnee"],p.joints["RightFoot"],p.joints["RightKnee"], 2);
 
-		mapJointRotations["LeftFoot"]=RTMatFromJointPosition(mapJointRotations["MidSpine"]*mapJointRotations["BaseSpine"]*mapJointRotations["LeftHip"]*mapJointRotations["LeftKnee"],p.joints["LeftFoot"],p.joints["LeftKnee"],p.joints["LeftFoot"], 2);
-		mapJointRotations["RightFoot"]=RTMatFromJointPosition(mapJointRotations["MidSpine"]*mapJointRotations["BaseSpine"]*mapJointRotations["RightHip"]*mapJointRotations["RightKnee"],p.joints["RightFoot"],p.joints["RightKnee"],p.joints["RightFoot"], 2);
+        mapJointRotations["LeftFoot"]=RTMatFromJointPosition(mapJointRotations["MidSpine"]*mapJointRotations["BaseSpine"]*mapJointRotations["LeftHip"]*mapJointRotations["LeftKnee"],p.joints["LeftFoot"],p.joints["LeftKnee"],p.joints["LeftFoot"], 2);
+        mapJointRotations["RightFoot"]=RTMatFromJointPosition(mapJointRotations["MidSpine"]*mapJointRotations["BaseSpine"]*mapJointRotations["RightHip"]*mapJointRotations["RightKnee"],p.joints["RightFoot"],p.joints["RightKnee"],p.joints["RightFoot"], 2);
 
-	}
+    }
+
 }
-
 
 RTMat SpecificWorker::RTMatFromJointPosition (RTMat rS,jointPos p1, jointPos p2, jointPos translation, int axis) {
 
@@ -841,7 +879,6 @@ bool SpecificWorker::SetPoses (Pose3D &pose, string joint) {
 
 	else
 	{
-
 		qDebug()<<" NO EXISTE "<< QString::fromStdString(joint);
 		return false;
 	}

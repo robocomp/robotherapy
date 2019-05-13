@@ -63,7 +63,7 @@ class SpecificWorker : public GenericWorker
 	map<string,std::vector<float>> currentMetrics; //Map with calculated metrics
 
 	using jointPos = std::vector<float> ;
-	vector<string> upperTrunk = {"MidSpine","Head", "Neck", "LeftShoulder", "RightShoulder","LeftElbow","RightElbow" , "LeftHand", "RightHand" };
+	vector<string> upperTrunk = {"MidSpine","ShoulderSpine", "Head", "Neck", "LeftShoulder", "RightShoulder","LeftElbow","RightElbow" , "LeftHand", "RightHand" };
 	vector<string> lowerTrunk = {"MidSpine", "BaseSpine" ,"LeftHip","RightHip","LeftKnee","RightKnee","LeftFoot","RightFoot" };
 	vector<TPerson> loadedTraining;
 
@@ -122,6 +122,10 @@ private:
 	void obtainFeatures();
 	float getShoulderAngle(std::string side);
 	float getElbowAngle(std::string side);
+	float getShoulderAngleVec(std::string side);
+	float getElbowAngleVec(std::string side);
+	float getAngleBetweenVectors(QVec v1, QVec v2);
+
 //	void calculateAllMetrics();
 
 

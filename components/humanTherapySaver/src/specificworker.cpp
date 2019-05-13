@@ -146,7 +146,7 @@ void SpecificWorker::obtainFeatures()
 //    auto v2  = innerModel->transform(mapJointMesh["RightElbow"],mapJointMesh["RightShoulder"]);
 //
 
-    auto v1  = innerModel->transform(mapJointMesh["ShoulderSpine"],mapJointMesh["RightElbow"]);
+    auto v1  = innerModel->transform(mapJointMesh["ShoulderSpine"],mapJointMesh["RightHand"]);
     auto v2  = innerModel->transform(mapJointMesh["ShoulderSpine"],mapJointMesh["BaseSpine"]);
 
     float angle = getAngleBetweenVectors(v1,v2);
@@ -192,6 +192,7 @@ float SpecificWorker::getShoulderAngle(std::string side)
 void SpecificWorker::relateJointsMeshes()
 {
     mapJointMesh["Neck"] = "XN_SKEL_NECK";
+
     mapJointMesh["MidSpine"] = "XN_SKEL_TORSO";
     mapJointMesh["ShoulderSpine"] = "XN_SKEL_SHOULDER_SPINE";
 
@@ -426,11 +427,6 @@ void SpecificWorker::PaintSkeleton (TPerson &person) {
 
     osgView->frame();
     osgView->autoResize();
-
-//    innerModel->save("SavedInnerModel.xml");
-
-
-    usleep(1000);
 
 }
 

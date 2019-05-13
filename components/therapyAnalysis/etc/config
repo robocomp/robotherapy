@@ -6,7 +6,7 @@ HumanTrackerProxy = humantracker:tcp -h 158.49.247.169 -p 11666
 
 
 
-InnerModelPath = /home/robocomp/robocomp/components/robotherapy/etc/innermodel/humanColor.xml
+InnerModelPath = /home/robocomp/robocomp/components/robotherapy/etc/innermodel/humanColorMod.xml
 
 Ice.Warn.Connections=0
 Ice.Trace.Network=0

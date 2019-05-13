@@ -57,7 +57,7 @@ using jointPos = std::vector<float> ;
 bool upperTrunkFound = false;
 bool lowerTrunkFound = false;
 
-vector<string> upperTrunk = {"MidSpine","Head", "Neck", "LeftShoulder", "RightShoulder","LeftElbow","RightElbow" , "LeftHand", "RightHand" };
+vector<string> upperTrunk = {"MidSpine","ShoulderSpine","Head", "Neck", "LeftShoulder", "RightShoulder","LeftElbow","RightElbow" , "LeftHand", "RightHand" };
 vector<string> lowerTrunk = {"MidSpine", "BaseSpine" ,"LeftHip","RightHip","LeftKnee","RightKnee","LeftFoot","RightFoot" };
 
 
@@ -97,6 +97,7 @@ public slots:
     void printJointsFromAstra();
     void saveJointsMatrixRot(bool endline, string TypeJoint = " ", float x = 0,float y = 0,float z = 0,float rx = 0,float ry = 0,float rz = 0);
     void obtainFeatures();
+    float getAngleBetweenVectors(QVec v1, QVec v2);
 
 private:
     std::shared_ptr<InnerModel> innerModel;

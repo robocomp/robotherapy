@@ -132,7 +132,7 @@ void SpecificWorker::compute()
 
 	if(recording)
 	{
-		saveJointsFromAstra(QString());
+		recordData();
 	}
 	//computeCODE
 //	QMutexLocker locker(mutex); 
@@ -270,10 +270,33 @@ void SpecificWorker::record_mode() {
 void SpecificWorker::record() {
 	if(recording) {
 		this->recording = false;
+		this->filePath_lnedit->setEnabled(true);
 		this->record_btn->setText("Record");
 		qDebug()<<"Stopping Recording...";
-	} else{
+	} else
+	{
+		if(!this->filePath_lnedit->text().isEmpty())
+			this->savePath = this->filePath_lnedit->text();
+		else
+		{
+			if(QMessageBox::warning(this,tr("Save path problem"),tr("You have to set a valid path to record to a file"),
+									QMessageBox::Ok,QMessageBox::Ok ) == QMessageBox::Ok)
+			{
+				this->record_mode();
+				this->filePath_lnedit->setFocus();
+				QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),"",tr("Recordings)"));
+				this->filePath_lnedit->setText(fileName);
+				this->savePath = fileName;
+			}
+		}
+		//truncate file
+		fstream jointfile;
+		jointfile.open( (this->savePath+".txt").toStdString() , std::fstream::trunc);
+		jointfile.close();
+		this->videoWriter = cv::VideoWriter( (this->savePath+".avi").toStdString(), 0, 0, cv::Size(640, 480));
+
 		this->recording = true;
+		this->filePath_lnedit->setEnabled(false);
 		this->record_btn->setText("Stop");
 		qDebug()<<"Starting Recording...";
 	}
@@ -548,52 +571,27 @@ vector<string> SpecificWorker::split(const string& str, const string& delim)
 	return tokens;
 }
 
-
-void SpecificWorker::saveJointsFromAstra(QString filepath_i = QString())
+void SpecificWorker::recordData()
 {
-	QString filepath;
-	if(filepath_i.isEmpty())
+	//video
+	//read frame data
+	cv::Mat frame(480, 640, CV_8UC3, cv::Scalar(10, 100, 150));
+	videoWriter.write(frame);
+	if(visualizeRecording)
 	{
-		if(!this->filePath_lnedit->text().isEmpty())
-		{
-			filepath = this->filePath_lnedit->text();
-		}
-		else
-		{
-			if(QMessageBox::warning(
-					this,
-					tr("Save path problem"),
-					tr("You have to set a valid path to record to a file"),
-
-					QMessageBox::Ok,
-
-					QMessageBox::Ok ) == QMessageBox::Ok)
-			{
-				this->record_mode();
-				this->filePath_lnedit->setFocus();
-				QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),
-																"",
-																tr("Recordings (*.txt *.rec *.save)"));
-				this->filePath_lnedit->setText(fileName);
-				filepath = fileName;
-			}
-		}
+		QImage img = QImage(frame.ptr(), 640, 480, QImage::Format_RGB888);
+    	video2_lb->setPixmap(QPixmap::fromImage(img));
+    	video2_lb->resize(video2_lb->pixmap()->size());
 	}
-	else
-	{
-		filepath = filepath_i;
-	}
-
+	//joints
 	fstream jointfile;
-	jointfile.open( filepath.toStdString() , ios::app);
-
+	jointfile.open( (this->savePath+".txt").toStdString() , ios::app);
 	try
 	{
 		PersonList users;
-		humantracker_proxy-> getUsersList(users);
+//		humantracker_proxy->getUsersList(users);
 		if(visualizeRecording)
 		{
-
 			for (auto person : users)
 			{
 				if(checkNecessaryJoints(person.second)) {
@@ -624,7 +622,9 @@ void SpecificWorker::saveJointsFromAstra(QString filepath_i = QString())
 		this->status->showMessage("Saved "+QString::number(this->framesRecorded)+" frames - Visualize = "+QString::number(visualizeRecording));
 	}
 
-	catch(...) {}
+	catch(...){
+		qDebug()<<"no connection to humantracker_proxy";
+	}
 
 	jointfile.close();
 

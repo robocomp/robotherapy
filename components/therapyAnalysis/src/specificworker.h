@@ -36,6 +36,7 @@
 #include <qmat/qrtmat.h>
 #include <QMessageBox>
 #include <QFileDialog>
+#include <opencv2/opencv.hpp>
 
 #ifdef USE_QTGUI
 	#include <osgviewer/osgview.h>
@@ -104,12 +105,16 @@ public slots:
 
 private:
 	Chart *chart;
+	//record
+	bool recording;
+	bool visualizeRecording=false;
+	int framesRecorded;
+	QString savePath;
+	cv::VideoWriter videoWriter;
+
 	std::shared_ptr<InnerModel> innerModel;
 	QTimer *playTimer;
 	bool playForward;
-	bool recording;
-	bool visualizeRecording;
-	int framesRecorded;
 	float playFps;
 	float get_rand_float(float HI, float LO);
 	void updateFramesRecorded();
@@ -130,7 +135,7 @@ private:
 	bool checkNecessaryJoints(TPerson &person);
 	void loadTrainingFromFile(QString);
 	vector<string>split(const string& str, const string& delim);
-	void saveJointsFromAstra(QString string);
+	void recordData();
 	void printJointsFromAstra();
 #ifdef USE_QTGUI
 	OsgView *osgView;

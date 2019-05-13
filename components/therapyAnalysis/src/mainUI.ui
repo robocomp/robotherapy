@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>822</width>
-    <height>537</height>
+    <width>1029</width>
+    <height>673</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -153,7 +153,14 @@
             <property name="frameShadow">
              <enum>QFrame::Raised</enum>
             </property>
-            <layout class="QVBoxLayout" name="verticalLayout_3">
+            <layout class="QHBoxLayout" name="horizontalLayout_4">
+             <item>
+              <widget class="QLabel" name="video_lb">
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
              <item>
               <layout class="QVBoxLayout" name="osgLayout"/>
              </item>
@@ -303,9 +310,17 @@
           <property name="frameShadow">
            <enum>QFrame::Raised</enum>
           </property>
-          <layout class="QVBoxLayout" name="verticalLayout_5">
+          <layout class="QHBoxLayout" name="horizontalLayout_3">
            <item>
-            <layout class="QVBoxLayout" name="osgLayout_2"/>
+            <layout class="QHBoxLayout" name="osgLayout_2">
+             <item>
+              <widget class="QLabel" name="video2_lb">
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
           </layout>
          </widget>
@@ -380,7 +395,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>822</width>
+     <width>1029</width>
      <height>22</height>
     </rect>
    </property>

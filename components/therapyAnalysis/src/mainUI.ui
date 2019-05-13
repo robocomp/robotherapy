@@ -33,7 +33,10 @@
              <item row="1" column="1">
               <widget class="QLCDNumber" name="angle1_lcd">
                <property name="smallDecimalPoint">
-                <bool>true</bool>
+                <bool>false</bool>
+               </property>
+               <property name="digitCount">
+                <number>3</number>
                </property>
                <property name="segmentStyle">
                 <enum>QLCDNumber::Flat</enum>
@@ -43,7 +46,10 @@
              <item row="2" column="1">
               <widget class="QLCDNumber" name="height1_lcd">
                <property name="smallDecimalPoint">
-                <bool>true</bool>
+                <bool>false</bool>
+               </property>
+               <property name="digitCount">
+                <number>3</number>
                </property>
                <property name="segmentStyle">
                 <enum>QLCDNumber::Flat</enum>
@@ -53,7 +59,10 @@
              <item row="1" column="2">
               <widget class="QLCDNumber" name="angle2_lcd">
                <property name="smallDecimalPoint">
-                <bool>true</bool>
+                <bool>false</bool>
+               </property>
+               <property name="digitCount">
+                <number>3</number>
                </property>
                <property name="segmentStyle">
                 <enum>QLCDNumber::Flat</enum>
@@ -63,14 +72,14 @@
              <item row="1" column="0">
               <widget class="QLabel" name="metric1_label">
                <property name="text">
-                <string>Arm Angle:</string>
+                <string>Elbow Angle:</string>
                </property>
               </widget>
              </item>
              <item row="2" column="0">
               <widget class="QLabel" name="metric2_label">
                <property name="text">
-                <string>Arm Height</string>
+                <string>Shoulder Height</string>
                </property>
               </widget>
              </item>
@@ -90,7 +99,10 @@
              <item row="2" column="2">
               <widget class="QLCDNumber" name="height2_lcd">
                <property name="smallDecimalPoint">
-                <bool>true</bool>
+                <bool>false</bool>
+               </property>
+               <property name="digitCount">
+                <number>3</number>
                </property>
                <property name="segmentStyle">
                 <enum>QLCDNumber::Flat</enum>

@@ -32,6 +32,9 @@
 #include <QTimer>
 #include <fstream>
 #include <unistd.h>
+#include <qmat/qrtmat.h>
+#include <QMessageBox>
+#include <QFileDialog>
 
 #ifdef USE_QTGUI
 	#include <osgviewer/osgview.h>
@@ -94,6 +97,7 @@ public slots:
 	void loadFileClicked();
 	void framesSliderMoved(int value);
 	void changePlayFps(double value);
+	void setEnabledPlayControls(bool enabled);
 
 
 private:
@@ -107,6 +111,9 @@ private:
 	float get_rand_float(float HI, float LO);
 	void updateFramesRecorded();
 	void restartPlayTimer();
+	void obtainFeatures();
+	float getShoulderAngle(std::string side);
+	float getElbowAngle(std::string side);
 
 
 //	=============== Capture Methods ===========

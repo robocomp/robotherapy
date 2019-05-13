@@ -74,7 +74,7 @@ SpecificWorker::SpecificWorker(TuplePrx tprx) : GenericWorker(tprx)
 
 #ifdef USE_QTGUI
 	innerModelViewer = NULL;
-	osgView = new OsgView();
+	osgView = new OsgView(this);
 	this->osgLayout->addWidget(osgView);
 	osgGA::TrackballManipulator *tb = new osgGA::TrackballManipulator;
 	osg::Vec3d eye(osg::Vec3(4000.,4000.,-1000.));
@@ -84,9 +84,11 @@ SpecificWorker::SpecificWorker(TuplePrx tprx) : GenericWorker(tprx)
 	tb->setByMatrix(osg::Matrixf::lookAt(eye,center,up));
 	osgView->setCameraManipulator(tb);
 #endif
+
 	this->playback_mode();
 	this->relateJointsMeshes();
 	playFps = this->fps_spnbox->value();
+	this->setEnabledPlayControls(false);
 }
 
 /**
@@ -185,7 +187,7 @@ void  SpecificWorker::endFrame()
 void  SpecificWorker::forwardFrames(int numFrames)
 {
 	this->frames_slider->setValue(this->frames_slider->value()+numFrames);
-	this->update_metrics();
+	this->obtainFeatures();
 }
 
 void  SpecificWorker::playTimerTimeout()
@@ -206,7 +208,7 @@ void  SpecificWorker::start_playing()
 	this->stop_btn->setEnabled(true);
 	this->pause_btn->setEnabled(true);
 	this->playTimer->start(1000/playFps);
-	this->update_metrics();
+	this->obtainFeatures();
 }
 
 void  SpecificWorker::pause_playing()
@@ -215,7 +217,7 @@ void  SpecificWorker::pause_playing()
 	this->stop_btn->setEnabled(false);
 	this->pause_btn->setEnabled(false);
 	this->playTimer->stop();
-	this->update_metrics();
+	this->obtainFeatures();
 }
 
 void  SpecificWorker::stop_playing()
@@ -225,7 +227,7 @@ void  SpecificWorker::stop_playing()
 	this->pause_btn->setEnabled(false);
 	this->playTimer->stop();
 	this->startFrame();
-	this->update_metrics();
+	this->obtainFeatures();
 }
 
 void  SpecificWorker::reverse_playing(int state)
@@ -292,6 +294,7 @@ void SpecificWorker::loadFileClicked()
 {
 	this->playback_mode();
 	this->loadTrainingFromFile(QString());
+	this->setEnabledPlayControls(true);
 	this->frames_slider->setMaximum(this->loadedTraining.size()-1);
 }
 
@@ -304,17 +307,97 @@ void SpecificWorker::changePlayFps(double value)
 void SpecificWorker::restartPlayTimer()
 {
 	this->playTimer->stop();
-	this->playTimer->start(1000/playFps);
+	// Check if currently playing
+	if(this->stop_btn->isEnabled())
+		this->playTimer->start(1000/playFps);
 }
 
 void SpecificWorker::framesSliderMoved(int value)
 {
-	this->update_metrics();
-	auto person = this->loadedTraining[value];
-	this->PaintSkeleton(person);
+	this->obtainFeatures();
+	if(this->loadedTraining.size()>value) {
+		auto person = this->loadedTraining[value];
+		this->PaintSkeleton(person);
+	}
+	else{
+		this->status->showMessage("No training loaded");
+	}
+
+}
+
+void SpecificWorker::setEnabledPlayControls(bool enabled)
+{
+	this->frames_slider->setEnabled(enabled);
+
+	this->play_btn->setEnabled(enabled);
+
+	this->stop_btn->setEnabled(enabled);
+	this->pause_btn->setEnabled(enabled);
+	this->playTimer->stop();
+	if(!enabled)
+	{
+		this->frames_slider->setToolTip("Load a training to enable this control");
+		this->play_btn->setToolTip("Load a training to enable this control");
+	}
+	else
+	{
+		this->frames_slider->setToolTip("");
+		this->play_btn->setToolTip("");
+	}
 }
 
 //========================= Capture and save code ======================
+
+
+void SpecificWorker::obtainFeatures()
+{
+	if(!upperTrunkFound) return;
+
+//	ofstream file;
+//	file.open ( "features.txt" , ios::app);
+
+//	timeval curTime;
+//	gettimeofday(&curTime, NULL);
+//	int milli = curTime.tv_usec / 1000;
+
+//	char buffer [80];
+//	strftime(buffer, 80, "%H:%M:%S", localtime(&curTime.tv_sec));
+//	char currentTime[84] = "";
+//	sprintf(currentTime, "%s:%d", buffer, milli);
+
+
+	qDebug()<<"Left "<<getElbowAngle("Left")<<getShoulderAngle("Left");
+	qDebug()<<"Right "<<getElbowAngle("Right")<<getShoulderAngle("Right");
+	this->angle1_lcd->display(getElbowAngle("Left"));
+	this->angle2_lcd->display(getElbowAngle("Right"));
+	this->height1_lcd->display(getShoulderAngle("Left"));
+	this->height2_lcd->display(getShoulderAngle("Right"));
+
+//	file << currentTime << ";"<< getElbowAngle("Left") << ";" << getShoulderAngle("Left")<<";"<<getElbowAngle("Right")<<";"<<getShoulderAngle("Right")<<"\n";
+//	file.close();
+
+}
+//side must be "Right" or "Left"
+float SpecificWorker::getElbowAngle(std::string side)
+{
+	return qRadiansToDegrees(innerModel->getTransform(mapJointMesh[side+"Elbow"])->getRxValue());
+}
+
+float SpecificWorker::getShoulderAngle(std::string side)
+{
+	float shoulderElevation = innerModel->getTranslationVectorTo(mapJointMesh["MidSpine"],mapJointMesh[side+"Shoulder"]).z();
+	float elbowElevation = innerModel->getTranslationVectorTo(mapJointMesh["MidSpine"],mapJointMesh[side+"Elbow"]).z();
+	float shoulderAngle = innerModel->getTransform(mapJointMesh[side+"Shoulder"])->getRyValue();
+
+	if (side == "Right")
+		shoulderAngle = -shoulderAngle;
+
+	if(elbowElevation > shoulderElevation)
+		return qRadiansToDegrees((M_PI + shoulderAngle));
+	else
+		return qRadiansToDegrees(-shoulderAngle);
+}
+
 void SpecificWorker::relateJointsMeshes()
 {
 	mapJointMesh["Neck"] = "XN_SKEL_NECK";
@@ -345,6 +428,8 @@ void SpecificWorker::relateJointsMeshes()
 
 bool SpecificWorker::checkNecessaryJoints(TPerson &person)
 {
+	upperTrunkFound = false;
+	lowerTrunkFound = false;
 	jointListType joints = person.joints;
 
 
@@ -608,9 +693,6 @@ void SpecificWorker::PaintSkeleton (TPerson &person) {
 	osgView->autoResize();
 
 //    innerModel->save("SavedInnerModel.xml");
-
-	upperTrunkFound = false;
-	lowerTrunkFound = false;
 }
 
 void SpecificWorker::CalculateJointRotations (TPerson &p) {
@@ -711,7 +793,7 @@ RTMat SpecificWorker::RTMatFromJointPosition (RTMat rS,jointPos p1, jointPos p2,
 
 bool SpecificWorker::RotateTorso (const QVec &lshoulder, const QVec &rshoulder) {
 
-	qDebug()<<__FUNCTION__;
+//	qDebug()<<__FUNCTION__;
 
 	QVec eje = lshoulder - rshoulder;	//Calculamos el eje que va de un hombro a otro
 

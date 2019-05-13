@@ -27,6 +27,7 @@
 #ifndef SPECIFICWORKER_H
 #define SPECIFICWORKER_H
 
+#include <chart.h>
 #include <genericworker.h>
 #include <innermodel/innermodel.h>
 #include <QTimer>
@@ -99,9 +100,10 @@ public slots:
 	void framesSliderMoved(int value);
 	void changePlayFps(double value);
 	void setEnabledPlayControls(bool enabled);
-
+	void load_chart();
 
 private:
+	Chart *chart;
 	std::shared_ptr<InnerModel> innerModel;
 	QTimer *playTimer;
 	bool playForward;

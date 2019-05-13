@@ -70,7 +70,7 @@ SpecificWorker::SpecificWorker(TuplePrx tprx) : GenericWorker(tprx)
 	connect(this->visualizeRecording_chck, SIGNAL(toggled(bool)), this, SLOT(visualizeRecordingToggled(bool)));
 	connect(this->frames_slider, SIGNAL(valueChanged(int)), this, SLOT(framesSliderMoved(int)));
 	connect(this->fps_spnbox, SIGNAL(valueChanged(double)), this, SLOT(changePlayFps(double)));
-
+	connect(this->chart_pb, SIGNAL(clicked()), this, SLOT(load_chart()));
 
 #ifdef USE_QTGUI
 	innerModelViewer = NULL;
@@ -315,7 +315,7 @@ void SpecificWorker::restartPlayTimer()
 void SpecificWorker::framesSliderMoved(int value)
 {
 	this->obtainFeatures();
-	if(this->loadedTraining.size()>value) {
+	if((int)this->loadedTraining.size()>value) {
 		auto person = this->loadedTraining[value];
 		this->PaintSkeleton(person);
 	}
@@ -344,6 +344,12 @@ void SpecificWorker::setEnabledPlayControls(bool enabled)
 		this->frames_slider->setToolTip("");
 		this->play_btn->setToolTip("");
 	}
+}
+
+void SpecificWorker::load_chart()
+{
+	chart = new Chart();
+	chart->loadData();
 }
 
 //========================= Capture and save code ======================

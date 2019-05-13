@@ -3,14 +3,20 @@
 SET ( SOURCES
   specificworker.cpp
   specificmonitor.cpp
+  chart.cpp
+  callout.cpp
 )
 
 # Headers set
 SET ( HEADERS
   specificworker.h
   specificmonitor.h
+  chart.h
+  callout.h
 )
+
+find_package(Qt5Charts)
 
 set(CMAKE_CXX_STANDARD 17)
 
-SET (LIBS ${LIBS}  )
+SET (LIBS ${LIBS} Qt5::Charts )

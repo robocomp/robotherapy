@@ -43,6 +43,66 @@
                </property>
               </widget>
              </item>
+             <item row="3" column="1">
+              <spacer name="verticalSpacer_2">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="0" column="2">
+              <widget class="QLabel" name="label_2">
+               <property name="text">
+                <string>Right</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>Left</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="metric1_label">
+               <property name="text">
+                <string>Elbow Angle:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="2">
+              <widget class="QLCDNumber" name="height2_lcd">
+               <property name="smallDecimalPoint">
+                <bool>false</bool>
+               </property>
+               <property name="digitCount">
+                <number>3</number>
+               </property>
+               <property name="segmentStyle">
+                <enum>QLCDNumber::Flat</enum>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="metric2_label">
+               <property name="text">
+                <string>Shoulder Height</string>
+               </property>
+              </widget>
+             </item>
              <item row="2" column="1">
               <widget class="QLCDNumber" name="height1_lcd">
                <property name="smallDecimalPoint">
@@ -69,63 +129,10 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="metric1_label">
+             <item row="4" column="1">
+              <widget class="QPushButton" name="chart_pb">
                <property name="text">
-                <string>Elbow Angle:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="metric2_label">
-               <property name="text">
-                <string>Shoulder Height</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="1">
-              <spacer name="verticalSpacer_2">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>20</width>
-                 <height>40</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item row="2" column="2">
-              <widget class="QLCDNumber" name="height2_lcd">
-               <property name="smallDecimalPoint">
-                <bool>false</bool>
-               </property>
-               <property name="digitCount">
-                <number>3</number>
-               </property>
-               <property name="segmentStyle">
-                <enum>QLCDNumber::Flat</enum>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QLabel" name="label">
-               <property name="text">
-                <string>Left</string>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignCenter</set>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="2">
-              <widget class="QLabel" name="label_2">
-               <property name="text">
-                <string>Right</string>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignCenter</set>
+                <string>Charts</string>
                </property>
               </widget>
              </item>
@@ -374,7 +381,7 @@
      <x>0</x>
      <y>0</y>
      <width>822</width>
-     <height>20</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

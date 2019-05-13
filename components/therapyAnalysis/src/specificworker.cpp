@@ -377,6 +377,14 @@ void SpecificWorker::obtainFeatures()
 //	file.close();
 
 }
+
+
+//void SpecificWorker::calculateAllMetrics()
+//{
+//	this->cur
+//}
+
+
 //side must be "Right" or "Left"
 float SpecificWorker::getElbowAngle(std::string side)
 {

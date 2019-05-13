@@ -58,6 +58,7 @@ class SpecificWorker : public GenericWorker
 
 	map<string,QString> mapJointMesh; //Mapa que relaciona el nombre de las partes con los meshs
 	map<string,RTMat> mapJointRotations; //Mapa que guarda las rotaciones calculadas
+	map<string,std::vector<float>> currentMetrics; //Map with calculated metrics
 
 	using jointPos = std::vector<float> ;
 	vector<string> upperTrunk = {"MidSpine","Head", "Neck", "LeftShoulder", "RightShoulder","LeftElbow","RightElbow" , "LeftHand", "RightHand" };
@@ -114,6 +115,7 @@ private:
 	void obtainFeatures();
 	float getShoulderAngle(std::string side);
 	float getElbowAngle(std::string side);
+//	void calculateAllMetrics();
 
 
 //	=============== Capture Methods ===========

@@ -32,6 +32,18 @@
             <layout class="QGridLayout" name="gridLayout">
              <item row="1" column="1">
               <widget class="QLCDNumber" name="angle1_lcd">
+               <property name="minimumSize">
+                <size>
+                 <width>100</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>100</width>
+                 <height>16777215</height>
+                </size>
+               </property>
                <property name="smallDecimalPoint">
                 <bool>false</bool>
                </property>
@@ -85,6 +97,18 @@
              </item>
              <item row="2" column="2">
               <widget class="QLCDNumber" name="height2_lcd">
+               <property name="minimumSize">
+                <size>
+                 <width>100</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>100</width>
+                 <height>16777215</height>
+                </size>
+               </property>
                <property name="smallDecimalPoint">
                 <bool>false</bool>
                </property>
@@ -99,12 +123,24 @@
              <item row="2" column="0">
               <widget class="QLabel" name="metric2_label">
                <property name="text">
-                <string>Shoulder Height</string>
+                <string>Shoulder Height:</string>
                </property>
               </widget>
              </item>
              <item row="2" column="1">
               <widget class="QLCDNumber" name="height1_lcd">
+               <property name="minimumSize">
+                <size>
+                 <width>100</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>100</width>
+                 <height>16777215</height>
+                </size>
+               </property>
                <property name="smallDecimalPoint">
                 <bool>false</bool>
                </property>
@@ -396,7 +432,7 @@
      <x>0</x>
      <y>0</y>
      <width>1029</width>
-     <height>22</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

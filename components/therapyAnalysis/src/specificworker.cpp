@@ -437,34 +437,82 @@ float SpecificWorker::getShoulderAngle(std::string side)
 
 float SpecificWorker::getElbowAngleVec(std::string side)
 {
+
 	auto v1  = innerModel->transform(mapJointMesh[side +"Elbow"],mapJointMesh[side+"Hand"]);
 	auto v2  = innerModel->transform(mapJointMesh[side +"Elbow"],mapJointMesh[side+"Shoulder"]);
 
-	return getAngleBetweenVectors(v1,v2);
 
+	float angle = getAngleBetweenVectors(v1,v2);
+
+    QPalette palGreen;
+    QPalette palRed;
+    palRed.setColor(palRed.WindowText, QColor(Qt::darkRed));
+    palGreen.setColor(palGreen.WindowText, QColor(Qt::darkGreen));
+
+    if(side =="Left")
+    {
+        if (angle > 150)
+            angle1_lcd->setPalette(palGreen);
+        else
+            angle1_lcd->setPalette(palRed);
+    }
+
+    else
+    {
+        if (angle > 150)
+            angle2_lcd->setPalette(palGreen);
+        else
+            angle2_lcd->setPalette(palRed);
+    }
+
+
+    return angle;
 }
 
 float SpecificWorker::getShoulderAngleVec(std::string side)
 {
 
-	auto v1  = innerModel->transform(mapJointMesh["ShoulderSpine"],mapJointMesh[side +"Hand"]);
+	auto v1  = innerModel->transform(mapJointMesh["ShoulderSpine"],mapJointMesh[side +"Elbow"]);
 	auto v2  = innerModel->transform(mapJointMesh["ShoulderSpine"],mapJointMesh["BaseSpine"]);
 
-	return getAngleBetweenVectors(v1,v2);
+    float angle = getAngleBetweenVectors(v1,v2);
+
+    QPalette palGreen;
+    QPalette palRed;
+    palRed.setColor(palRed.WindowText, QColor(Qt::darkRed));
+    palGreen.setColor(palGreen.WindowText, QColor(Qt::darkGreen));
+
+    if(side =="Left")
+    {
+        if (angle > 80 and angle < 120)
+            height1_lcd->setPalette(palGreen);
+        else
+            height1_lcd->setPalette(palRed);
+    }
+
+    else
+    {
+        if (angle > 80 and angle < 120)
+            height2_lcd->setPalette(palGreen);
+        else
+            height2_lcd->setPalette(palRed);
+    }
+
+
+    return angle;
 
 }
 
 
 float SpecificWorker::getAngleBetweenVectors(QVec v1, QVec v2)
 {
-	float mod1 = sqrt(v1.x()*v1.x() + v1.y()*v1.y() + v1.z()*v1.z());
-	float mod2 = sqrt(v2.x()*v2.x() + v2.y()*v2.y() + v2.z()*v2.z());
+    v1 = v1.normalize();
+    v2 = v2.normalize();
 
-	auto prod =  v1.x() * v2.x() + v1.y() * v2.y() + v1.z() * v2.z();
+    auto prod = v1.dotProduct(v2);
+    float angle = acos(prod/(v1.norm2()*v2.norm2()));
 
-	float angle = acos(prod/(mod1*mod2));
-
-	return qRadiansToDegrees(angle);
+    return qRadiansToDegrees(angle);
 }
 
 void SpecificWorker::relateJointsMeshes()

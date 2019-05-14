@@ -43,7 +43,8 @@
 	#include <innermodel/innermodelviewer.h>
 #endif
 
-
+#define VIDEO_WIDTH 640
+#define VIDEO_HEIGHT 480
 
 struct Pose3D
 {
@@ -111,6 +112,8 @@ private:
 	int framesRecorded;
 	QString savePath;
 	cv::VideoWriter videoWriter;
+	//playback
+	cv::VideoCapture videoReader;
 
 	std::shared_ptr<InnerModel> innerModel;
 	QTimer *playTimer;
@@ -137,7 +140,10 @@ private:
 	bool RotateTorso (const QVec &lshoulder, const QVec &rshoulder); //This method allows to rotate the torso from the position and rotation of the shoulders
 	bool SetPoses (Pose3D &pose, string joint);
 	bool checkNecessaryJoints(TPerson &person);
-	void loadTrainingFromFile(QString);
+	bool loadTrainingFromFile();
+	void loadJointsFromFile(QString filename);
+	void loadVideoFromFile(QString filename);
+	void loadVideoFrame(int frame);
 	vector<string>split(const string& str, const string& delim);
 	void recordData();
 	void printJointsFromAstra();

@@ -188,6 +188,7 @@ void  SpecificWorker::forwardFrames(int numFrames)
 {
 	this->frames_slider->setValue(this->frames_slider->value()+numFrames);
 	this->obtainFeatures();
+	this->loadVideoFrame(this->frames_slider->value());
 }
 
 void  SpecificWorker::playTimerTimeout()
@@ -315,10 +316,12 @@ void SpecificWorker::visualizeRecordingToggled(bool state)
 
 void SpecificWorker::loadFileClicked()
 {
-	this->playback_mode();
-	this->loadTrainingFromFile(QString());
-	this->setEnabledPlayControls(true);
-	this->frames_slider->setMaximum(this->loadedTraining.size()-1);
+	if (this->loadTrainingFromFile())
+	{
+		this->playback_mode();
+		this->setEnabledPlayControls(true);
+		this->frames_slider->setMaximum(this->loadedTraining.size()-1);
+	}
 }
 
 void SpecificWorker::changePlayFps(double value)
@@ -588,16 +591,33 @@ bool SpecificWorker::checkNecessaryJoints(TPerson &person)
 
 }
 
-void SpecificWorker::loadTrainingFromFile(QString filepath_i = QString()){
-
-	ifstream file;
-	file.open("/home/robocomp/robocomp/components/robotherapy/components/humanTherapySaver/joints.txt");
-
-	if (!file) {
-		cout << "Unable to open file";
-		return;
+bool SpecificWorker::loadTrainingFromFile()
+{
+	QString fileName = QFileDialog::getOpenFileName(this, tr("Load file"),"",tr("Recordings (*.txt *.avi)"));
+	QString jointFile, videoFile;
+	if (fileName.size() > 0 and fileName.contains(".txt"))
+	{
+		jointFile = fileName;
+		videoFile = fileName.replace(".txt", ".avi");
+	}else if (fileName.size() > 0 and fileName.contains(".avi"))
+	{
+		videoFile = fileName;
+		jointFile = fileName.replace(".avi", ".txt");
 	}
-
+	if (not (QFile::exists(videoFile) and QFile::exists(jointFile)))
+	{
+		QMessageBox::warning(this,tr("Load recorded data problem"),tr("You have to set a valid video/joint file"));
+		qDebug() << "Unable to load recorded data, check filename";
+		return false;
+	}
+	loadJointsFromFile(jointFile);
+	loadVideoFromFile(videoFile);
+	return true;
+}
+void SpecificWorker::loadJointsFromFile(QString filename)
+{
+	ifstream file;
+	file.open(filename.toStdString());
 	std::string line;
 	while (std::getline(file, line))
 	{
@@ -619,24 +639,31 @@ void SpecificWorker::loadTrainingFromFile(QString filepath_i = QString()){
 
 				all_joints[joints[0]] = poses;
 			}
-
 		}
-
 		person.joints = all_joints;
 		if(!checkNecessaryJoints(person))
 		{
-			qDebug()<<"No se han encontrado todos los joints necesarios";
+			qDebug()<<"Necessary joints not found";
 		}
 		else
 		{
 			loadedTraining.push_back(person);
 		}
-
-
 	}
-
 }
-
+void SpecificWorker::loadVideoFromFile(QString filename)
+{
+	videoReader = cv::VideoCapture(filename.toStdString());
+	loadVideoFrame(0);
+}
+void SpecificWorker::loadVideoFrame(int frame_no)
+{
+	videoReader.set(CV_CAP_PROP_POS_FRAMES, frame_no);
+	cv::Mat frame;
+	videoReader >> frame;
+	QImage img = QImage(frame.ptr(), VIDEO_WIDTH, VIDEO_HEIGHT, QImage::Format_RGB888);
+    video_lb->setPixmap(QPixmap::fromImage(img));
+}
 
 vector<string> SpecificWorker::split(const string& str, const string& delim)
 {
@@ -657,14 +684,13 @@ vector<string> SpecificWorker::split(const string& str, const string& delim)
 void SpecificWorker::recordData()
 {
 	//video
-	//read frame data
-	cv::Mat frame(480, 640, CV_8UC3, cv::Scalar(10, 100, 150));
+///TODO	==> //read frame data
+cv::Mat frame(VIDEO_WIDTH, VIDEO_HEIGHT, CV_8UC3, cv::Scalar(10, 100, 150));
 	videoWriter.write(frame);
 	if(visualizeRecording)
 	{
-		QImage img = QImage(frame.ptr(), 640, 480, QImage::Format_RGB888);
+		QImage img = QImage(frame.ptr(), VIDEO_WIDTH, VIDEO_HEIGHT, QImage::Format_RGB888);
     	video2_lb->setPixmap(QPixmap::fromImage(img));
-    	video2_lb->resize(video2_lb->pixmap()->size());
 	}
 	//joints
 	fstream jointfile;
@@ -708,14 +734,11 @@ void SpecificWorker::recordData()
 	catch(...){
 		qDebug()<<"no connection to humantracker_proxy";
 	}
-
 	jointfile.close();
-
 }
 
 
 void SpecificWorker::PaintSkeleton (TPerson &person) {
-
 	this->status->showMessage(__FUNCTION__);
 	checkNecessaryJoints(person);
 	this->status->showMessage(QString::fromStdString(__FUNCTION__)+": Checked necessary joints");

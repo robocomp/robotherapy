@@ -54,6 +54,7 @@ public slots:
 private:
     QGraphicsSimpleTextItem *m_coordX;
     QGraphicsSimpleTextItem *m_coordY;
+    QHBoxLayout *m_groupBox;
     QChart *m_chart=NULL;
     Callout *m_tooltip=NULL;
     QList<Callout *> m_callouts;

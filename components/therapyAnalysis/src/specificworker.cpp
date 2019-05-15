@@ -379,7 +379,10 @@ void SpecificWorker::setEnabledPlayControls(bool enabled)
 
 void SpecificWorker::load_chart()
 {
-	chart = new Chart();
+	QWidget *widget = new QWidget();
+	widget->setAttribute( Qt::WA_QuitOnClose, false );
+	chart = new Chart(widget);
+	widget->show();
 	chart->loadData();
 }
 

@@ -347,7 +347,7 @@ void SpecificWorker::framesSliderMoved(int value)
 {
 	this->obtainFeatures();
 	if((int)this->loadedTraining.size()>value) {
-		auto person = this->loadedTraining[value];
+		auto person = this->loadedTraining[value].personDet;
 		this->PaintSkeleton(person);
 	}
 	else{
@@ -403,8 +403,8 @@ void SpecificWorker::obtainFeatures()
 //	sprintf(currentTime, "%s:%d", buffer, milli);
 
 
-	qDebug()<<"Left "<<getElbowAngleVec("Left")<<getShoulderAngleVec("Left");
-	qDebug()<<"Right "<<getElbowAngleVec("Right")<<getShoulderAngleVec("Right");
+//	qDebug()<<"Left "<<getElbowAngleVec("Left")<<getShoulderAngleVec("Left");
+//	qDebug()<<"Right "<<getElbowAngleVec("Right")<<getShoulderAngleVec("Right");
 	this->angle1_lcd->display(getElbowAngleVec("Left"));
 	this->angle2_lcd->display(getElbowAngleVec("Right"));
 	this->height1_lcd->display(getShoulderAngleVec("Left"));
@@ -455,32 +455,7 @@ float SpecificWorker::getElbowAngleVec(std::string side)
 	auto v1  = innerModel->transform(mapJointMesh[side +"Elbow"],mapJointMesh[side+"Hand"]);
 	auto v2  = innerModel->transform(mapJointMesh[side +"Elbow"],mapJointMesh[side+"Shoulder"]);
 
-
-	float angle = getAngleBetweenVectors(v1,v2);
-
-    QPalette palGreen;
-    QPalette palRed;
-    palRed.setColor(palRed.WindowText, QColor(Qt::darkRed));
-    palGreen.setColor(palGreen.WindowText, QColor(Qt::darkGreen));
-
-    if(side =="Left")
-    {
-        if (angle > 150)
-            angle1_lcd->setPalette(palGreen);
-        else
-            angle1_lcd->setPalette(palRed);
-    }
-
-    else
-    {
-        if (angle > 150)
-            angle2_lcd->setPalette(palGreen);
-        else
-            angle2_lcd->setPalette(palRed);
-    }
-
-
-    return angle;
+    return getAngleBetweenVectors(v1,v2);
 }
 
 float SpecificWorker::getShoulderAngleVec(std::string side)
@@ -489,31 +464,9 @@ float SpecificWorker::getShoulderAngleVec(std::string side)
 	auto v1  = innerModel->transform(mapJointMesh["ShoulderSpine"],mapJointMesh[side +"Elbow"]);
 	auto v2  = innerModel->transform(mapJointMesh["ShoulderSpine"],mapJointMesh["BaseSpine"]);
 
-    float angle = getAngleBetweenVectors(v1,v2);
-
-    QPalette palGreen;
-    QPalette palRed;
-    palRed.setColor(palRed.WindowText, QColor(Qt::darkRed));
-    palGreen.setColor(palGreen.WindowText, QColor(Qt::darkGreen));
-
-    if(side =="Left")
-    {
-        if (angle > 80 and angle < 120)
-            height1_lcd->setPalette(palGreen);
-        else
-            height1_lcd->setPalette(palRed);
-    }
-
-    else
-    {
-        if (angle > 80 and angle < 120)
-            height2_lcd->setPalette(palGreen);
-        else
-            height2_lcd->setPalette(palRed);
-    }
 
 
-    return angle;
+    return getAngleBetweenVectors(v1,v2);
 
 }
 
@@ -668,6 +621,9 @@ void SpecificWorker::loadJointsFromFile(QString filename)
 
 		vector<string> parts = split(line,"#");
 
+		auto currTime = parts[0];
+		qDebug()<< QString::fromStdString(currTime);
+
 		for (auto p: parts)
 		{
 			vector<string> joints = split(p," ");
@@ -689,7 +645,11 @@ void SpecificWorker::loadJointsFromFile(QString filename)
 		}
 		else
 		{
-			loadedTraining.push_back(person);
+			sincPerson persontoload;
+			persontoload.currentTime = currTime;
+			persontoload.personDet = person;
+
+			loadedTraining.push_back(persontoload);
 		}
 	}
 }
@@ -754,12 +714,20 @@ cv::Mat frame(VIDEO_WIDTH, VIDEO_HEIGHT, CV_8UC3, cv::Scalar(10, 100, 150));
 		if(users.size()== 0)
 			this->status->showMessage("No human detected...");
 
+        timeval curTime;
+        gettimeofday(&curTime, NULL);
+        int milli = curTime.tv_usec / 1000;
+        char buffer [80];
+        strftime(buffer, 80, "%H:%M:%S", localtime(&curTime.tv_sec));
+        char currentTime[84] = "";
+        sprintf(currentTime, "%s:%d", buffer, milli);
+
 		for (auto u : users)
 		{
 			auto id = u.first;
 			auto joints = u.second.joints;
 
-			jointfile << id <<"#";
+            jointfile << currentTime <<"#" << id <<"#";
 
 			for (auto j: joints)
 			{

@@ -66,7 +66,14 @@ class SpecificWorker : public GenericWorker
 	using jointPos = std::vector<float> ;
 	vector<string> upperTrunk = {"MidSpine","ShoulderSpine", "Head", "Neck", "LeftShoulder", "RightShoulder","LeftElbow","RightElbow" , "LeftHand", "RightHand" };
 	vector<string> lowerTrunk = {"MidSpine", "BaseSpine" ,"LeftHip","RightHip","LeftKnee","RightKnee","LeftFoot","RightFoot" };
-	vector<TPerson> loadedTraining;
+
+	struct sincPerson
+    {
+	    std::string currentTime;
+	    TPerson personDet;
+    };
+
+	vector<sincPerson> loadedTraining;
 
 	bool upperTrunkFound = false;
 	bool lowerTrunkFound = false;

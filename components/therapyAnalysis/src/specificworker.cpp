@@ -147,7 +147,11 @@ void SpecificWorker::compute()
 // 	{
 // 		std::cout << "Error reading from Camera" << e << std::endl;
 // 	}
-
+#ifdef USE_QTGUI
+	if (innerModelViewer) innerModelViewer->update();
+	osgView->frame();
+	innerModel->save("prueba.xml");
+#endif
 }
 
 
@@ -685,10 +689,6 @@ void SpecificWorker::HumanTrackerJointsAndRGB_newPersonListAndRGB(MixedJointsRGB
 	{
 		recordData(mixedData);
 	}
-#ifdef USE_QTGUI
-	if (innerModelViewer) innerModelViewer->update();
-	osgView->frame();
-#endif
 }
 
 void SpecificWorker::recordData(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB &mixedData)

@@ -155,7 +155,7 @@ private:
 	void loadVideoFromFile(QString filename);
 	void loadVideoFrame(int frame);
 	vector<string>split(const string& str, const string& delim);
-	void recordData();
+	void recordData(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB &mixedData);
 	void printJointsFromAstra();
 #ifdef USE_QTGUI
 	OsgView *osgView;

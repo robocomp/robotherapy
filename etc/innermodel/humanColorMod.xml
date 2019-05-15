@@ -1,5 +1,6 @@
 <innerModel>
 	<transform id="world" tx="0" ty="0" tz="0"  rx="0" ry="0" rz="0">
+        <plane id="floor_mesh" ny="1"  px="-10000" py="0" pz="-10000" size="20000,20000,10" texture="/home/robocomp/robocomp/files/osgModels/textures/wood.jpg" /> 
 		<transform id="XN_SKEL_TORSO" tx="0" ty="400" tz="0"  rx="-1.570000052" ry="0" rz="0">
 			<mesh id="jTorso_mesh" file="/home/robocomp/robocomp/files/osgModels/humanColor/jointbox.osg" scale="50" tx="0" ty="0" tz="0" rx="0" ry="0" rz="0" />
 			<mesh id="XN_SKEL_TORSO_mesh" file="/home/robocomp/robocomp/files/osgModels/humanColor/pecho.osg" scale="8" tx="0" ty="0" tz="0" rx="1.570000052" ry="0" rz="0" />

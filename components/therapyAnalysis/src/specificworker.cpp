@@ -37,6 +37,11 @@ SpecificWorker::SpecificWorker(TuplePrx tprx) : GenericWorker(tprx)
 	this->angle2_lcd->setPalette(palette);
 	this->height1_lcd->setPalette(palette);
 	this->height2_lcd->setPalette(palette);
+	this->spinedev_lcd->setPalette(palette);
+	this->shoulderdev_lcd->setPalette(palette);
+	this->hipsdev_lcd->setPalette(palette);
+	this->kneesdev_lcd->setPalette(palette);
+
 	this->play_btn->setDefaultAction(this->play_action);
 	this->stop_btn->setDefaultAction(this->stop_action);
 	this->pause_btn->setDefaultAction(this->pause_action);
@@ -405,6 +410,12 @@ void SpecificWorker::obtainFeatures()
 	this->height1_lcd->display(getShoulderAngleVec("Left"));
 	this->height2_lcd->display(getShoulderAngleVec("Right"));
 
+	this->spinedev_lcd->display(getDeviation("Spine"));
+	this->shoulderdev_lcd->display(getDeviation("Shoulder"));
+	this->hipsdev_lcd->display(getDeviation("Hip"));
+	this->kneesdev_lcd->display(getDeviation("Knee"));
+
+
 //	file << currentTime << ";"<< getElbowAngle("Left") << ";" << getShoulderAngle("Left")<<";"<<getElbowAngle("Right")<<";"<<getShoulderAngle("Right")<<"\n";
 //	file.close();
 
@@ -505,6 +516,37 @@ float SpecificWorker::getShoulderAngleVec(std::string side)
     return angle;
 
 }
+
+//part must be Shoulder, Hip, Knee or Spine
+float SpecificWorker::getDeviation(std::string part)
+{
+	float angle;
+
+	if(part == "Spine")
+	{
+		auto baseS = innerModel->transform("world",mapJointMesh["BaseSpine"]);
+		auto upperS = innerModel->transform("world",mapJointMesh["ShoulderSpine"]);
+
+		QVec v1 = upperS- baseS ;
+		auto v2 = QVec::vec3(0,1,0);
+
+		angle = getAngleBetweenVectors(v1,v2);
+	}
+
+	else
+	{
+		auto left = innerModel->transform("world",mapJointMesh["Left"+ part]);
+		auto right = innerModel->transform("world",mapJointMesh["Right"+ part]);
+
+		QVec v1 = left - right ;
+		auto v2 = QVec::vec3(-1,0,0);
+
+		angle = getAngleBetweenVectors(v1,v2);
+	}
+
+	return angle;
+}
+
 
 
 float SpecificWorker::getAngleBetweenVectors(QVec v1, QVec v2)

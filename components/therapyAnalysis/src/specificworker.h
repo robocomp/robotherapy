@@ -128,6 +128,8 @@ private:
 	float getShoulderAngleVec(std::string side);
 	float getElbowAngleVec(std::string side);
 	float getAngleBetweenVectors(QVec v1, QVec v2);
+	float getDeviation(std::string part);
+
 
 //	void calculateAllMetrics();
 

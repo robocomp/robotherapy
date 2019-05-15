@@ -686,6 +686,11 @@ vector<string> SpecificWorker::split(const string& str, const string& delim)
 	return tokens;
 }
 
+void SpecificWorker::HumanTrackerJointsAndRGB_newPersonListAndRGB(MixedJointsRGB &mixedData)
+{
+
+}
+
 void SpecificWorker::recordData()
 {
 	//video

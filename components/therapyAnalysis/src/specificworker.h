@@ -142,9 +142,10 @@ private:
 
 
 //	=============== Capture Methods ===========
+	void HumanTrackerJointsAndRGB_newPersonListAndRGB(MixedJointsRGB &mixedData);
 	void relateJointsMeshes();
-	void PaintSkeleton (RoboCompHumanTracker::TPerson &person);
-	void CalculateJointRotations (RoboCompHumanTracker::TPerson &person);
+	void PaintSkeleton (RoboCompHumanTrackerJointsAndRGB::TPerson &person);
+	void CalculateJointRotations (RoboCompHumanTrackerJointsAndRGB::TPerson &person);
 	RTMat RTMatFromJointPosition (RTMat rS, jointPos p1, jointPos p2, jointPos translation, int axis); //This method calculates the rotation of a Joint given some points
 	bool RotateTorso (const QVec &lshoulder, const QVec &rshoulder); //This method allows to rotate the torso from the position and rotation of the shoulders
 	bool SetPoses (Pose3D &pose, string joint);

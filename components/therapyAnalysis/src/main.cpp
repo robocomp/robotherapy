@@ -81,6 +81,7 @@
 #include "specificmonitor.h"
 #include "commonbehaviorI.h"
 
+#include <humantrackerjointsandrgbI.h>
 
 
 
@@ -133,29 +134,22 @@ int ::therapyAnalysis::run(int argc, char* argv[])
 
 	int status=EXIT_SUCCESS;
 
-	HumanTrackerPrxPtr humantracker_proxy;
 
 	string proxy, tmp;
 	initialize();
 
-
+	IceStorm::TopicManagerPrxPtr topicManager;
 	try
 	{
-		if (not GenericMonitor::configGetString(communicator(), prefix, "HumanTrackerProxy", proxy, ""))
-		{
-			cout << "[" << PROGRAM_NAME << "]: Can't read configuration for proxy HumanTrackerProxy\n";
-		}
-		humantracker_proxy = Ice::uncheckedCast<HumanTrackerPrx>( communicator()->stringToProxy( proxy ) );
+		topicManager = Ice::checkedCast<IceStorm::TopicManagerPrx>(communicator()->propertyToProxy("TopicManager.Proxy"));
 	}
-	catch(const Ice::Exception& ex)
+	catch (const Ice::Exception &ex)
 	{
-		cout << "[" << PROGRAM_NAME << "]: Exception creating proxy HumanTracker: " << ex;
+		cout << "[" << PROGRAM_NAME << "]: Exception: STORM not running: " << ex << endl;
 		return EXIT_FAILURE;
 	}
-	rInfo("HumanTrackerProxy initialized Ok!");
 
-
-	tprx = std::make_tuple(humantracker_proxy);
+	tprx = std::tuple<>();
 	SpecificWorker *worker = new SpecificWorker(tprx);
 	//Monitor thread
 	SpecificMonitor *monitor = new SpecificMonitor(worker,communicator());
@@ -196,6 +190,46 @@ int ::therapyAnalysis::run(int argc, char* argv[])
 
 
 		// Server adapter creation and publication
+		std::shared_ptr<IceStorm::TopicPrx> humantrackerjointsandrgb_topic;
+		Ice::ObjectPrxPtr humantrackerjointsandrgb;
+		try
+		{
+			if (not GenericMonitor::configGetString(communicator(), prefix, "HumanTrackerJointsAndRGBTopic.Endpoints", tmp, ""))
+			{
+				cout << "[" << PROGRAM_NAME << "]: Can't read configuration for proxy HumanTrackerJointsAndRGBProxy";
+			}
+			Ice::ObjectAdapterPtr HumanTrackerJointsAndRGB_adapter = communicator()->createObjectAdapterWithEndpoints("humantrackerjointsandrgb", tmp);
+			HumanTrackerJointsAndRGBPtr humantrackerjointsandrgbI_ =  std::make_shared <HumanTrackerJointsAndRGBI>(worker);
+			auto humantrackerjointsandrgb = HumanTrackerJointsAndRGB_adapter->addWithUUID(humantrackerjointsandrgbI_)->ice_oneway();
+			if(!humantrackerjointsandrgb_topic)
+			{
+				try {
+					humantrackerjointsandrgb_topic = topicManager->create("HumanTrackerJointsAndRGB");
+				}
+				catch (const IceStorm::TopicExists&) {
+					//Another client created the topic
+					try{
+						cout << "[" << PROGRAM_NAME << "]: Probably other client already opened the topic. Trying to connect.\n";
+						humantrackerjointsandrgb_topic = topicManager->retrieve("HumanTrackerJointsAndRGB");
+					}
+					catch(const IceStorm::NoSuchTopic&)
+					{
+						cout << "[" << PROGRAM_NAME << "]: Topic doesn't exists and couldn't be created.\n";
+						//Error. Topic does not exist
+					}
+				}
+				IceStorm::QoS qos;
+				humantrackerjointsandrgb_topic->subscribeAndGetPublisher(qos, humantrackerjointsandrgb);
+			}
+			HumanTrackerJointsAndRGB_adapter->activate();
+		}
+		catch(const IceStorm::NoSuchTopic&)
+		{
+			cout << "[" << PROGRAM_NAME << "]: Error creating HumanTrackerJointsAndRGB topic.\n";
+			//Error. Topic does not exist
+		}
+
+		// Server adapter creation and publication
 		cout << SERVER_FULL_NAME " started" << endl;
 
 		// User defined QtGui elements ( main window, dialogs, etc )
@@ -207,6 +241,15 @@ int ::therapyAnalysis::run(int argc, char* argv[])
 		// Run QT Application Event Loop
 		a.exec();
 
+		try
+		{
+			std::cout << "Unsubscribing topic: humantrackerjointsandrgb " <<std::endl;
+			humantrackerjointsandrgb_topic->unsubscribe( humantrackerjointsandrgb );
+		}
+		catch(const Ice::Exception& ex)
+		{
+			std::cout << "ERROR Unsubscribing topic: humantrackerjointsandrgb " <<std::endl;
+		}
 
 		status = EXIT_SUCCESS;
 	}

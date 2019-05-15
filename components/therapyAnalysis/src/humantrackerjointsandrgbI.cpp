@@ -1,5 +1,5 @@
 /*
- *    Copyright (C)2019 by YOUR NAME HERE
+ *    Copyright (C) 2019 by YOUR NAME HERE
  *
  *    This file is part of RoboComp
  *
@@ -16,50 +16,20 @@
  *    You should have received a copy of the GNU General Public License
  *    along with RoboComp.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "genericworker.h"
-/**
-* \brief Default constructor
-*/
-GenericWorker::GenericWorker(TuplePrx tprx) :
-#ifdef USE_QTGUI
-Ui_guiDlg()
-#else
-QObject()
-#endif
+#include "humantrackerjointsandrgbI.h"
 
+HumanTrackerJointsAndRGBI::HumanTrackerJointsAndRGBI(GenericWorker *_worker)
 {
-
-	mutex = new QMutex(QMutex::Recursive);
-
-	#ifdef USE_QTGUI
-		setupUi(this);
-		show();
-	#endif
-	Period = BASIC_PERIOD;
-	connect(&timer, SIGNAL(timeout()), this, SLOT(compute()));
-
+	worker = _worker;
 }
 
-/**
-* \brief Default destructor
-*/
-GenericWorker::~GenericWorker()
-{
 
-}
-void GenericWorker::killYourSelf()
+HumanTrackerJointsAndRGBI::~HumanTrackerJointsAndRGBI()
 {
-	rDebug("Killing myself");
-	emit kill();
 }
-/**
-* \brief Change compute period
-* @param per Period in ms
-*/
-void GenericWorker::setPeriod(int p)
+
+void HumanTrackerJointsAndRGBI::newPersonListAndRGB( MixedJointsRGB  &mixedData, const Ice::Current&)
 {
-	rDebug("Period changed"+QString::number(p));
-	Period = p;
-	timer.start(Period);
+	worker->HumanTrackerJointsAndRGB_newPersonListAndRGB(mixedData);
 }
 

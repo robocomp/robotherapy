@@ -32,15 +32,15 @@
 
 #include <CommonBehavior.h>
 
-#include <HumanTracker.h>
+#include <HumanTrackerJointsAndRGB.h>
 
 #define CHECK_PERIOD 5000
 #define BASIC_PERIOD 100
 
 using namespace std;
-using namespace RoboCompHumanTracker;
+using namespace RoboCompHumanTrackerJointsAndRGB;
 
-using TuplePrx = std::tuple<RoboCompHumanTracker::HumanTrackerPrxPtr>;
+using TuplePrx = std::tuple<>;
 
 
 class GenericWorker :
@@ -61,8 +61,8 @@ public:
 	QMutex *mutex;
 
 
-	HumanTrackerPrxPtr humantracker_proxy;
 
+	virtual void HumanTrackerJointsAndRGB_newPersonListAndRGB(MixedJointsRGB &mixedData) = 0;
 
 protected:
 	QTimer timer;

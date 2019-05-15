@@ -135,10 +135,6 @@ void SpecificWorker::initialize(int period)
 void SpecificWorker::compute()
 {
 
-	if(recording)
-	{
-		recordData();
-	}
 	//computeCODE
 //	QMutexLocker locker(mutex); 
 // 	try
@@ -151,10 +147,7 @@ void SpecificWorker::compute()
 // 	{
 // 		std::cout << "Error reading from Camera" << e << std::endl;
 // 	}
-#ifdef USE_QTGUI
-	if (innerModelViewer) innerModelViewer->update();
-	osgView->frame();
-#endif
+
 }
 
 
@@ -688,12 +681,20 @@ vector<string> SpecificWorker::split(const string& str, const string& delim)
 
 void SpecificWorker::HumanTrackerJointsAndRGB_newPersonListAndRGB(MixedJointsRGB &mixedData)
 {
-
+	if(recording)
+	{
+		recordData(mixedData);
+	}
+#ifdef USE_QTGUI
+	if (innerModelViewer) innerModelViewer->update();
+	osgView->frame();
+#endif
 }
 
-void SpecificWorker::recordData()
+void SpecificWorker::recordData(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB &mixedData)
 {
 	//video
+	cv::Mat frameV(mixedData.rgbImage.height, mixedData.rgbImage.height, CV_8UC3,  &(mixedData.rgbImage.image)[0]);
 ///TODO	==> //read frame data
 cv::Mat frame(VIDEO_WIDTH, VIDEO_HEIGHT, CV_8UC3, cv::Scalar(10, 100, 150));
 	videoWriter.write(frame);
@@ -707,8 +708,7 @@ cv::Mat frame(VIDEO_WIDTH, VIDEO_HEIGHT, CV_8UC3, cv::Scalar(10, 100, 150));
 	jointfile.open( (this->savePath+".txt").toStdString() , ios::app);
 	try
 	{
-		PersonList users;
-//		humantracker_proxy->getUsersList(users);
+		PersonList users = mixedData.persons;
 		if(visualizeRecording)
 		{
 			for (auto person : users)

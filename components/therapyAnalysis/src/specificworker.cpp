@@ -323,9 +323,16 @@ void SpecificWorker::loadFileClicked()
 {
 	if (this->loadTrainingFromFile())
 	{
+		if(this->loadedTraining.size()>0) {
 		this->playback_mode();
 		this->setEnabledPlayControls(true);
-//		this->frames_slider->setMaximum(this->loadedTraining.size()-1);
+			qDebug()<<"Setting maximum to"<<this->loadedTraining.size()-1<<endl;
+			this->frames_slider->setMaximum(this->loadedTraining.size()-1);
+	}
+		else
+		{
+			QMessageBox::warning(this,tr("File load problem"),tr("No pose loaded from files.\nPlease, check these are valid files\n"));
+}
 	}
 }
 

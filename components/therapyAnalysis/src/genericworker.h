@@ -62,7 +62,7 @@ public:
 
 
 
-	virtual void HumanTrackerJointsAndRGB_newPersonListAndRGB(MixedJointsRGB &mixedData) = 0;
+	virtual void HumanTrackerJointsAndRGB_newPersonListAndRGB(MixedJointsRGB mixedData) = 0;
 
 protected:
 	QTimer timer;

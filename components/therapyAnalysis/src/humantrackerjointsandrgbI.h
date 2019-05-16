@@ -34,7 +34,7 @@ public:
 HumanTrackerJointsAndRGBI(GenericWorker *_worker);
 	~HumanTrackerJointsAndRGBI();
 
-	void newPersonListAndRGB( MixedJointsRGB  &mixedData, const Ice::Current&);
+	void newPersonListAndRGB(MixedJointsRGB mixedData, const Ice::Current&);
 
 private:
 

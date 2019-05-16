@@ -41,7 +41,7 @@ class Chart: public QGraphicsView
 
 public:
     Chart(QWidget *parent = 0);
-    void loadData();
+    void loadData(std::map<std::string,std::vector<float>> currentMetrics);
 
 protected:
     void resizeEvent(QResizeEvent *event);

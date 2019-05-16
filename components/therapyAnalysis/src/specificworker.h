@@ -136,13 +136,13 @@ private:
 	float getElbowAngleVec(std::string side);
 	float getAngleBetweenVectors(QVec v1, QVec v2);
 	float getDeviation(std::string part);
-
-
+	void saveActualFrameMetrics(long int time);
+	void initializeMetrics();
 //	void calculateAllMetrics();
 
 
 //	=============== Capture Methods ===========
-	void HumanTrackerJointsAndRGB_newPersonListAndRGB(MixedJointsRGB &mixedData);
+	void HumanTrackerJointsAndRGB_newPersonListAndRGB(MixedJointsRGB mixedData);
 	void relateJointsMeshes();
 	void PaintSkeleton (RoboCompHumanTrackerJointsAndRGB::TPerson &person);
 	void CalculateJointRotations (RoboCompHumanTrackerJointsAndRGB::TPerson &person);
@@ -155,7 +155,7 @@ private:
 	void loadVideoFromFile(QString filename);
 	void loadVideoFrame(int frame);
 	vector<string>split(const string& str, const string& delim);
-	void recordData(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB &mixedData);
+	void recordData(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB mixedData);
 	void printJointsFromAstra();
 #ifdef USE_QTGUI
 	OsgView *osgView;

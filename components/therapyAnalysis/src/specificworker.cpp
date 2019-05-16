@@ -148,9 +148,8 @@ void SpecificWorker::compute()
 // 		std::cout << "Error reading from Camera" << e << std::endl;
 // 	}
 #ifdef USE_QTGUI
-	if (innerModelViewer) innerModelViewer->update();
-	osgView->frame();
-	innerModel->save("prueba.xml");
+//	if (innerModelViewer) innerModelViewer->update();
+//	osgView->frame();
 #endif
 }
 
@@ -380,7 +379,7 @@ void SpecificWorker::load_chart()
 	widget->setAttribute( Qt::WA_QuitOnClose, false );
 	chart = new Chart(widget);
 	widget->show();
-	chart->loadData();
+	chart->loadData(this->currentMetrics);
 }
 
 //========================= Capture and save code ======================
@@ -609,11 +608,43 @@ bool SpecificWorker::loadTrainingFromFile()
 	loadVideoFromFile(videoFile);
 	return true;
 }
+
+//Clear metrics structure and create new one
+void SpecificWorker::initializeMetrics()
+{
+	currentMetrics.clear();
+	currentMetrics["Time"] = std::vector<float>();
+	currentMetrics["Elbow_left"] = std::vector<float>();
+	currentMetrics["Elbow_right"] = std::vector<float>();
+	currentMetrics["Shoulder_left"] = std::vector<float>();
+	currentMetrics["Shoulder_right"] = std::vector<float>();
+	currentMetrics["Spine"] = std::vector<float>();
+	currentMetrics["Shoulder"] = std::vector<float>();
+	currentMetrics["Hip"] = std::vector<float>();
+	currentMetrics["Knee"] = std::vector<float>();
+}
+
+void SpecificWorker::saveActualFrameMetrics(long int time){
+
+	currentMetrics["Time"].push_back(float(time));
+	currentMetrics["Elbow_left"].push_back(getElbowAngleVec("Left"));
+	currentMetrics["Elbow_right"].push_back(getElbowAngleVec("Right"));
+	currentMetrics["Shoulder_left"].push_back(getShoulderAngleVec("Left"));
+	currentMetrics["Shoulder_right"].push_back(getShoulderAngleVec("Right"));
+
+	currentMetrics["Spine"].push_back(getDeviation("Spine"));
+	currentMetrics["Shoulder"].push_back(getDeviation("Shoulder"));
+	currentMetrics["Hip"].push_back(getDeviation("Hip"));
+	currentMetrics["Knee"].push_back(getDeviation("Knee"));
+}
+
 void SpecificWorker::loadJointsFromFile(QString filename)
 {
 	ifstream file;
 	file.open(filename.toStdString());
 	std::string line;
+	//metrics
+	initializeMetrics();
 	while (std::getline(file, line))
 	{
 		TPerson person;
@@ -621,8 +652,8 @@ void SpecificWorker::loadJointsFromFile(QString filename)
 
 		vector<string> parts = split(line,"#");
 
-		auto currTime = parts[0];
-		qDebug()<< QString::fromStdString(currTime);
+		long int currTime = std::stol(parts[0]);
+		qDebug()<< "Time"<<(currTime);
 
 		for (auto p: parts)
 		{
@@ -651,6 +682,10 @@ void SpecificWorker::loadJointsFromFile(QString filename)
 
 			loadedTraining.push_back(persontoload);
 		}
+		//calcule innerModel and save Metrics
+		this->PaintSkeleton(person);
+
+		saveActualFrameMetrics(currTime);
 	}
 }
 void SpecificWorker::loadVideoFromFile(QString filename)
@@ -683,20 +718,28 @@ vector<string> SpecificWorker::split(const string& str, const string& delim)
 	return tokens;
 }
 
-void SpecificWorker::HumanTrackerJointsAndRGB_newPersonListAndRGB(MixedJointsRGB &mixedData)
+void SpecificWorker::HumanTrackerJointsAndRGB_newPersonListAndRGB(MixedJointsRGB mixedData)
 {
 	if(recording)
 	{
 		recordData(mixedData);
 	}
+
 }
 
-void SpecificWorker::recordData(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB &mixedData)
+void SpecificWorker::recordData(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB mixedData)
 {
+qDebug()<<"Data"<<mixedData.rgbImage.height<<mixedData.rgbImage.width<<mixedData.persons.size();
+qDebug()<<"timeStamp"<<mixedData.timeStamp<<"image size"<<mixedData.rgbImage.image.size();
+	if(mixedData.rgbImage.height == 0 or mixedData.rgbImage.width == 0)
+	{
+		qDebug()<<"Invalid rgd frame";
+		return;
+	}
 	//video
-	cv::Mat frameV(mixedData.rgbImage.height, mixedData.rgbImage.height, CV_8UC3,  &(mixedData.rgbImage.image)[0]);
+	cv::Mat frame(mixedData.rgbImage.height, mixedData.rgbImage.width, CV_8UC3,  &(mixedData.rgbImage.image)[0]);
 ///TODO	==> //read frame data
-cv::Mat frame(VIDEO_WIDTH, VIDEO_HEIGHT, CV_8UC3, cv::Scalar(10, 100, 150));
+//cv::Mat frame(VIDEO_WIDTH, VIDEO_HEIGHT, CV_8UC3, cv::Scalar(10, 100, 150));
 	videoWriter.write(frame);
 	if(visualizeRecording)
 	{
@@ -708,6 +751,7 @@ cv::Mat frame(VIDEO_WIDTH, VIDEO_HEIGHT, CV_8UC3, cv::Scalar(10, 100, 150));
 	jointfile.open( (this->savePath+".txt").toStdString() , ios::app);
 	try
 	{
+qDebug()<<"1";		
 		PersonList users = mixedData.persons;
 		if(visualizeRecording)
 		{
@@ -718,24 +762,16 @@ cv::Mat frame(VIDEO_WIDTH, VIDEO_HEIGHT, CV_8UC3, cv::Scalar(10, 100, 150));
 				}
 			}
 		}
-
+qDebug()<<"2";
 		if(users.size()== 0)
 			this->status->showMessage("No human detected...");
-
-        timeval curTime;
-        gettimeofday(&curTime, NULL);
-        int milli = curTime.tv_usec / 1000;
-        char buffer [80];
-        strftime(buffer, 80, "%H:%M:%S", localtime(&curTime.tv_sec));
-        char currentTime[84] = "";
-        sprintf(currentTime, "%s:%d", buffer, milli);
-
+qDebug()<<"3";
 		for (auto u : users)
 		{
 			auto id = u.first;
 			auto joints = u.second.joints;
 
-            jointfile << currentTime <<"#" << id <<"#";
+            jointfile << mixedData.timeStamp <<"#" << id <<"#";
 
 			for (auto j: joints)
 			{
@@ -743,16 +779,16 @@ cv::Mat frame(VIDEO_WIDTH, VIDEO_HEIGHT, CV_8UC3, cv::Scalar(10, 100, 150));
 				jointfile << "#";
 			}
 		}
-
+qDebug()<<"4";
 		jointfile <<endl;
 		this->updateFramesRecorded();
 		this->status->showMessage("Saved "+QString::number(this->framesRecorded)+" frames - Visualize = "+QString::number(visualizeRecording));
 	}
-
 	catch(...){
 		qDebug()<<"no connection to humantracker_proxy";
 	}
 	jointfile.close();
+qDebug()<<"5";
 }
 
 

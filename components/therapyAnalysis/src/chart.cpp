@@ -43,7 +43,7 @@ Chart::Chart(QWidget *parent) : QGraphicsView(new QGraphicsScene, parent),
 }
 
 
-void Chart::loadData()
+void Chart::loadData(std::map<std::string,std::vector<float>> currentMetrics)
 {
 //load x axis
 

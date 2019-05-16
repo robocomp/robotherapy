@@ -28,7 +28,7 @@ HumanTrackerJointsAndRGBI::~HumanTrackerJointsAndRGBI()
 {
 }
 
-void HumanTrackerJointsAndRGBI::newPersonListAndRGB( MixedJointsRGB  &mixedData, const Ice::Current&)
+void HumanTrackerJointsAndRGBI::newPersonListAndRGB(MixedJointsRGB mixedData, const Ice::Current&)
 {
 	worker->HumanTrackerJointsAndRGB_newPersonListAndRGB(mixedData);
 }

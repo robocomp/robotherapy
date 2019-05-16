@@ -159,7 +159,7 @@
              </item>
              <item row="6" column="1" colspan="2">
               <widget class="QLCDNumber" name="kneesdev_lcd">
-               <property name="numDigits">
+               <property name="digitCount">
                 <number>3</number>
                </property>
                <property name="segmentStyle">
@@ -225,7 +225,7 @@
              </item>
              <item row="3" column="1" colspan="2">
               <widget class="QLCDNumber" name="spinedev_lcd">
-               <property name="numDigits">
+               <property name="digitCount">
                 <number>3</number>
                </property>
                <property name="segmentStyle">
@@ -235,7 +235,7 @@
              </item>
              <item row="5" column="1" colspan="2">
               <widget class="QLCDNumber" name="hipsdev_lcd">
-               <property name="numDigits">
+               <property name="digitCount">
                 <number>3</number>
                </property>
                <property name="segmentStyle">
@@ -260,7 +260,7 @@
             <property name="frameShadow">
              <enum>QFrame::Raised</enum>
             </property>
-            <layout class="QHBoxLayout" name="horizontalLayout_4">
+            <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="1,1">
              <item>
               <widget class="QLabel" name="video_lb">
                <property name="sizePolicy">
@@ -271,8 +271,8 @@
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>640</width>
-                 <height>480</height>
+                 <width>320</width>
+                 <height>240</height>
                 </size>
                </property>
                <property name="maximumSize">
@@ -283,6 +283,9 @@
                </property>
                <property name="text">
                 <string/>
+               </property>
+               <property name="scaledContents">
+                <bool>true</bool>
                </property>
               </widget>
              </item>
@@ -539,7 +542,7 @@
      <x>0</x>
      <y>0</y>
      <width>1029</width>
-     <height>25</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

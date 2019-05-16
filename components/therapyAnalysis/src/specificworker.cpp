@@ -21,8 +21,10 @@
 /**
 * \brief Default constructor
 */
+Q_DECLARE_METATYPE(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB)
 SpecificWorker::SpecificWorker(TuplePrx tprx) : GenericWorker(tprx)
 {
+	qRegisterMetaType<RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB>("MixedJointsRGB");
 	playTimer = new QTimer();
 	framesRecorded = 0;
 	playForward = true;
@@ -76,6 +78,7 @@ SpecificWorker::SpecificWorker(TuplePrx tprx) : GenericWorker(tprx)
 	connect(this->frames_slider, SIGNAL(valueChanged(int)), this, SLOT(framesSliderMoved(int)));
 	connect(this->fps_spnbox, SIGNAL(valueChanged(double)), this, SLOT(changePlayFps(double)));
 	connect(this->chart_pb, SIGNAL(clicked()), this, SLOT(load_chart()));
+	connect(this, SIGNAL(newMixDetected(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB)), this, SLOT(recordData(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB)));
 
 #ifdef USE_QTGUI
 	innerModelViewer = NULL;
@@ -723,7 +726,7 @@ void SpecificWorker::HumanTrackerJointsAndRGB_newPersonListAndRGB(MixedJointsRGB
 {
 	if(recording)
 	{
-		recordData(mixedData);
+		emit newMixDetected(mixedData);
 	}
 
 }

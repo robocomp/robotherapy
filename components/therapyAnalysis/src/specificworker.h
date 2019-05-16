@@ -31,6 +31,7 @@
 #include <genericworker.h>
 #include <innermodel/innermodel.h>
 #include <QTimer>
+#include <QMetaType>
 #include <fstream>
 #include <unistd.h>
 #include <qmat/qrtmat.h>
@@ -110,6 +111,10 @@ public slots:
 	void changePlayFps(double value);
 	void setEnabledPlayControls(bool enabled);
 	void load_chart();
+	void recordData(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB mixedData);
+
+signals:
+	void newMixDetected(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB mixedData);
 
 private:
 	Chart *chart;
@@ -155,7 +160,7 @@ private:
 	void loadVideoFromFile(QString filename);
 	void loadVideoFrame(int frame);
 	vector<string>split(const string& str, const string& delim);
-	void recordData(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB mixedData);
+//	void recordData(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB mixedData);
 	void printJointsFromAstra();
 #ifdef USE_QTGUI
 	OsgView *osgView;

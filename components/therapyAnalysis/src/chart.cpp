@@ -46,7 +46,7 @@ Chart::Chart(QWidget *parent) : QGraphicsView(new QGraphicsScene, parent),
 void Chart::loadData(std::map<std::string,std::vector<float>> currentMetrics)
 {
 //load x axis
-
+    qDebug()<<currentMetrics["Time"].size();
 //load vertical series
     QSplineSeries *series = new QSplineSeries;
     series->setName("serie1");

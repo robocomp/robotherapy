@@ -295,7 +295,7 @@ void SpecificWorker::record() {
 		fstream jointfile;
 		jointfile.open( (this->savePath+".txt").toStdString() , std::fstream::trunc);
 		jointfile.close();
-		this->videoWriter = cv::VideoWriter( (this->savePath+".avi").toStdString(), 0, 0, cv::Size(640, 480));
+		this->videoWriter = cv::VideoWriter( (this->savePath+".avi").toStdString(), CV_FOURCC('M','J','P','G'), 30, cv::Size(VIDEO_WIDTH, VIDEO_HEIGHT));
 
 		this->recording = true;
 		this->filePath_lnedit->setEnabled(false);
@@ -306,7 +306,8 @@ void SpecificWorker::record() {
 
 void SpecificWorker::updateFramesRecorded()
 {
-	this->framesRecorded++;
+	//cout<<"Recorded "<<framesRecorded<<endl;
+	this->framesRecorded=this->framesRecorded+1;
 	this->framesRecorded_lcd->display(this->framesRecorded);
 }
 
@@ -321,7 +322,7 @@ void SpecificWorker::loadFileClicked()
 	{
 		this->playback_mode();
 		this->setEnabledPlayControls(true);
-		this->frames_slider->setMaximum(this->loadedTraining.size()-1);
+//		this->frames_slider->setMaximum(this->loadedTraining.size()-1);
 	}
 }
 
@@ -738,20 +739,19 @@ qDebug()<<"timeStamp"<<mixedData.timeStamp<<"image size"<<mixedData.rgbImage.ima
 	}
 	//video
 	cv::Mat frame(mixedData.rgbImage.height, mixedData.rgbImage.width, CV_8UC3,  &(mixedData.rgbImage.image)[0]);
-///TODO	==> //read frame data
-//cv::Mat frame(VIDEO_WIDTH, VIDEO_HEIGHT, CV_8UC3, cv::Scalar(10, 100, 150));
+	cv::cvtColor(frame, frame, CV_BGR2RGB);
 	videoWriter.write(frame);
 	if(visualizeRecording)
 	{
-		QImage img = QImage(frame.ptr(), VIDEO_WIDTH, VIDEO_HEIGHT, QImage::Format_RGB888);
+		QImage img = QImage(&(mixedData.rgbImage.image)[0], VIDEO_WIDTH, VIDEO_HEIGHT, QImage::Format_RGB888);
     	video2_lb->setPixmap(QPixmap::fromImage(img));
 	}
 	//joints
 	fstream jointfile;
 	jointfile.open( (this->savePath+".txt").toStdString() , ios::app);
+	jointfile << mixedData.timeStamp <<"#";
 	try
 	{
-qDebug()<<"1";		
 		PersonList users = mixedData.persons;
 		if(visualizeRecording)
 		{
@@ -762,16 +762,14 @@ qDebug()<<"1";
 				}
 			}
 		}
-qDebug()<<"2";
 		if(users.size()== 0)
 			this->status->showMessage("No human detected...");
-qDebug()<<"3";
 		for (auto u : users)
 		{
 			auto id = u.first;
 			auto joints = u.second.joints;
 
-            jointfile << mixedData.timeStamp <<"#" << id <<"#";
+            jointfile << id <<"#";
 
 			for (auto j: joints)
 			{
@@ -779,16 +777,14 @@ qDebug()<<"3";
 				jointfile << "#";
 			}
 		}
-qDebug()<<"4";
 		jointfile <<endl;
 		this->updateFramesRecorded();
-		this->status->showMessage("Saved "+QString::number(this->framesRecorded)+" frames - Visualize = "+QString::number(visualizeRecording));
+//		this->status->showMessage("Saved "+QString::number(this->framesRecorded)+" frames - Visualize = "+QString::number(visualizeRecording));
 	}
 	catch(...){
 		qDebug()<<"no connection to humantracker_proxy";
 	}
 	jointfile.close();
-qDebug()<<"5";
 }
 
 

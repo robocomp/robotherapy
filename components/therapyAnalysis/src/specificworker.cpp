@@ -462,9 +462,7 @@ float SpecificWorker::getShoulderAngleVec(std::string side)
 
 	auto v1  = innerModel->transform(mapJointMesh["ShoulderSpine"],mapJointMesh[side +"Elbow"]);
 	auto v2  = innerModel->transform(mapJointMesh["ShoulderSpine"],mapJointMesh["BaseSpine"]);
-
-
-
+	
     return getAngleBetweenVectors(v1,v2);
 
 }
@@ -472,32 +470,34 @@ float SpecificWorker::getShoulderAngleVec(std::string side)
 //part must be Shoulder, Hip, Knee or Spine
 float SpecificWorker::getDeviation(std::string part)
 {
-	float angle;
+    float angle;
 
-	if(part == "Spine")
-	{
-		auto baseS = innerModel->transform("world",mapJointMesh["BaseSpine"]);
-		auto upperS = innerModel->transform("world",mapJointMesh["ShoulderSpine"]);
+    if(part == "Spine")
+    {
+        auto baseS = innerModel->transform("world",mapJointMesh["BaseSpine"]);
+        auto upperS = innerModel->transform("world",mapJointMesh["ShoulderSpine"]);
 
-		QVec v1 = upperS- baseS ;
-		auto v2 = QVec::vec3(0,1,0);
+        QVec v1 = upperS- baseS;
+        auto v2 = QVec::vec3(upperS.x(),v1.y(),v1.z());
+//      auto v2 = QVec::vec3(0,1,0);
 
-		angle = getAngleBetweenVectors(v1,v2);
-	}
+        angle = getAngleBetweenVectors(v1,v2);
+    }
 
-	else
-	{
-		auto left = innerModel->transform("world",mapJointMesh["Left"+ part]);
-		auto right = innerModel->transform("world",mapJointMesh["Right"+ part]);
+    else
+    {
+        auto left = innerModel->transform("world",mapJointMesh["Left"+ part]);
+        auto right = innerModel->transform("world",mapJointMesh["Right"+ part]);
 
-		QVec v1 = left - right ;
-		auto v2 = QVec::vec3(-1,0,0);
+        QVec v1 = left - right ;
+        auto v2 = QVec::vec3(v1.x(),0,v1.z());
+//      auto v2 = QVec::vec3(-1,0,0);
+        angle = getAngleBetweenVectors(v1,v2);
+    }
 
-		angle = getAngleBetweenVectors(v1,v2);
-	}
-
-	return angle;
+    return angle;
 }
+
 
 
 

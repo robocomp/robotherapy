@@ -45,41 +45,31 @@ Chart::Chart(QWidget *parent) : QGraphicsView(new QGraphicsScene, parent),
 
 void Chart::loadData(std::map<std::string,std::vector<float>> currentMetrics)
 {
-//load x axis
-    qDebug()<<currentMetrics["Time"].size();
-//load vertical series
-    QSplineSeries *series = new QSplineSeries;
-    series->setName("serie1");
-    series->append(1.6, 1.4);
-    series->append(2.4, 3.5);
-    series->append(3.7, 2.5);
-    series->append(7, 4);
-    series->append(10, 2);
-    m_chart->addSeries(series);
-    connect(series, &QLineSeries::clicked, this, &Chart::keepCallout);
-    connect(series, &QLineSeries::hovered, this, &Chart::tooltip);
-    QCheckBox *s_check = new QCheckBox("serie1");
-    s_check->setChecked(true);
-    m_groupBox->addWidget(s_check);
-    connect(s_check, &QCheckBox::toggled, series, &QSplineSeries::setVisible);
-
-    QSplineSeries *series2 = new QSplineSeries;
-    series2->setName("serie2");
-    series2->append(.6, 1.4);
-    series2->append(.4, 3.5);
-    series2->append(.7, 2.5);
-    series2->append(1, 4);
-    series2->append(10, 2);
-    m_chart->addSeries(series2);
-    connect(series2, &QLineSeries::clicked, this, &Chart::keepCallout);
-    connect(series2, &QLineSeries::hovered, this, &Chart::tooltip);
-    QCheckBox *s_check2 = new QCheckBox("serie2");
-    s_check2->setChecked(true);
-    m_groupBox->addWidget(s_check2);
-    connect(s_check2, &QCheckBox::toggled, series2, &QSplineSeries::setVisible);
-
-    
-
+    //Create series
+    std::map<std::string, QLineSeries*> series;
+    for(auto const& element: currentMetrics)
+    {
+        if (element.first != "Time")
+        {
+            series[element.first] = new QLineSeries();
+            series[element.first]->setName(QString::fromStdString(element.first));
+        }
+    }
+    //load data
+    for (int i=0; i<=currentMetrics["Time"].size(); i++)
+        for(auto const& serie: series)
+            serie.second->append(currentMetrics["Time"][i], currentMetrics[serie.first][i]);
+    //load graphic and connect signals
+    for(auto const& serie: series)
+    {
+        m_chart->addSeries(serie.second);
+        connect(serie.second, &QLineSeries::clicked, this, &Chart::keepCallout);
+        connect(serie.second, &QLineSeries::hovered, this, &Chart::tooltip);
+        QCheckBox *check = new QCheckBox(QString::fromStdString(serie.first));
+        check->setChecked(true);
+        connect(check, &QCheckBox::toggled, serie.second, &QSplineSeries::setVisible);
+        m_groupBox->addWidget(check);
+    }
     m_chart->createDefaultAxes();
     m_chart->setAcceptHoverEvents(true);
 }

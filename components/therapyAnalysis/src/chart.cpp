@@ -56,9 +56,10 @@ void Chart::loadData(std::map<std::string,std::vector<float>> currentMetrics)
         }
     }
     //load data
-    for (int i=0; i<=currentMetrics["Time"].size(); i++)
+    for (int i=0; i<currentMetrics["Time"].size(); i++)
         for(auto const& serie: series)
             serie.second->append(currentMetrics["Time"][i], currentMetrics[serie.first][i]);
+
     //load graphic and connect signals
     for(auto const& serie: series)
     {

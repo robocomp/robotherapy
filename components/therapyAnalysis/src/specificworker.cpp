@@ -151,8 +151,8 @@ void SpecificWorker::compute()
 // 		std::cout << "Error reading from Camera" << e << std::endl;
 // 	}
 #ifdef USE_QTGUI
-//	if (innerModelViewer) innerModelViewer->update();
-//	osgView->frame();
+	if (innerModelViewer) innerModelViewer->update();
+	osgView->frame();
 #endif
 }
 
@@ -635,8 +635,7 @@ void SpecificWorker::initializeMetrics()
 	currentMetrics["Knee"] = std::vector<float>();
 }
 
-void SpecificWorker::saveActualFrameMetrics(long int time){
-
+void SpecificWorker::saveActualFrameMetrics(float time){
 	currentMetrics["Time"].push_back(float(time));
 	currentMetrics["Elbow_left"].push_back(getElbowAngleVec("Left"));
 	currentMetrics["Elbow_right"].push_back(getElbowAngleVec("Right"));
@@ -660,11 +659,9 @@ void SpecificWorker::loadJointsFromFile(QString filename)
 	{
 		TPerson person;
 		jointListType all_joints;
-
 		vector<string> parts = split(line,"#");
-
 		long int currTime = std::stol(parts[0]);
-		qDebug()<< "Time"<<(currTime);
+		static long int firstTime = currTime;
 
 		for (auto p: parts)
 		{
@@ -695,8 +692,7 @@ void SpecificWorker::loadJointsFromFile(QString filename)
 		}
 		//calcule innerModel and save Metrics
 		this->PaintSkeleton(person);
-
-		saveActualFrameMetrics(currTime);
+		saveActualFrameMetrics((currTime-firstTime)/1000.);
 	}
 }
 void SpecificWorker::loadVideoFromFile(QString filename)

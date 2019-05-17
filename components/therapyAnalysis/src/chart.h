@@ -42,7 +42,7 @@ class Chart: public QGraphicsView
 public:
     Chart(QWidget *parent = 0);
     void loadData(std::map<std::string,std::vector<float>> currentMetrics);
-
+    void saveChart(QString filename);
 protected:
     void resizeEvent(QResizeEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
@@ -58,6 +58,8 @@ private:
     QChart *m_chart=NULL;
     Callout *m_tooltip=NULL;
     QList<Callout *> m_callouts;
+
+    int time =0;
 };
 
 #endif

@@ -391,6 +391,7 @@ void SpecificWorker::load_chart()
 	chart = new Chart(widget);
 	widget->show();
 	chart->loadData(this->currentMetrics);
+	chart->saveChart("prueba");
 }
 
 //========================= Capture and save code ======================

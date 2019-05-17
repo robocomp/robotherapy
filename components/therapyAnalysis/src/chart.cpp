@@ -39,7 +39,6 @@ Chart::Chart(QWidget *parent) : QGraphicsView(new QGraphicsScene, parent),
 
 
     this->setMouseTracking(true);
-
 }
 
 
@@ -56,7 +55,7 @@ void Chart::loadData(std::map<std::string,std::vector<float>> currentMetrics)
         }
     }
     //load data
-    for (int i=0; i<currentMetrics["Time"].size(); i++)
+    for (unsigned int i=0; i<currentMetrics["Time"].size(); i++)
         for(auto const& serie: series)
             serie.second->append(currentMetrics["Time"][i], currentMetrics[serie.first][i]);
 
@@ -73,7 +72,41 @@ void Chart::loadData(std::map<std::string,std::vector<float>> currentMetrics)
     }
     m_chart->createDefaultAxes();
     m_chart->setAcceptHoverEvents(true);
+
+    time = (currentMetrics["Time"][currentMetrics["Time"].size()-1]-currentMetrics["Time"][0]);
 }
+void Chart::saveChart(QString filename)
+{
+    QPixmap p = this->grab();
+    QOpenGLWidget *glWidget  = this->findChild<QOpenGLWidget*>();
+    if(glWidget){
+        QPainter painter(&p);
+        QPoint d = glWidget->mapToGlobal(QPoint()) - this->mapToGlobal(QPoint());
+        painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
+        painter.drawImage(d, glWidget->grabFramebuffer());
+        painter.end();
+    }
+    p.save(filename+".png", "PNG");
+    //pdf
+    QPdfWriter pdfWriter(filename+".pdf");
+    pdfWriter.setPageSize(QPageSize(QPageSize::A4));
+    pdfWriter.setPageMargins(QMargins(30, 30, 30, 30));
+    
+    QPainter painter(&pdfWriter);
+    painter.setPen(Qt::black);
+    painter.setFont(QFont("Times", 12));
+    QRect r = painter.viewport();
+  //  QTextDocument td;
+  //  td.setHtml("<sub>max</sub>=K<sub>2</sub> &middot; 3");
+  //  td.drawContents(&painter);
+    painter.drawText(r, Qt::AlignLeft, "Fecha informe " + QTime::currentTime().toString()  );
+    painter.drawText(r, Qt::AlignLeft, "Tiempo de sesion " + QString::number(time) + " segundos" );
+    
+    painter.drawPixmap(30,350,7000,7000,p);
+    painter.end();    
+
+}
+
 
 void Chart::resizeEvent(QResizeEvent *event)
 {

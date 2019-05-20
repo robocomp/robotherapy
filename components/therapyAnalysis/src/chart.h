@@ -33,6 +33,7 @@
 #include <QtWidgets/QMainWindow>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
+#include <QPrinter>
 #include "callout.h"
 
 class Chart: public QGraphicsView
@@ -60,6 +61,10 @@ private:
     QList<Callout *> m_callouts;
 
     int time =0;
+    //TODO: read from file
+    const std::string REPORT_HTML = "<html><head><h2>Informe de terapia </h2></head><body><p>Fecha: <DATETIME></p><p>Tiempo de sesión: <SESIONTIME> segundos</p><p><img src=\"<CHART>\" width=\"500\" height=\"300\"></p></body></html>";
 };
+
+
 
 #endif

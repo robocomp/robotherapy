@@ -15,10 +15,10 @@ SET ( HEADERS
   callout.h
 )
 
-find_package(Qt5Charts)
+find_package(Qt5 REQUIRED COMPONENTS Charts PrintSupport)
 
 INCLUDE( $ENV{ROBOCOMP}/cmake/modules/opencv3.cmake)
 
 set(CMAKE_CXX_STANDARD 17)
 
-SET (LIBS ${LIBS} Qt5::Charts )
+SET (LIBS ${LIBS} Qt5::Charts Qt5::PrintSupport )

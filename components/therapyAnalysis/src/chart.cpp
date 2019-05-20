@@ -88,22 +88,19 @@ void Chart::saveChart(QString filename)
     }
     p.save(filename+".png", "PNG");
     //pdf
-    QPdfWriter pdfWriter(filename+".pdf");
-    pdfWriter.setPageSize(QPageSize(QPageSize::A4));
-    pdfWriter.setPageMargins(QMargins(30, 30, 30, 30));
-    
-    QPainter painter(&pdfWriter);
-    painter.setPen(Qt::black);
-    painter.setFont(QFont("Times", 12));
-    QRect r = painter.viewport();
-  //  QTextDocument td;
-  //  td.setHtml("<sub>max</sub>=K<sub>2</sub> &middot; 3");
-  //  td.drawContents(&painter);
-    painter.drawText(r, Qt::AlignLeft, "Fecha informe " + QTime::currentTime().toString()  );
-    painter.drawText(r, Qt::AlignLeft, "Tiempo de sesion " + QString::number(time) + " segundos" );
-    
-    painter.drawPixmap(30,350,7000,7000,p);
-    painter.end();    
+    QString html_text = QString::fromStdString(REPORT_HTML);
+    html_text.replace("<DATETIME>", QTime::currentTime().toString());
+    html_text.replace("<SESIONTIME>", QString::number(time));
+    html_text.replace("<CHART>", filename+".png");
+
+    QTextDocument document;
+    QPrinter printer(QPrinter::PrinterResolution);
+    printer.setOutputFormat(QPrinter::PdfFormat);
+    printer.setPaperSize(QPrinter::A4);
+    printer.setOutputFileName(filename+".pdf");
+    printer.setPageMargins(QMarginsF(15, 15, 15, 15));
+    document.setHtml(html_text);
+    document.print(&printer);
 
 }
 

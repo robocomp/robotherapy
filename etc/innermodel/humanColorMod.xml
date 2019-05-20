@@ -1,6 +1,9 @@
 <innerModel>
 	<transform id="world" tx="0" ty="0" tz="0"  rx="0" ry="0" rz="0">
-        <plane id="floor_mesh" ny="1"  px="-10000" py="0" pz="-10000" size="20000,20000,10" texture="/home/robocomp/robocomp/files/osgModels/textures/wood.jpg" /> 
+		<transform id="floor_transform" tx="0" ty="0" tz="-1700" rx="-1.197554946" ry="-0.01657616906" rz="-0.6708751321">
+			<axes id = "ejes1"/>
+        	<plane id="floor_mesh" ny="1"  px="0" py="0" pz="0" size="20000,10,20000" texture="/home/robocomp/robocomp/files/osgModels/textures/wood.jpg" />
+		</transform>
 		<transform id="XN_SKEL_TORSO" tx="0" ty="400" tz="0"  rx="-1.570000052" ry="0" rz="0">
 			<mesh id="jTorso_mesh" file="/home/robocomp/robocomp/files/osgModels/humanColor/jointbox.osg" scale="50" tx="0" ty="0" tz="0" rx="0" ry="0" rz="0" />
 			<mesh id="XN_SKEL_TORSO_mesh" file="/home/robocomp/robocomp/files/osgModels/humanColor/pecho.osg" scale="8" tx="0" ty="0" tz="0" rx="1.570000052" ry="0" rz="0" />
@@ -9,11 +12,11 @@
 				<mesh id="jShoulderSpine_mesh" file="/home/robocomp/robocomp/files/osgModels/humanColor/jointbox.osg" scale="50" tx="0" ty="0" tz="0" rx="0" ry="0" rz="0" />
 
 				<transform id="XN_SKEL_NECK" tx="0" ty="0" tz="250"  rx="0" ry="0" rz="0">
+					<axes id = "ejes2"/>
 				<mesh id="jNECK_mesh" file="/home/robocomp/robocomp/files/osgModels/humanColor/jointbox.osg" scale="50" tx="0" ty="0" tz="0" rx="0" ry="0" rz="0" />
 				<mesh id="XN_SKEL_NECK_mesh" file="/home/robocomp/robocomp/files/osgModels/humanColor/cabeza.osg" scale="10" tx="0" ty="0" tz="75" rx="1.570000052" ry="3.140000105" rz="0" />
 				</transform>
 				<transform id="XN_SKEL_LEFT_SHOULDER" tx="-250" ty="0" tz="200"  rx="0" ry="0" rz="0">
-					<axes id = "ejes1"/>
 					<mesh id="jLEFTShoulder_mesh" file="/home/robocomp/robocomp/files/osgModels/humanColor/jointbox.osg" scale="50" tx="0" ty="0" tz="0" rx="0" ry="0" rz="0" />
 					<mesh id="XN_SKEL_LEFT_SHOULDER_mesh" file="/home/robocomp/robocomp/files/osgModels/humanColor/brazo.osg" scale="8" tx="0" ty="0" tz="0" rx="3.140000105" ry="0" rz="1.570000052" />
 					<transform id="XN_SKEL_LEFT_ELBOW" tx="0" ty="0" tz="400"  rx="0" ry="0" rz="0">

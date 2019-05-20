@@ -117,6 +117,8 @@ signals:
 	void newMixDetected(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB mixedData);
 
 private:
+	QSettings *settings;
+	osgGA::TrackballManipulator *manipulator;
 	Chart *chart;
 	//record
 	bool recording;
@@ -143,6 +145,7 @@ private:
 	float getDeviation(std::string part);
 	void saveActualFrameMetrics(float time);
 	void initializeMetrics();
+	void closeEvent(QCloseEvent *event);
 //	void calculateAllMetrics();
 
 

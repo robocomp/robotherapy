@@ -80,23 +80,48 @@ SpecificWorker::SpecificWorker(TuplePrx tprx) : GenericWorker(tprx)
 	connect(this->chart_pb, SIGNAL(clicked()), this, SLOT(load_chart()));
 	connect(this, SIGNAL(newMixDetected(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB)), this, SLOT(recordData(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB)));
 
-#ifdef USE_QTGUI
+
+
+
+
 	innerModelViewer = NULL;
 	osgView = new OsgView(this);
 	this->osgLayout->addWidget(osgView);
-	osgGA::TrackballManipulator *tb = new osgGA::TrackballManipulator;
-	osg::Vec3d eye(osg::Vec3(4000.,4000.,-1000.));
-	osg::Vec3d center(osg::Vec3(0.,0.,-0.));
-	osg::Vec3d up(osg::Vec3(0.,1.,0.));
-	tb->setHomePosition(eye, center, up, true);
-	tb->setByMatrix(osg::Matrixf::lookAt(eye,center,up));
-	osgView->setCameraManipulator(tb);
-#endif
+	this->manipulator = new osgGA::TrackballManipulator;
+	osgView->setCameraManipulator(manipulator);
+
+
+	// Restore previous camera position
+	settings = new QSettings("RoboComp", "TherapyAnalysis");
+
+	//restore matrix view
+	QStringList l = settings->value("matrix").toStringList();
+	if (l.size() > 0)
+	{
+		osg::Matrixd m;
+		for (int i=0; i<4; i++ )
+		{
+			for (int j=0; j<4; j++ )
+			{
+				m(i,j)=l.takeFirst().toDouble();
+			}
+		}
+		manipulator->setByMatrix(m);
+	}
+	else
+	{
+		osg::Vec3d eye(osg::Vec3(0, 0, -2000));
+		osg::Vec3d center(osg::Vec3(0,0,0));
+		osg::Vec3d up(osg::Vec3(0.,1.,0.));
+		manipulator->setHomePosition(eye, center, up, false);
+		manipulator->setByMatrix(osg::Matrixf::lookAt(eye,center,up));
+	}
 
 	this->playback_mode();
 	this->relateJointsMeshes();
 	playFps = this->fps_spnbox->value();
 	this->setEnabledPlayControls(false);
+
 }
 
 /**
@@ -153,6 +178,8 @@ void SpecificWorker::compute()
 #ifdef USE_QTGUI
 	if (innerModelViewer) innerModelViewer->update();
 	osgView->frame();
+	osg::Vec3 eye, center, up;
+	osgView->getCamera()->getViewMatrixAsLookAt( eye, center, up );
 #endif
 }
 
@@ -356,6 +383,7 @@ void SpecificWorker::framesSliderMoved(int value)
 	if((int)this->loadedTraining.size()>value) {
 		auto person = this->loadedTraining[value].personDet;
 		this->PaintSkeleton(person);
+		this->innerModel->save("lapatata.xml");
 	}
 	else{
 		this->status->showMessage("No training loaded");
@@ -391,7 +419,26 @@ void SpecificWorker::load_chart()
 	chart = new Chart(widget);
 	widget->show();
 	chart->loadData(this->currentMetrics);
-	chart->saveChart("prueba");
+//	chart->saveChart("prueba");
+}
+
+
+void SpecificWorker::closeEvent(QCloseEvent *event)
+{
+	event->accept();
+	osg::Matrixd m = manipulator->getMatrix();
+	QString s="";
+	QStringList l;
+	for (int i=0; i<4; i++ )
+	{
+		for (int j=0; j<4; j++ )
+		{
+			l.append(s.number(m(i,j)));
+		}
+	}
+	settings->setValue("matrix", l);
+	settings->sync();
+
 }
 
 //========================= Capture and save code ======================
@@ -605,7 +652,8 @@ bool SpecificWorker::loadTrainingFromFile()
 	{
 		jointFile = fileName;
 		videoFile = fileName.replace(".txt", ".avi");
-	}else if (fileName.size() > 0 and fileName.contains(".avi"))
+	}
+	else if (fileName.size() > 0 and fileName.contains(".avi"))
 	{
 		videoFile = fileName;
 		jointFile = fileName.replace(".avi", ".txt");

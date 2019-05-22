@@ -348,12 +348,14 @@ void SpecificWorker::loadFileClicked()
 {
 	if (this->loadTrainingFromFile())
 	{
-		if(this->loadedTraining.size()>0) {
-		this->playback_mode();
-		this->setEnabledPlayControls(true);
+		if(this->loadedTraining.size()>0)
+		{
+			this->playback_mode();
+			this->setEnabledPlayControls(true);
 			qDebug()<<"Setting maximum to"<<this->loadedTraining.size()-1<<endl;
 			this->frames_slider->setMaximum(this->loadedTraining.size()-1);
 			this->frames_slider->setValue(0);
+			this->loadVideoFrame(0);
 		}
 		else
 		{
@@ -384,7 +386,7 @@ void SpecificWorker::framesSliderMoved(int value)
 		this->PaintSkeleton(person);
 		//TODO: Remove. Only for Debug
 //		this->innerModel->save("lapatata.xml");
-//		this->loadVideoFrame(value);
+		this->loadVideoFrame(value);
 	}
 	else{
 		this->status->showMessage("No training loaded");
@@ -665,6 +667,7 @@ bool SpecificWorker::loadTrainingFromFile()
 		qDebug() << "Unable to load recorded data, check filename";
 		return false;
 	}
+	//Load from joints file needs to be executed before load video becuause it creates the main structure
 	int n_joint_frames = loadJointsFromFile(jointFile);
 	int n_video_frames = loadVideoFromFile(videoFile);
 	if(n_joint_frames != n_video_frames)
@@ -755,18 +758,50 @@ int SpecificWorker::loadJointsFromFile(QString filename)
 int SpecificWorker::loadVideoFromFile(QString filename)
 {
 	videoReader = cv::VideoCapture(filename.toStdString());
-	loadVideoFrame(0);
-	int prop_length = int(videoReader.get(cv::CAP_PROP_FRAME_COUNT));
-	return prop_length;
+	int frame_pos = 0;
+
+	for(;;)
+	{
+		cv::Mat frame;
+		videoReader >> frame;
+		if (!frame.empty()) {
+			if(frame_pos < this->loadedTraining.size())
+			{
+				cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+				//TODO: Can be obtimized?
+				loadedTraining[frame_pos].image= new  cv::Mat();
+				frame.copyTo(*loadedTraining[frame_pos].image);
+//				qDebug()<<"Loaded video frame"<<frame_pos<<endl;
+				frame_pos+=1;
+			}
+			else{
+				this->status->showMessage("WARNING: There's more video frames than joint frames. Truncating");
+				break;
+			}
+		}
+		else{
+			break;
+		}
+	}
+//	qDebug()<<"Finished loading video"<<endl;
+//	int prop_length = int(videoReader.get(cv::CAP_PROP_FRAME_COUNT));
+	return frame_pos;
 }
+
 void SpecificWorker::loadVideoFrame(int frame_no)
 {
-	videoReader.set(CV_CAP_PROP_POS_FRAMES, frame_no);
-	cv::Mat frame;
-	videoReader >> frame;
-	if(!frame.empty()) {
-		cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-		QImage img = QImage(frame.ptr(), VIDEO_WIDTH, VIDEO_HEIGHT, QImage::Format_RGB888);
+//	videoReader.set(CV_CAP_PROP_POS_FRAMES, frame_no);
+//	cv::Mat frame;
+//	videoReader >> frame;
+//	if(!frame.empty()) {
+//		cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+//		QImage img = QImage(frame.ptr(), VIDEO_WIDTH, VIDEO_HEIGHT, QImage::Format_RGB888);
+//		video_lb->setPixmap(QPixmap::fromImage(img));
+//	}
+	if(frame_no < this->loadedTraining.size())
+	{
+		cv::Mat *frame = this->loadedTraining[frame_no].image;
+		QImage img = QImage(frame->ptr(), VIDEO_WIDTH, VIDEO_HEIGHT, QImage::Format_RGB888);
 		video_lb->setPixmap(QPixmap::fromImage(img));
 	}
 }

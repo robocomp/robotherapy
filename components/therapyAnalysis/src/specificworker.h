@@ -72,6 +72,7 @@ class SpecificWorker : public GenericWorker
     {
 	    std::string currentTime;
 	    TPerson personDet;
+	    cv::Mat *image;
     };
 
 	vector<sincPerson> loadedTraining;

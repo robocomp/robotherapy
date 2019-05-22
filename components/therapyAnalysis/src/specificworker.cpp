@@ -178,8 +178,6 @@ void SpecificWorker::compute()
 #ifdef USE_QTGUI
 	if (innerModelViewer) innerModelViewer->update();
 	osgView->frame();
-	osg::Vec3 eye, center, up;
-	osgView->getCamera()->getViewMatrixAsLookAt( eye, center, up );
 #endif
 }
 
@@ -355,11 +353,12 @@ void SpecificWorker::loadFileClicked()
 		this->setEnabledPlayControls(true);
 			qDebug()<<"Setting maximum to"<<this->loadedTraining.size()-1<<endl;
 			this->frames_slider->setMaximum(this->loadedTraining.size()-1);
-	}
+			this->frames_slider->setValue(0);
+		}
 		else
 		{
-			QMessageBox::warning(this,tr("File load problem"),tr("No pose loaded from files.\nPlease, check these are valid files\n"));
-}
+				QMessageBox::warning(this,tr("File load problem"),tr("No pose loaded from files.\nPlease, check these are valid files\n"));
+		}
 	}
 }
 
@@ -383,7 +382,9 @@ void SpecificWorker::framesSliderMoved(int value)
 	if((int)this->loadedTraining.size()>value) {
 		auto person = this->loadedTraining[value].personDet;
 		this->PaintSkeleton(person);
-		this->innerModel->save("lapatata.xml");
+		//TODO: Remove. Only for Debug
+//		this->innerModel->save("lapatata.xml");
+//		this->loadVideoFrame(value);
 	}
 	else{
 		this->status->showMessage("No training loaded");
@@ -664,8 +665,14 @@ bool SpecificWorker::loadTrainingFromFile()
 		qDebug() << "Unable to load recorded data, check filename";
 		return false;
 	}
-	loadJointsFromFile(jointFile);
-	loadVideoFromFile(videoFile);
+	int n_joint_frames = loadJointsFromFile(jointFile);
+	int n_video_frames = loadVideoFromFile(videoFile);
+	if(n_joint_frames != n_video_frames)
+	{
+		this->status->showMessage("WARNING: Loaded "+QString::number(n_joint_frames)+" Joint frames vs "+QString::number(n_video_frames)+" Video Frames. It can be a problem.");
+//		QMessageBox::warning(this,tr("Files loaded problem"),"Incoherent number of frames for video and joints ("+QString::number(n_video_frames)+", "+QString::number(n_joint_frames)+")",
+//			QMessageBox::Ok,QMessageBox::Ok );
+	}
 	return true;
 }
 
@@ -697,7 +704,7 @@ void SpecificWorker::saveActualFrameMetrics(float time){
 	currentMetrics["Knee"].push_back(getDeviation("Knee"));
 }
 
-void SpecificWorker::loadJointsFromFile(QString filename)
+int SpecificWorker::loadJointsFromFile(QString filename)
 {
 	ifstream file;
 	file.open(filename.toStdString());
@@ -706,12 +713,13 @@ void SpecificWorker::loadJointsFromFile(QString filename)
 	initializeMetrics();
 	while (std::getline(file, line))
 	{
+		sincPerson persontoload;
 		TPerson person;
 		jointListType all_joints;
 		vector<string> parts = split(line,"#");
 		long int currTime = std::stol(parts[0]);
 		static long int firstTime = currTime;
-
+		persontoload.currentTime = currTime;
 		for (auto p: parts)
 		{
 			vector<string> joints = split(p," ");
@@ -727,35 +735,40 @@ void SpecificWorker::loadJointsFromFile(QString filename)
 			}
 		}
 		person.joints = all_joints;
-		if(!checkNecessaryJoints(person))
-		{
-			qDebug()<<"Necessary joints not found";
-		}
-		else
-		{
-			sincPerson persontoload;
-			persontoload.currentTime = currTime;
-			persontoload.personDet = person;
-
-			loadedTraining.push_back(persontoload);
-		}
+//		if(!checkNecessaryJoints(person))
+//		{
+//			qDebug()<<"Necessary joints not found";
+//		}
+//		else
+//		{
+//
+//
+//		}
+		persontoload.personDet = person;
+		loadedTraining.push_back(persontoload);
 		//calcule innerModel and save Metrics
 		this->PaintSkeleton(person);
 		saveActualFrameMetrics((currTime-firstTime)/1000.);
 	}
+	return int(loadedTraining.size());
 }
-void SpecificWorker::loadVideoFromFile(QString filename)
+int SpecificWorker::loadVideoFromFile(QString filename)
 {
 	videoReader = cv::VideoCapture(filename.toStdString());
 	loadVideoFrame(0);
+	int prop_length = int(videoReader.get(cv::CAP_PROP_FRAME_COUNT));
+	return prop_length;
 }
 void SpecificWorker::loadVideoFrame(int frame_no)
 {
 	videoReader.set(CV_CAP_PROP_POS_FRAMES, frame_no);
 	cv::Mat frame;
 	videoReader >> frame;
-	QImage img = QImage(frame.ptr(), VIDEO_WIDTH, VIDEO_HEIGHT, QImage::Format_RGB888);
-    video_lb->setPixmap(QPixmap::fromImage(img));
+	if(!frame.empty()) {
+		cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+		QImage img = QImage(frame.ptr(), VIDEO_WIDTH, VIDEO_HEIGHT, QImage::Format_RGB888);
+		video_lb->setPixmap(QPixmap::fromImage(img));
+	}
 }
 
 vector<string> SpecificWorker::split(const string& str, const string& delim)

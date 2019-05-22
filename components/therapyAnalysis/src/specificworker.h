@@ -159,8 +159,8 @@ private:
 	bool SetPoses (Pose3D &pose, string joint);
 	bool checkNecessaryJoints(TPerson &person);
 	bool loadTrainingFromFile();
-	void loadJointsFromFile(QString filename);
-	void loadVideoFromFile(QString filename);
+	int loadJointsFromFile(QString filename);
+	int loadVideoFromFile(QString filename);
 	void loadVideoFrame(int frame);
 	vector<string>split(const string& str, const string& delim);
 //	void recordData(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB mixedData);

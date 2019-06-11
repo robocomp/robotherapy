@@ -5,6 +5,7 @@
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QSplineSeries>
 #include <QtWidgets/QGraphicsTextItem>
+#include <fstream>
 
 
 Chart::Chart(QWidget *parent) : QGraphicsView(new QGraphicsScene, parent),
@@ -17,6 +18,14 @@ Chart::Chart(QWidget *parent) : QGraphicsView(new QGraphicsScene, parent),
     m_groupBox = new QHBoxLayout();
     m_legend->setLayout(m_groupBox);
     layout->addWidget(m_legend);
+    QHBoxLayout *buttonsLayout = new QHBoxLayout();
+    QPushButton *saveButton = new QPushButton("Save metrics");
+	buttonsLayout->addStretch();
+    buttonsLayout->addWidget(saveButton);
+    layout->addLayout(buttonsLayout);
+
+	connect(saveButton, &QPushButton::clicked, this, &Chart::saveMetrics);
+
 
     setDragMode(QGraphicsView::NoDrag);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -45,6 +54,7 @@ Chart::Chart(QWidget *parent) : QGraphicsView(new QGraphicsScene, parent),
 void Chart::loadData(std::map<std::string,std::vector<float>> currentMetrics)
 {
     //Create series
+    metrics = currentMetrics;
     std::map<std::string, QLineSeries*> series;
     for(auto const& element: currentMetrics)
     {
@@ -75,6 +85,37 @@ void Chart::loadData(std::map<std::string,std::vector<float>> currentMetrics)
 
     time = (currentMetrics["Time"][currentMetrics["Time"].size()-1]-currentMetrics["Time"][0]);
 }
+
+
+void Chart::saveMetrics()
+{
+	QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),"",tr("(*.csv)"));
+	std::ofstream myfile(fileName.toStdString(), std::ofstream::out);
+	myfile<<"Time; ";
+	std::vector<std::string> headers;
+	for(auto const& element: metrics)
+	{
+		if (element.first != "Time")
+		{
+			myfile<<element.first<<"; ";
+			headers.push_back(element.first);
+		}
+	}
+	myfile<<std::endl;
+	for (unsigned int i=0; i<metrics["Time"].size(); i++)
+	{
+		myfile<<metrics["Time"][i]<<"; ";
+		for(auto const& header: headers)
+		{
+			myfile<<metrics[header][i]<<"; ";
+		}
+		myfile<<std::endl;
+	}
+
+	myfile.close();
+
+}
+
 void Chart::saveChart(QString filename)
 {
     QPixmap p = this->grab();

@@ -51,6 +51,7 @@ protected:
 public slots:
     void keepCallout();
     void tooltip(QPointF point, bool state);
+    void saveMetrics();
 
 private:
     QGraphicsSimpleTextItem *m_coordX;
@@ -59,6 +60,7 @@ private:
     QChart *m_chart=NULL;
     Callout *m_tooltip=NULL;
     QList<Callout *> m_callouts;
+    std::map<std::string,std::vector<float>> metrics;
 
     int time =0;
     //TODO: read from file

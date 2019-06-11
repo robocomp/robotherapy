@@ -522,7 +522,7 @@ float SpecificWorker::getElbowAngleVec(std::string side)
 float SpecificWorker::getShoulderAngleVec(std::string side)
 {
 
-	auto v1  = innerModel->transform(mapJointMesh["ShoulderSpine"],mapJointMesh[side +"Elbow"]);
+	auto v1  = innerModel->transform(mapJointMesh[side +"Shoulder"],mapJointMesh[side +"Elbow"]);
 	auto v2  = innerModel->transform(mapJointMesh["ShoulderSpine"],mapJointMesh["BaseSpine"]);
 	
     return getAngleBetweenVectors(v1,v2);

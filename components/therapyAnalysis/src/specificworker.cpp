@@ -521,10 +521,16 @@ float SpecificWorker::getElbowAngleVec(std::string side)
 
 float SpecificWorker::getShoulderAngleVec(std::string side)
 {
+//
+//	auto v1  = innerModel->transform(mapJointMesh[side +"Shoulder"],mapJointMesh[side +"Elbow"]);
+//	auto v2  = innerModel->transform(mapJointMesh["ShoulderSpine"],mapJointMesh["BaseSpine"]);
 
-	auto v1  = innerModel->transform(mapJointMesh[side +"Shoulder"],mapJointMesh[side +"Elbow"]);
-	auto v2  = innerModel->transform(mapJointMesh["ShoulderSpine"],mapJointMesh["BaseSpine"]);
-	
+    auto elbow = innerModel->transform("world",mapJointMesh[side +"Elbow"]);
+    auto shoulder = innerModel->transform("world",mapJointMesh[side +"Shoulder"]);
+
+    QVec v1 = shoulder - elbow;
+    auto v2 = QVec::vec3(0,v1.y(),v1.z());
+
     return getAngleBetweenVectors(v1,v2);
 
 }
@@ -540,8 +546,7 @@ float SpecificWorker::getDeviation(std::string part)
         auto upperS = innerModel->transform("world",mapJointMesh["ShoulderSpine"]);
 
         QVec v1 = upperS- baseS;
-        auto v2 = QVec::vec3(upperS.x(),v1.y(),v1.z());
-//      auto v2 = QVec::vec3(0,1,0);
+        auto v2 = QVec::vec3(0,v1.y(),v1.z());
 
         angle = getAngleBetweenVectors(v1,v2);
     }

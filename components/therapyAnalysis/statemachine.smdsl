@@ -1,0 +1,37 @@
+/* CHANGE THE NAME OF THE MACHINE IF YOU MAKE
+   ANY CHANGE TO THE DEFAULT STATES OR TRANSITIONS */
+
+therapyAnalysisMachine{
+    states record, playback;
+    initial_state initialize;
+    end_state finalize;
+    transitions{
+        initialize => record;
+        initialize => playback;
+	    initalize => finalize;
+        record => playback;
+	    record => finalize;
+	    playback => finalize;
+
+    };
+ };
+:record{
+	states pause, stop, processFrame;
+	initial_state waitingStart;
+ 	transitions{
+        waitingStart => processFrame;
+        processFrame => stop;
+        processFrame => pause;
+        pause => processFrame;
+        pause => stop;
+	
+    };
+ };
+
+:playback{
+	states showTherapy;
+	initial_state loadFiles;
+ 	transitions{
+        loadFiles => showTherapy;
+    };
+};

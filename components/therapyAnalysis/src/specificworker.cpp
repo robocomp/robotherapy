@@ -25,71 +25,12 @@ Q_DECLARE_METATYPE(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB)
 SpecificWorker::SpecificWorker(TuplePrx tprx) : GenericWorker(tprx)
 {
 	qRegisterMetaType<RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB>("MixedJointsRGB");
-	playTimer = new QTimer();
-	framesRecorded = 0;
-	playForward = true;
-	recording = false;
-	this->stop_playing();
-	auto palette = this->angle1_lcd->palette();
-	palette.setColor(palette.WindowText, QColor(Qt::darkRed));
-//	palette.setColor(palette.Background, QColor(0, 170, 255));
-//	palette.setColor(palette.Light, QColor(255, 0, 0));
-//	palette.setColor(palette.Dark, QColor(0, 255, 0));
-	this->angle1_lcd->setPalette(palette);
-	this->angle2_lcd->setPalette(palette);
-	this->height1_lcd->setPalette(palette);
-	this->height2_lcd->setPalette(palette);
-	this->spinedev_lcd->setPalette(palette);
-	this->shoulderdev_lcd->setPalette(palette);
-	this->hipsdev_lcd->setPalette(palette);
-	this->kneesdev_lcd->setPalette(palette);
-
-	this->play_btn->setDefaultAction(this->play_action);
-	this->stop_btn->setDefaultAction(this->stop_action);
-	this->pause_btn->setDefaultAction(this->pause_action);
-	this->fwd1_btn->setDefaultAction(this->fwd1_action);
-	this->fwd5_btn->setDefaultAction(this->fwd5_action);
-	this->bwd1_btn->setDefaultAction(this->bwd1_action);
-	this->bwd5_btn->setDefaultAction(this->bwd5_action);
-
-	this->fwd1_btn->setText(">>+1");
-	this->fwd5_btn->setText(">>+5");
-	this->bwd1_btn->setText("<<-1");
-	this->bwd5_btn->setText("<<-5");
-
-
-	connect(this->loadFile_action, SIGNAL(triggered()), this, SLOT(loadFileClicked()));
-	connect(this->fwd1_action, SIGNAL(triggered()), this, SLOT(nextFrame()));
-	connect(this->fwd5_action, SIGNAL(triggered()), this, SLOT(next5Frames()));
-	connect(this->bwd1_action, SIGNAL(triggered()), this, SLOT(prevFrame()));
-	connect(this->bwd5_action, SIGNAL(triggered()), this, SLOT(prev5Frames()));
-	connect(this->start_btn, SIGNAL(clicked()), this, SLOT(startFrame()));
-	connect(this->end_btn, SIGNAL(clicked()), this, SLOT(endFrame()));
-	connect(this->playTimer, SIGNAL(timeout()), this, SLOT(playTimerTimeout()));
-	connect(this->play_action, SIGNAL(triggered()), this, SLOT(start_playing()));
-	connect(this->stop_action, SIGNAL(triggered()), this, SLOT(stop_playing()));
-	connect(this->pause_action, SIGNAL(triggered()), this, SLOT(pause_playing()));
-	connect(this->reverse_chck, SIGNAL(stateChanged(int)), this, SLOT(reverse_playing(int)));
-	connect(this->recordMode_action, SIGNAL(triggered()), this, SLOT(record_mode()));
-	connect(this->playbackMode_action, SIGNAL(triggered()), this, SLOT(playback_mode()));
-	connect(this->record_btn, SIGNAL(clicked()), this, SLOT(record()));
-	connect(this->reverse_chck, SIGNAL(stateChanged(int)), this, SLOT(reverse_playing(int)));
-	connect(this->visualizeRecording_chck, SIGNAL(toggled(bool)), this, SLOT(visualizeRecordingToggled(bool)));
-	connect(this->frames_slider, SIGNAL(valueChanged(int)), this, SLOT(framesSliderMoved(int)));
-	connect(this->fps_spnbox, SIGNAL(valueChanged(double)), this, SLOT(changePlayFps(double)));
-	connect(this->chart_pb, SIGNAL(clicked()), this, SLOT(load_chart()));
-	connect(this, SIGNAL(newMixDetected(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB)), this, SLOT(recordData(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB)));
-
-
-
-
 
 	innerModelViewer = NULL;
 	osgView = new OsgView(this);
 	this->osgLayout->addWidget(osgView);
 	this->manipulator = new osgGA::TrackballManipulator;
 	osgView->setCameraManipulator(manipulator);
-
 
 	// Restore previous camera position
 	settings = new QSettings("RoboComp", "TherapyAnalysis");
@@ -117,11 +58,8 @@ SpecificWorker::SpecificWorker(TuplePrx tprx) : GenericWorker(tprx)
 		manipulator->setByMatrix(osg::Matrixf::lookAt(eye,center,up));
 	}
 
-	this->playback_mode();
+    connect(this, SIGNAL(newMixDetected(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB)), this, SLOT(recordData(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB)));
 	this->relateJointsMeshes();
-	playFps = this->fps_spnbox->value();
-	this->setEnabledPlayControls(false);
-
 }
 
 /**
@@ -134,13 +72,11 @@ SpecificWorker::~SpecificWorker()
 
 bool SpecificWorker::setParams(RoboCompCommonBehavior::ParameterList params)
 {
-//       THE FOLLOWING IS JUST AN EXAMPLE
-//	To use innerModelPath parameter you should uncomment specificmonitor.cpp readConfig method content
 	try
 	{
 		RoboCompCommonBehavior::Parameter par = params.at("InnerModelPath");
 		std::string innermodel_path = par.value;
-		innerModel = std::make_shared<InnerModel>(innermodel_path); //InnerModel creation example
+		innerModel = std::make_shared<InnerModel>(innermodel_path);
 	}
 	catch(std::exception e) { qFatal("Error reading config params %s",e.what()); }
 
@@ -148,6 +84,8 @@ bool SpecificWorker::setParams(RoboCompCommonBehavior::ParameterList params)
 #ifdef USE_QTGUI
 	innerModelViewer = new InnerModelViewer (innerModel, "root", osgView->getRootGroup(), true);
 #endif
+
+	therapyAnalysisMachine.start();
 	return true;
 }
 
@@ -159,27 +97,13 @@ void SpecificWorker::initialize(int period)
 }
 
 
-
-void SpecificWorker::compute()
-{
-
-	//computeCODE
-//	QMutexLocker locker(mutex); 
-// 	try
-// 	{
-// 		camera_proxy->getYImage(0,img, cState, bState);
-// 		memcpy(image_gray.data, &img[0], m_width*m_height*sizeof(uchar));
-// 		searchTags(image_gray);
-// 	}
-// 	catch(const Ice::Exception &e)
-// 	{
-// 		std::cout << "Error reading from Camera" << e << std::endl;
-// 	}
-#ifdef USE_QTGUI
-	if (innerModelViewer) innerModelViewer->update();
-	osgView->frame();
-#endif
-}
+//void SpecificWorker::compute()
+//{
+//#ifdef USE_QTGUI
+//	if (innerModelViewer) innerModelViewer->update();
+//	osgView->frame();
+//#endif
+//}
 
 
 
@@ -265,37 +189,22 @@ void  SpecificWorker::reverse_playing(int state)
 	this->playForward = (state == 0);
 }
 
-float SpecificWorker::get_rand_float(float HI=-10, float LO=10)
-{
 
-	return (LO + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HI-LO))));
-}
-
-void SpecificWorker::update_metrics() {
-
-	this->angle1_lcd->display(this->get_rand_float(-6.2831, 6.2831));
-	this->angle2_lcd->display(this->get_rand_float(-6.2831, 6.2831));
-	this->height1_lcd->display(this->get_rand_float(500, 2500));
-	this->height2_lcd->display(this->get_rand_float(500, 2500));
-	qDebug()<<"Updating metrics";
-}
-
-
-void SpecificWorker::playback_mode() {
-
-	this->stackedWidget->setCurrentIndex(0);
-	this->playbackMode_action->setEnabled(false);
-	this->recordMode_action->setEnabled(true);
-	this->osgLayout->addWidget(this->osgView);
-}
-
-void SpecificWorker::record_mode() {
-
-	this->stackedWidget->setCurrentIndex(1);
-	this->playbackMode_action->setEnabled(true);
-	this->recordMode_action->setEnabled(false);
-	this->osgLayout_2->addWidget(this->osgView);
-}
+//void SpecificWorker::playback_mode() {
+//
+//	this->stackedWidget->setCurrentIndex(0);
+//	this->playbackMode_action->setEnabled(false);
+//	this->recordMode_action->setEnabled(true);
+//	this->osgLayout->addWidget(this->osgView);
+//}
+//
+//void SpecificWorker::record_mode() {
+//
+//	this->stackedWidget->setCurrentIndex(1);
+//	this->playbackMode_action->setEnabled(true);
+//	this->recordMode_action->setEnabled(false);
+//	this->osgLayout_2->addWidget(this->osgView);
+//}
 
 void SpecificWorker::record() {
 	if(recording) {
@@ -312,7 +221,7 @@ void SpecificWorker::record() {
 			if(QMessageBox::warning(this,tr("Save path problem"),tr("You have to set a valid path to record to a file"),
 									QMessageBox::Ok,QMessageBox::Ok ) == QMessageBox::Ok)
 			{
-				this->record_mode();
+//				this->record_mode();
 				this->filePath_lnedit->setFocus();
 				QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),"",tr("Recordings)"));
 				this->filePath_lnedit->setText(fileName);
@@ -346,11 +255,13 @@ void SpecificWorker::visualizeRecordingToggled(bool state)
 
 void SpecificWorker::loadFileClicked()
 {
+    printf("LoadFileClicked");
+
 	if (this->loadTrainingFromFile())
 	{
 		if(this->loadedTraining.size()>0)
 		{
-			this->playback_mode();
+//			this->playback_mode();
 			this->setEnabledPlayControls(true);
 			qDebug()<<"Setting maximum to"<<this->loadedTraining.size()-1<<endl;
 			this->frames_slider->setMaximum(this->loadedTraining.size()-1);
@@ -417,6 +328,7 @@ void SpecificWorker::setEnabledPlayControls(bool enabled)
 
 void SpecificWorker::load_chart()
 {
+	qDebug()<<"LoadChart clicked";
 	QWidget *widget = new QWidget();
 	widget->setAttribute( Qt::WA_QuitOnClose, false );
 	chart = new Chart(widget);
@@ -827,14 +739,6 @@ vector<string> SpecificWorker::split(const string& str, const string& delim)
 	return tokens;
 }
 
-void SpecificWorker::HumanTrackerJointsAndRGB_newPersonListAndRGB(MixedJointsRGB mixedData)
-{
-	if(recording)
-	{
-		emit newMixDetected(mixedData);
-	}
-
-}
 
 void SpecificWorker::recordData(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB mixedData)
 {
@@ -852,7 +756,7 @@ qDebug()<<"timeStamp"<<mixedData.timeStamp<<"image size"<<mixedData.rgbImage.ima
 	if(visualizeRecording)
 	{
 		QImage img = QImage(&(mixedData.rgbImage.image)[0], VIDEO_WIDTH, VIDEO_HEIGHT, QImage::Format_RGB888);
-    	video2_lb->setPixmap(QPixmap::fromImage(img));
+    	video_lb->setPixmap(QPixmap::fromImage(img));
 	}
 	//joints
 	fstream jointfile;
@@ -896,7 +800,7 @@ qDebug()<<"timeStamp"<<mixedData.timeStamp<<"image size"<<mixedData.rgbImage.ima
 }
 
 
-void SpecificWorker::PaintSkeleton (TPerson &person) {
+void SpecificWorker::PaintSkeleton (RoboCompHumanTrackerJointsAndRGB::TPerson &person) {
 	this->status->showMessage(__FUNCTION__);
 	checkNecessaryJoints(person);
 	this->status->showMessage(QString::fromStdString(__FUNCTION__)+": Checked necessary joints");
@@ -974,7 +878,7 @@ void SpecificWorker::PaintSkeleton (TPerson &person) {
 }
 
 
-void SpecificWorker::CalculateJointRotations (TPerson &p) {
+void SpecificWorker::CalculateJointRotations (RoboCompHumanTrackerJointsAndRGB::TPerson &p) {
 
     RTMat orbbec;
 
@@ -1111,4 +1015,143 @@ bool SpecificWorker::SetPoses (Pose3D &pose, string joint) {
 		qDebug()<<" NO EXISTE "<< QString::fromStdString(joint);
 		return false;
 	}
+}
+
+//--------------State Machine methods------------------
+
+void SpecificWorker::sm_initialize()
+{
+    std::cout<<"Entered initial state initialize"<<std::endl;
+
+    playTimer = new QTimer();
+    framesRecorded = 0;
+    playForward = true;
+    recording = false;
+    this->stop_playing();
+    auto palette = this->angle1_lcd->palette();
+    palette.setColor(palette.WindowText, QColor(Qt::darkRed));
+
+    this->angle1_lcd->setPalette(palette);
+    this->angle2_lcd->setPalette(palette);
+    this->height1_lcd->setPalette(palette);
+    this->height2_lcd->setPalette(palette);
+    this->spinedev_lcd->setPalette(palette);
+    this->shoulderdev_lcd->setPalette(palette);
+    this->hipsdev_lcd->setPalette(palette);
+    this->kneesdev_lcd->setPalette(palette);
+
+
+
+    connect(this->record_btn, SIGNAL(clicked()), this, SLOT(record()));
+    connect(this->visualizeRecording_chck, SIGNAL(toggled(bool)), this, SLOT(visualizeRecordingToggled(bool)));
+
+
+
+    this->t_initialize_to_playback();
+//    this->t_initialize_to_record();
+
+
+}
+
+void SpecificWorker::sm_finalize()
+{
+    std::cout<<"Entered final state finalize"<<std::endl;
+}
+
+// --------- Record sub states -----------------
+void SpecificWorker::sm_record()
+{
+	std::cout<<"Entered state record"<<std::endl;
+    this->playback_gBox->hide();
+    this->record_gBox->show();
+}
+
+
+void SpecificWorker::sm_pause()
+{
+    std::cout<<"Entered state pause"<<std::endl;
+}
+
+void SpecificWorker::sm_stop()
+{
+    std::cout<<"Entered state stop"<<std::endl;
+}
+
+void SpecificWorker::sm_processFrame()
+{
+    std::cout<<"Entered state processFrame"<<std::endl;
+}
+
+void SpecificWorker::sm_waitingStart()
+{
+    std::cout<<"Entered state waitingStart"<<std::endl;
+}
+
+
+//------------Playback sub states----------------
+void SpecificWorker::sm_playback()
+{
+	std::cout<<"Entered state playback"<<std::endl;
+    playFps = this->fps_spnbox->value();
+	this->stop_playing();
+
+    this->play_btn->setDefaultAction(this->play_action);
+    this->stop_btn->setDefaultAction(this->stop_action);
+    this->pause_btn->setDefaultAction(this->pause_action);
+    this->fwd1_btn->setDefaultAction(this->fwd1_action);
+    this->fwd5_btn->setDefaultAction(this->fwd5_action);
+    this->bwd1_btn->setDefaultAction(this->bwd1_action);
+    this->bwd5_btn->setDefaultAction(this->bwd5_action);
+
+    this->fwd1_btn->setText(">>+1");
+    this->fwd5_btn->setText(">>+5");
+    this->bwd1_btn->setText("<<-1");
+    this->bwd5_btn->setText("<<-5");
+
+    connect(this->loadFile_action, SIGNAL(triggered()), this, SLOT(loadFileClicked()));
+    connect(this->fwd1_action, SIGNAL(triggered()), this, SLOT(nextFrame()));
+    connect(this->fwd5_action, SIGNAL(triggered()), this, SLOT(next5Frames()));
+    connect(this->bwd1_action, SIGNAL(triggered()), this, SLOT(prevFrame()));
+    connect(this->bwd5_action, SIGNAL(triggered()), this, SLOT(prev5Frames()));
+    connect(this->start_btn, SIGNAL(clicked()), this, SLOT(startFrame()));
+    connect(this->end_btn, SIGNAL(clicked()), this, SLOT(endFrame()));
+    connect(this->playTimer, SIGNAL(timeout()), this, SLOT(playTimerTimeout()));
+    connect(this->play_action, SIGNAL(triggered()), this, SLOT(start_playing()));
+    connect(this->stop_action, SIGNAL(triggered()), this, SLOT(stop_playing()));
+    connect(this->pause_action, SIGNAL(triggered()), this, SLOT(pause_playing()));
+    connect(this->reverse_chck, SIGNAL(stateChanged(int)), this, SLOT(reverse_playing(int)));
+
+    connect(this->reverse_chck, SIGNAL(stateChanged(int)), this, SLOT(reverse_playing(int)));
+    connect(this->frames_slider, SIGNAL(valueChanged(int)), this, SLOT(framesSliderMoved(int)));
+    connect(this->fps_spnbox, SIGNAL(valueChanged(double)), this, SLOT(changePlayFps(double)));
+    connect(this->chart_pb, SIGNAL(clicked()), this, SLOT(load_chart()));
+
+    this->playback_gBox->show();
+    this->record_gBox->hide();
+
+//	this->setEnabledPlayControls(false);
+
+}
+
+void SpecificWorker::sm_loadFiles()
+{
+    std::cout<<"Entered state loadFiles"<<std::endl;
+
+}
+
+void SpecificWorker::sm_showTherapy()
+{
+	std::cout<<"Entered state showTherapy"<<std::endl;
+}
+
+
+
+//subscribesToCODE
+void SpecificWorker::HumanTrackerJointsAndRGB_newPersonListAndRGB(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB mixedData)
+{
+	if(recording)
+	{
+		emit newMixDetected(mixedData);
+	}
+
 }

@@ -71,7 +71,7 @@ class SpecificWorker : public GenericWorker
 	struct sincPerson
     {
 	    std::string currentTime;
-	    TPerson personDet;
+        RoboCompHumanTrackerJointsAndRGB::TPerson personDet;
 	    cv::Mat *image;
     };
 
@@ -89,30 +89,42 @@ public:
 
 
 public slots:
-	void compute();
+//	void compute();
 	void initialize(int period);
-	void nextFrame();
-	void next5Frames();
-	void prevFrame();
-	void prev5Frames();
-	void startFrame();
-	void endFrame();
-	void playTimerTimeout();
-	void start_playing();
-	void stop_playing();
-	void pause_playing();
-	void reverse_playing(int state);
-	void update_metrics();
-	void record_mode();
-	void playback_mode();
-	void record();
-	void visualizeRecordingToggled(bool);
+    //Specification slot methods State Machine
+    void sm_record();
+    void sm_playback();
+    void sm_initialize();
+    void sm_finalize();
+    void sm_pause();
+    void sm_stop();
+    void sm_processFrame();
+    void sm_waitingStart();
+    void sm_showTherapy();
+    void sm_loadFiles();
+//--------------------
+
 	void loadFileClicked();
-	void framesSliderMoved(int value);
-	void changePlayFps(double value);
-	void setEnabledPlayControls(bool enabled);
-	void load_chart();
-	void recordData(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB mixedData);
+    void nextFrame();
+    void next5Frames();
+    void prevFrame();
+    void prev5Frames();
+    void startFrame();
+    void endFrame();
+    void playTimerTimeout();
+    void start_playing();
+    void stop_playing();
+    void pause_playing();
+    void reverse_playing(int state);
+    void record();
+    void visualizeRecordingToggled(bool);
+
+    void framesSliderMoved(int value);
+    void changePlayFps(double value);
+    void setEnabledPlayControls(bool enabled);
+    void load_chart();
+    void recordData(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB mixedData);
+
 
 signals:
 	void newMixDetected(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB mixedData);
@@ -134,7 +146,6 @@ private:
 	QTimer *playTimer;
 	bool playForward;
 	float playFps;
-	float get_rand_float(float HI, float LO);
 	void updateFramesRecorded();
 	void restartPlayTimer();
 	void obtainFeatures();
@@ -151,14 +162,14 @@ private:
 
 
 //	=============== Capture Methods ===========
-	void HumanTrackerJointsAndRGB_newPersonListAndRGB(MixedJointsRGB mixedData);
+	void HumanTrackerJointsAndRGB_newPersonListAndRGB(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB mixedData);
 	void relateJointsMeshes();
 	void PaintSkeleton (RoboCompHumanTrackerJointsAndRGB::TPerson &person);
 	void CalculateJointRotations (RoboCompHumanTrackerJointsAndRGB::TPerson &person);
 	RTMat RTMatFromJointPosition (RTMat rS, jointPos p1, jointPos p2, jointPos translation, int axis); //This method calculates the rotation of a Joint given some points
 	bool RotateTorso (const QVec &lshoulder, const QVec &rshoulder); //This method allows to rotate the torso from the position and rotation of the shoulders
 	bool SetPoses (Pose3D &pose, string joint);
-	bool checkNecessaryJoints(TPerson &person);
+	bool checkNecessaryJoints(RoboCompHumanTrackerJointsAndRGB::TPerson &person);
 	bool loadTrainingFromFile();
 	int loadJointsFromFile(QString filename);
 	int loadVideoFromFile(QString filename);

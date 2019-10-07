@@ -29,6 +29,42 @@ QObject()
 
 {
 
+//Initialization State machine
+	initializeState->addTransition(this, SIGNAL(t_initialize_to_record()), recordState);
+	initializeState->addTransition(this, SIGNAL(t_initialize_to_playback()), playbackState);
+	initializeState->addTransition(this, SIGNAL(t_initialize_to_finalize()), finalizeState);
+	recordState->addTransition(this, SIGNAL(t_record_to_playback()), playbackState);
+	recordState->addTransition(this, SIGNAL(t_record_to_finalize()), finalizeState);
+	playbackState->addTransition(this, SIGNAL(t_playback_to_finalize()), finalizeState);
+	waitingStartState->addTransition(this, SIGNAL(t_waitingStart_to_processFrame()), processFrameState);
+	processFrameState->addTransition(this, SIGNAL(t_processFrame_to_stop()), stopState);
+	processFrameState->addTransition(this, SIGNAL(t_processFrame_to_pause()), pauseState);
+	pauseState->addTransition(this, SIGNAL(t_pause_to_processFrame()), processFrameState);
+	pauseState->addTransition(this, SIGNAL(t_pause_to_stop()), stopState);
+	loadFilesState->addTransition(this, SIGNAL(t_loadFiles_to_showTherapy()), showTherapyState);
+
+	therapyAnalysisMachine.addState(recordState);
+	therapyAnalysisMachine.addState(playbackState);
+	therapyAnalysisMachine.addState(initializeState);
+	therapyAnalysisMachine.addState(finalizeState);
+
+	therapyAnalysisMachine.setInitialState(initializeState);
+	recordState->setInitialState(waitingStartState);
+	playbackState->setInitialState(loadFilesState);
+
+	QObject::connect(recordState, SIGNAL(entered()), this, SLOT(sm_record()));
+	QObject::connect(playbackState, SIGNAL(entered()), this, SLOT(sm_playback()));
+	QObject::connect(initializeState, SIGNAL(entered()), this, SLOT(sm_initialize()));
+	QObject::connect(finalizeState, SIGNAL(entered()), this, SLOT(sm_finalize()));
+	QObject::connect(waitingStartState, SIGNAL(entered()), this, SLOT(sm_waitingStart()));
+	QObject::connect(pauseState, SIGNAL(entered()), this, SLOT(sm_pause()));
+	QObject::connect(stopState, SIGNAL(entered()), this, SLOT(sm_stop()));
+	QObject::connect(processFrameState, SIGNAL(entered()), this, SLOT(sm_processFrame()));
+	QObject::connect(loadFilesState, SIGNAL(entered()), this, SLOT(sm_loadFiles()));
+	QObject::connect(showTherapyState, SIGNAL(entered()), this, SLOT(sm_showTherapy()));
+
+//------------------
+
 	mutex = new QMutex(QMutex::Recursive);
 
 	#ifdef USE_QTGUI
@@ -36,7 +72,7 @@ QObject()
 		show();
 	#endif
 	Period = BASIC_PERIOD;
-	connect(&timer, SIGNAL(timeout()), this, SLOT(compute()));
+//	connect(&timer, SIGNAL(timeout()), this, SLOT(compute()));
 
 }
 

@@ -8,7 +8,7 @@ therapyAnalysisMachine{
     transitions{
         initialize => record;
         initialize => playback;
-	    initalize => finalize;
+	    initialize => finalize;
         record => playback;
 	    record => finalize;
 	    playback => finalize;

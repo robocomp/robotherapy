@@ -1,0 +1,11 @@
+Component robotTherapy
+{
+    Communications
+    {
+
+    };
+	language python;
+	gui Qt(QMainWindow);
+	statemachine "statemachine.smdsl";
+};
+

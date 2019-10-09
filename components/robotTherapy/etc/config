@@ -2,6 +2,9 @@
 # This property is used by the clients to connect to IceStorm.
 TopicManager.Proxy=IceStorm/TopicManager:default -p 9999
 
+# Proxies for required interfaces
+HumanTrackerJointsAndRGBTopic.Endpoints = tcp -p 11677
+
 
 Ice.Warn.Connections=0
 Ice.Trace.Network=0

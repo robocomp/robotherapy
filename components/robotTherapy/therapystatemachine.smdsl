@@ -10,30 +10,22 @@ robotTherapyMachine{
         initialize => waitSession;
 	    waitSession => waitTherapy;
 	    waitTherapy => waitStartTherapy, finalizeSession;
-	    waitStarTherapy => loopTherapy;
+	    waitStartTherapy => loopTherapy;
 	    loopTherapy => resetTherapy,pauseTherapy,finalizeTherapy;
-	    resetTherapy => loopTherapy, waitStartTherapy;
-	    pauseTherapy => loopTherapy, finalizeTherapy;
+	    resetTherapy => waitStartTherapy;
+	    pauseTherapy => loopTherapy, resetTherapy, finalizeTherapy;
 	    finalizeTherapy => waitTherapy;
 
     };
 };
 
-:loopTherapy parallel{
-    states playingVideo, ProcessFrames;
-    transitions{
-	playingVideo => playingVideo;
-    };
-};
-
-:processFrames{
-
+:loopTherapy {
 	states computeMetrics, updateMetrics;
-	initial_state captureFrame;
+	initial_state saveFrame;
 	transitions{
-	captureFrame => captureFrame, computeMetrics;
+	saveFrame => saveFrame, computeMetrics;
 	computeMetrics => updateMetrics;
-	updateMetrics => captureFrame;
+	updateMetrics => saveFrame;
 	};
 
 };

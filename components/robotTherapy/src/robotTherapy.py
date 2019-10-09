@@ -107,12 +107,44 @@ if __name__ == '__main__':
 	parameters = {}
 	for i in ic.getProperties():
 		parameters[str(i)] = str(ic.getProperties().getProperty(i))
+
+	# Topic Manager
+	proxy = ic.getProperties().getProperty("TopicManager.Proxy")
+	obj = ic.stringToProxy(proxy)
+	try:
+		topicManager = IceStorm.TopicManagerPrx.checkedCast(obj)
+	except Ice.ConnectionRefusedException, e:
+		print 'Cannot connect to IceStorm! ('+proxy+')'
+		status = 1
 	if status == 0:
 		worker = SpecificWorker(mprx)
 		worker.setParams(parameters)
 	else:
 		print "Error getting required connections, check config file"
 		sys.exit(-1)
+
+	HumanTrackerJointsAndRGB_adapter = ic.createObjectAdapter("HumanTrackerJointsAndRGBTopic")
+	humantrackerjointsandrgbI_ = HumanTrackerJointsAndRGBI(worker)
+	humantrackerjointsandrgb_proxy = HumanTrackerJointsAndRGB_adapter.addWithUUID(humantrackerjointsandrgbI_).ice_oneway()
+
+	subscribeDone = False
+	while not subscribeDone:
+		try:
+			humantrackerjointsandrgb_topic = topicManager.retrieve("HumanTrackerJointsAndRGB")
+			subscribeDone = True
+		except Ice.Exception, e:
+			print "Error. Topic does not exist (creating)"
+			time.sleep(1)
+			try:
+				humantrackerjointsandrgb_topic = topicManager.create("HumanTrackerJointsAndRGB")
+				subscribeDone = True
+			except:
+				print "Error. Topic could not be created. Exiting"
+				status = 0
+	qos = {}
+	humantrackerjointsandrgb_topic.subscribeAndGetPublisher(qos, humantrackerjointsandrgb_proxy)
+	HumanTrackerJointsAndRGB_adapter.activate()
+
 
 	signal.signal(signal.SIGINT, sigint_handler)
 	app.exec_()

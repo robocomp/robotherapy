@@ -1,11 +1,14 @@
+import "HumanTrackerJointsAndRGB.idsl";
+
 Component robotTherapy
 {
     Communications
     {
+        subscribesTo HumanTrackerJointsAndRGB;
 
     };
 	language python;
-	gui Qt(QMainWindow);
-	statemachine "statemachine.smdsl";
+	gui Qt(QWidget);
+	statemachine "therapystatemachine.smdsl";
 };
 

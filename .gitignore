@@ -10,3 +10,5 @@ components/humanTherapySaver/\.idea/
 components/humanTherapySaver/cmake-build-debug/
 
 components/humanTherapySaver/SavedInnerModel\.xml
+
+components/robotTherapy/\.idea/

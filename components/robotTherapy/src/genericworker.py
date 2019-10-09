@@ -44,8 +44,21 @@ except:
 	print 'SLICE_PATH environment variable was not exported. Using only the default paths'
 	pass
 
+ice_HumanTrackerJointsAndRGB = False
+for p in icePaths:
+	if os.path.isfile(p+'/HumanTrackerJointsAndRGB.ice'):
+		preStr = "-I/opt/robocomp/interfaces/ -I"+ROBOCOMP+"/interfaces/ " + additionalPathStr + " --all "+p+'/'
+		wholeStr = preStr+"HumanTrackerJointsAndRGB.ice"
+		Ice.loadSlice(wholeStr)
+		ice_HumanTrackerJointsAndRGB = True
+		break
+if not ice_HumanTrackerJointsAndRGB:
+	print 'Couln\'t load HumanTrackerJointsAndRGB'
+	sys.exit(-1)
+from RoboCompHumanTrackerJointsAndRGB import *
 
 
+from humantrackerjointsandrgbI import *
 
 try:
 	from ui_mainUI import *
@@ -54,7 +67,7 @@ except:
 	sys.exit(-1)
 
 
-class GenericWorker(QtWidgets.QMainWindow):
+class GenericWorker(QtWidgets.QWidget):
 
 	kill = QtCore.Signal()
 #Signals for State Machine
@@ -62,20 +75,19 @@ class GenericWorker(QtWidgets.QMainWindow):
 	t_waitSession_to_waitTherapy = QtCore.Signal()
 	t_waitTherapy_to_waitStartTherapy = QtCore.Signal()
 	t_waitTherapy_to_finalizeSession = QtCore.Signal()
-	t_waitStarTherapy_to_loopTherapy = QtCore.Signal()
+	t_waitStartTherapy_to_loopTherapy = QtCore.Signal()
 	t_loopTherapy_to_resetTherapy = QtCore.Signal()
 	t_loopTherapy_to_pauseTherapy = QtCore.Signal()
 	t_loopTherapy_to_finalizeTherapy = QtCore.Signal()
-	t_resetTherapy_to_loopTherapy = QtCore.Signal()
 	t_resetTherapy_to_waitStartTherapy = QtCore.Signal()
 	t_pauseTherapy_to_loopTherapy = QtCore.Signal()
+	t_pauseTherapy_to_resetTherapy = QtCore.Signal()
 	t_pauseTherapy_to_finalizeTherapy = QtCore.Signal()
 	t_finalizeTherapy_to_waitTherapy = QtCore.Signal()
-	t_playingVideo_to_playingVideo = QtCore.Signal()
-	t_captureFrame_to_captureFrame = QtCore.Signal()
-	t_captureFrame_to_computeMetrics = QtCore.Signal()
+	t_saveFrame_to_saveFrame = QtCore.Signal()
+	t_saveFrame_to_computeMetrics = QtCore.Signal()
 	t_computeMetrics_to_updateMetrics = QtCore.Signal()
-	t_updateMetrics_to_captureFrame = QtCore.Signal()
+	t_updateMetrics_to_saveFrame = QtCore.Signal()
 
 #-------------------------
 
@@ -97,6 +109,7 @@ class GenericWorker(QtWidgets.QMainWindow):
 		self.waitSession_state = QtCore.QState(self.robotTherapyMachine)
 		self.waitTherapy_state = QtCore.QState(self.robotTherapyMachine)
 		self.waitStartTherapy_state = QtCore.QState(self.robotTherapyMachine)
+		self.loopTherapy_state = QtCore.QState(self.robotTherapyMachine)
 		self.resetTherapy_state = QtCore.QState(self.robotTherapyMachine)
 		self.pauseTherapy_state = QtCore.QState(self.robotTherapyMachine)
 		self.finalizeTherapy_state = QtCore.QState(self.robotTherapyMachine)
@@ -104,18 +117,11 @@ class GenericWorker(QtWidgets.QMainWindow):
 
 		self.finalizeSession_state = QtCore.QFinalState(self.robotTherapyMachine)
 
-		self.loopTherapy_state = QtCore.QState(QtCore.QState.ParallelStates, self.robotTherapyMachine)
 
 
-		self.playingVideo_state = QtCore.QState(self.loopTherapy_state)
-		self.ProcessFrames_state = QtCore.QState(self.loopTherapy_state)
-
-
-
-
-		self.computeMetrics_state = QtCore.QState(self.processFrames_state)
-		self.updateMetrics_state = QtCore.QState(self.processFrames_state)
-		self.captureFrame_state = QtCore.QState(self.processFrames_state)
+		self.computeMetrics_state = QtCore.QState(self.loopTherapy_state)
+		self.updateMetrics_state = QtCore.QState(self.loopTherapy_state)
+		self.saveFrame_state = QtCore.QState(self.loopTherapy_state)
 
 
 
@@ -125,20 +131,19 @@ class GenericWorker(QtWidgets.QMainWindow):
 		self.waitSession_state.addTransition(self.t_waitSession_to_waitTherapy, self.waitTherapy_state)
 		self.waitTherapy_state.addTransition(self.t_waitTherapy_to_waitStartTherapy, self.waitStartTherapy_state)
 		self.waitTherapy_state.addTransition(self.t_waitTherapy_to_finalizeSession, self.finalizeSession_state)
-		self.waitStarTherapy_state.addTransition(self.t_waitStarTherapy_to_loopTherapy, self.loopTherapy_state)
+		self.waitStartTherapy_state.addTransition(self.t_waitStartTherapy_to_loopTherapy, self.loopTherapy_state)
 		self.loopTherapy_state.addTransition(self.t_loopTherapy_to_resetTherapy, self.resetTherapy_state)
 		self.loopTherapy_state.addTransition(self.t_loopTherapy_to_pauseTherapy, self.pauseTherapy_state)
 		self.loopTherapy_state.addTransition(self.t_loopTherapy_to_finalizeTherapy, self.finalizeTherapy_state)
-		self.resetTherapy_state.addTransition(self.t_resetTherapy_to_loopTherapy, self.loopTherapy_state)
 		self.resetTherapy_state.addTransition(self.t_resetTherapy_to_waitStartTherapy, self.waitStartTherapy_state)
 		self.pauseTherapy_state.addTransition(self.t_pauseTherapy_to_loopTherapy, self.loopTherapy_state)
+		self.pauseTherapy_state.addTransition(self.t_pauseTherapy_to_resetTherapy, self.resetTherapy_state)
 		self.pauseTherapy_state.addTransition(self.t_pauseTherapy_to_finalizeTherapy, self.finalizeTherapy_state)
 		self.finalizeTherapy_state.addTransition(self.t_finalizeTherapy_to_waitTherapy, self.waitTherapy_state)
-		self.playingVideo_state.addTransition(self.t_playingVideo_to_playingVideo, self.playingVideo_state)
-		self.captureFrame_state.addTransition(self.t_captureFrame_to_captureFrame, self.captureFrame_state)
-		self.captureFrame_state.addTransition(self.t_captureFrame_to_computeMetrics, self.computeMetrics_state)
+		self.saveFrame_state.addTransition(self.t_saveFrame_to_saveFrame, self.saveFrame_state)
+		self.saveFrame_state.addTransition(self.t_saveFrame_to_computeMetrics, self.computeMetrics_state)
 		self.computeMetrics_state.addTransition(self.t_computeMetrics_to_updateMetrics, self.updateMetrics_state)
-		self.updateMetrics_state.addTransition(self.t_updateMetrics_to_captureFrame, self.captureFrame_state)
+		self.updateMetrics_state.addTransition(self.t_updateMetrics_to_saveFrame, self.saveFrame_state)
 
 
 		self.waitSession_state.entered.connect(self.sm_waitSession)
@@ -150,14 +155,12 @@ class GenericWorker(QtWidgets.QMainWindow):
 		self.finalizeTherapy_state.entered.connect(self.sm_finalizeTherapy)
 		self.initialize_state.entered.connect(self.sm_initialize)
 		self.finalizeSession_state.entered.connect(self.sm_finalizeSession)
-		self.playingVideo_state.entered.connect(self.sm_playingVideo)
-		self.ProcessFrames_state.entered.connect(self.sm_ProcessFrames)
-		self.captureFrame_state.entered.connect(self.sm_captureFrame)
+		self.saveFrame_state.entered.connect(self.sm_saveFrame)
 		self.computeMetrics_state.entered.connect(self.sm_computeMetrics)
 		self.updateMetrics_state.entered.connect(self.sm_updateMetrics)
 
 		self.robotTherapyMachine.setInitialState(self.initialize_state)
-		self.processFrames_state.setInitialState(self.captureFrame_state)
+		self.loopTherapy_state.setInitialState(self.saveFrame_state)
 
 #------------------
 
@@ -208,16 +211,6 @@ class GenericWorker(QtWidgets.QMainWindow):
 		sys.exit(-1)
 
 	@QtCore.Slot()
-	def sm_playingVideo(self):
-		print "Error: lack sm_playingVideo in Specificworker"
-		sys.exit(-1)
-
-	@QtCore.Slot()
-	def sm_ProcessFrames(self):
-		print "Error: lack sm_ProcessFrames in Specificworker"
-		sys.exit(-1)
-
-	@QtCore.Slot()
 	def sm_computeMetrics(self):
 		print "Error: lack sm_computeMetrics in Specificworker"
 		sys.exit(-1)
@@ -228,8 +221,8 @@ class GenericWorker(QtWidgets.QMainWindow):
 		sys.exit(-1)
 
 	@QtCore.Slot()
-	def sm_captureFrame(self):
-		print "Error: lack sm_captureFrame in Specificworker"
+	def sm_saveFrame(self):
+		print "Error: lack sm_saveFrame in Specificworker"
 		sys.exit(-1)
 
 

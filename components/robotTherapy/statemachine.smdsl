@@ -8,27 +8,28 @@ robotTherapyMachine{
     end_state finalizeSession;
     transitions{
         initialize => waitSession;
-	waitSession => waitTherapy;
-	waitTherapy => waitStartTherapy, finalizeSession;
-	waitStarTherapy => loopTherapy;
-	loopTherapy => resetTherapy,pauseTherapy,finalizeTherapy;
-	resetTherapy => loopTherapy, waitStartTherapy;
-	pauseTherapy => loopTherapy, finalizeTherapy;
-	finalizeTherapy => waitTherapy; 
+	    waitSession => waitTherapy;
+	    waitTherapy => waitStartTherapy, finalizeSession;
+	    waitStarTherapy => loopTherapy;
+	    loopTherapy => resetTherapy,pauseTherapy,finalizeTherapy;
+	    resetTherapy => loopTherapy, waitStartTherapy;
+	    pauseTherapy => loopTherapy, finalizeTherapy;
+	    finalizeTherapy => waitTherapy;
 
     };
 };
 
 :loopTherapy parallel{
     states playingVideo, ProcessFrames;
-    transition{
+    transitions{
 	playingVideo => playingVideo;
     };
 };
 
 :processFrames{
 
-	states captureFrame, computeMetrics, updateMetrics;
+	states computeMetrics, updateMetrics;
+	initial_state captureFrame;
 	transitions{
 	captureFrame => captureFrame, computeMetrics;
 	computeMetrics => updateMetrics;

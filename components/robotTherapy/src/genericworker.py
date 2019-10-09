@@ -71,6 +71,11 @@ class GenericWorker(QtWidgets.QMainWindow):
 	t_pauseTherapy_to_loopTherapy = QtCore.Signal()
 	t_pauseTherapy_to_finalizeTherapy = QtCore.Signal()
 	t_finalizeTherapy_to_waitTherapy = QtCore.Signal()
+	t_playingVideo_to_playingVideo = QtCore.Signal()
+	t_captureFrame_to_captureFrame = QtCore.Signal()
+	t_captureFrame_to_computeMetrics = QtCore.Signal()
+	t_computeMetrics_to_updateMetrics = QtCore.Signal()
+	t_updateMetrics_to_captureFrame = QtCore.Signal()
 
 #-------------------------
 
@@ -92,13 +97,26 @@ class GenericWorker(QtWidgets.QMainWindow):
 		self.waitSession_state = QtCore.QState(self.robotTherapyMachine)
 		self.waitTherapy_state = QtCore.QState(self.robotTherapyMachine)
 		self.waitStartTherapy_state = QtCore.QState(self.robotTherapyMachine)
-		self.loopTherapy_state = QtCore.QState(self.robotTherapyMachine)
 		self.resetTherapy_state = QtCore.QState(self.robotTherapyMachine)
 		self.pauseTherapy_state = QtCore.QState(self.robotTherapyMachine)
 		self.finalizeTherapy_state = QtCore.QState(self.robotTherapyMachine)
 		self.initialize_state = QtCore.QState(self.robotTherapyMachine)
 
 		self.finalizeSession_state = QtCore.QFinalState(self.robotTherapyMachine)
+
+		self.loopTherapy_state = QtCore.QState(QtCore.QState.ParallelStates, self.robotTherapyMachine)
+
+
+		self.playingVideo_state = QtCore.QState(self.loopTherapy_state)
+		self.ProcessFrames_state = QtCore.QState(self.loopTherapy_state)
+
+
+
+
+		self.computeMetrics_state = QtCore.QState(self.processFrames_state)
+		self.updateMetrics_state = QtCore.QState(self.processFrames_state)
+		self.captureFrame_state = QtCore.QState(self.processFrames_state)
+
 
 
 #------------------
@@ -116,6 +134,11 @@ class GenericWorker(QtWidgets.QMainWindow):
 		self.pauseTherapy_state.addTransition(self.t_pauseTherapy_to_loopTherapy, self.loopTherapy_state)
 		self.pauseTherapy_state.addTransition(self.t_pauseTherapy_to_finalizeTherapy, self.finalizeTherapy_state)
 		self.finalizeTherapy_state.addTransition(self.t_finalizeTherapy_to_waitTherapy, self.waitTherapy_state)
+		self.playingVideo_state.addTransition(self.t_playingVideo_to_playingVideo, self.playingVideo_state)
+		self.captureFrame_state.addTransition(self.t_captureFrame_to_captureFrame, self.captureFrame_state)
+		self.captureFrame_state.addTransition(self.t_captureFrame_to_computeMetrics, self.computeMetrics_state)
+		self.computeMetrics_state.addTransition(self.t_computeMetrics_to_updateMetrics, self.updateMetrics_state)
+		self.updateMetrics_state.addTransition(self.t_updateMetrics_to_captureFrame, self.captureFrame_state)
 
 
 		self.waitSession_state.entered.connect(self.sm_waitSession)
@@ -127,11 +150,90 @@ class GenericWorker(QtWidgets.QMainWindow):
 		self.finalizeTherapy_state.entered.connect(self.sm_finalizeTherapy)
 		self.initialize_state.entered.connect(self.sm_initialize)
 		self.finalizeSession_state.entered.connect(self.sm_finalizeSession)
+		self.playingVideo_state.entered.connect(self.sm_playingVideo)
+		self.ProcessFrames_state.entered.connect(self.sm_ProcessFrames)
+		self.captureFrame_state.entered.connect(self.sm_captureFrame)
+		self.computeMetrics_state.entered.connect(self.sm_computeMetrics)
+		self.updateMetrics_state.entered.connect(self.sm_updateMetrics)
 
 		self.robotTherapyMachine.setInitialState(self.initialize_state)
+		self.processFrames_state.setInitialState(self.captureFrame_state)
 
 #------------------
 
+#Slots funtion State Machine
+	@QtCore.Slot()
+	def sm_waitSession(self):
+		print "Error: lack sm_waitSession in Specificworker"
+		sys.exit(-1)
+
+	@QtCore.Slot()
+	def sm_waitTherapy(self):
+		print "Error: lack sm_waitTherapy in Specificworker"
+		sys.exit(-1)
+
+	@QtCore.Slot()
+	def sm_waitStartTherapy(self):
+		print "Error: lack sm_waitStartTherapy in Specificworker"
+		sys.exit(-1)
+
+	@QtCore.Slot()
+	def sm_loopTherapy(self):
+		print "Error: lack sm_loopTherapy in Specificworker"
+		sys.exit(-1)
+
+	@QtCore.Slot()
+	def sm_resetTherapy(self):
+		print "Error: lack sm_resetTherapy in Specificworker"
+		sys.exit(-1)
+
+	@QtCore.Slot()
+	def sm_pauseTherapy(self):
+		print "Error: lack sm_pauseTherapy in Specificworker"
+		sys.exit(-1)
+
+	@QtCore.Slot()
+	def sm_finalizeTherapy(self):
+		print "Error: lack sm_finalizeTherapy in Specificworker"
+		sys.exit(-1)
+
+	@QtCore.Slot()
+	def sm_initialize(self):
+		print "Error: lack sm_initialize in Specificworker"
+		sys.exit(-1)
+
+	@QtCore.Slot()
+	def sm_finalizeSession(self):
+		print "Error: lack sm_finalizeSession in Specificworker"
+		sys.exit(-1)
+
+	@QtCore.Slot()
+	def sm_playingVideo(self):
+		print "Error: lack sm_playingVideo in Specificworker"
+		sys.exit(-1)
+
+	@QtCore.Slot()
+	def sm_ProcessFrames(self):
+		print "Error: lack sm_ProcessFrames in Specificworker"
+		sys.exit(-1)
+
+	@QtCore.Slot()
+	def sm_computeMetrics(self):
+		print "Error: lack sm_computeMetrics in Specificworker"
+		sys.exit(-1)
+
+	@QtCore.Slot()
+	def sm_updateMetrics(self):
+		print "Error: lack sm_updateMetrics in Specificworker"
+		sys.exit(-1)
+
+	@QtCore.Slot()
+	def sm_captureFrame(self):
+		print "Error: lack sm_captureFrame in Specificworker"
+		sys.exit(-1)
+
+
+#-------------------------
 	@QtCore.Slot()
 	def killYourSelf(self):
 		rDebug("Killing myself")

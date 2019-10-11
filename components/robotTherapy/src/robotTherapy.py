@@ -77,14 +77,14 @@ class CommonBehaviorI(RoboCompCommonBehavior.CommonBehavior):
 		try:
 			return self.handler.timeAwake()
 		except:
-			print 'Problem getting timeAwake'
+			print ('Problem getting timeAwake')
 	def killYourSelf(self, current = None):
 		self.handler.killYourSelf()
 	def getAttrList(self, current = None):
 		try:
 			return self.handler.getAttrList()
 		except:
-			print 'Problem getting getAttrList'
+			print ('Problem getting getAttrList')
 			traceback.print_exc()
 			status = 1
 			return
@@ -114,13 +114,13 @@ if __name__ == '__main__':
 	try:
 		topicManager = IceStorm.TopicManagerPrx.checkedCast(obj)
 	except Ice.ConnectionRefusedException, e:
-		print 'Cannot connect to IceStorm! ('+proxy+')'
+		print ('Cannot connect to IceStorm! ('+proxy+')')
 		status = 1
 	if status == 0:
 		worker = SpecificWorker(mprx)
 		worker.setParams(parameters)
 	else:
-		print "Error getting required connections, check config file"
+		print ("Error getting required connections, check config file")
 		sys.exit(-1)
 
 	HumanTrackerJointsAndRGB_adapter = ic.createObjectAdapter("HumanTrackerJointsAndRGBTopic")
@@ -133,13 +133,13 @@ if __name__ == '__main__':
 			humantrackerjointsandrgb_topic = topicManager.retrieve("HumanTrackerJointsAndRGB")
 			subscribeDone = True
 		except Ice.Exception, e:
-			print "Error. Topic does not exist (creating)"
+			print ("Error. Topic does not exist (creating)")
 			time.sleep(1)
 			try:
 				humantrackerjointsandrgb_topic = topicManager.create("HumanTrackerJointsAndRGB")
 				subscribeDone = True
 			except:
-				print "Error. Topic could not be created. Exiting"
+				print ("Error. Topic could not be created. Exiting")
 				status = 0
 	qos = {}
 	humantrackerjointsandrgb_topic.subscribeAndGetPublisher(qos, humantrackerjointsandrgb_proxy)

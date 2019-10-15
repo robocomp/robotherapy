@@ -18,9 +18,11 @@
 #    You should have received a copy of the GNU General Public License
 #    along with RoboComp.  If not, see <http://www.gnu.org/licenses/>.
 #
+
 from datetime import datetime
 from Queue import Queue, Empty
-
+import csv
+import vg
 import cv2
 from PySide2.QtCore import QTimer, QUrl
 from PySide2.QtMultimedia import QMediaPlayer
@@ -36,6 +38,24 @@ from genericworker import *
 # import librobocomp_qmat
 # import librobocomp_osgviewer
 # import librobocomp_innermodel
+
+
+def get_AngleBetweenVectors(v1, v2):
+    v1 = v1 / np.linalg.norm(v1)
+    v2 = v2 / np.linalg.norm(v2)
+
+    dot_product = np.dot(v1, v2)
+    angle = np.arccos(dot_product / (np.linalg.norm(v1) * np.linalg.norm(v2)))
+
+    return np.degrees(angle)
+
+
+def get_AngleBetweenVectors2(v1, v2):
+    v1 = vg.normalize(v1)
+    v2 = vg.normalize(v2)
+
+    return vg.angle(v1, v2)
+
 
 class SpecificWorker(GenericWorker):
     def __init__(self, proxy_map):
@@ -58,6 +78,16 @@ class SpecificWorker(GenericWorker):
         self.aux_session_dir = None
         self.aux_video_dir = None
         self.aux_joints_dir = None
+        self.aux_metrics_dir = None
+
+        self.necessary_joints = ["MidSpine", "ShoulderSpine", "Head", "Neck", "LeftShoulder", "RightShoulder",
+                                 "LeftElbow",
+                                 'RightElbow', "LeftHand", "RightHand", "BaseSpine", "LeftHip", "RightHip", "LeftKnee",
+                                 "RightKnee"]
+        self.aux_current_joints = None
+
+        self.saveMetrics = False
+        self.current_metrics = {}
 
         self.robotTherapyMachine.start()
 
@@ -70,6 +100,67 @@ class SpecificWorker(GenericWorker):
     def video_state_changed(self, state):
         if state == QMediaPlayer.State.StoppedState:
             self.t_loopTherapy_to_finalizeTherapy.emit()
+
+    def reset_metrics(self):
+        self.current_metrics["Time"] = -1
+        self.current_metrics["ElbowLeft"] = -1
+        self.current_metrics["ElbowRight"] = -1
+        self.current_metrics["ShoulderLeft"] = -1
+        self.current_metrics["ShoulderRight"] = -1
+        self.current_metrics["Spine"] = -1
+        self.current_metrics["Shoulder"] = -1
+        self.current_metrics["Hip"] = -1
+        self.current_metrics["Knee"] = -1
+
+    def get_elbowAngle(self, side):
+        elbow = np.array(self.aux_current_joints[side + "Elbow"])
+        shoulder = np.array(self.aux_current_joints[side + "Shoulder"])
+        hand = np.array(self.aux_current_joints[side + "Hand"])
+
+        v1 = elbow - hand
+        v2 = elbow - shoulder
+
+        self.current_metrics["Elbow" + side] = get_AngleBetweenVectors(v1, v2)
+
+    def get_shoulderAngle(self, side):
+        elbow = np.array(self.aux_current_joints[side + "Elbow"])
+        shoulder = np.array(self.aux_current_joints[side + "Shoulder"])
+        vertical = np.array([shoulder[0], 0, shoulder[2]])
+        v1 = shoulder - elbow
+        v2 = shoulder - vertical
+
+        print get_AngleBetweenVectors(v1, v2)
+        print get_AngleBetweenVectors2(v1, v2)
+
+        self.current_metrics["Shoulder" + side] = get_AngleBetweenVectors(v1, v2)
+
+    def get_deviationAngle(self, part):
+        if part == "Spine":
+            base = np.array(self.aux_current_joints["BaseSpine"])
+            upper = np.array(self.aux_current_joints["ShoulderSpine"])
+            vertical = np.array([upper[0], 0, upper[2]])
+
+            v1 = upper - base
+            v2 = upper - vertical
+
+            self.current_metrics[part] = get_AngleBetweenVectors(v1, v2)
+
+        else:
+            left = np.array(self.aux_current_joints["Left" + part])
+            right = np.array(self.aux_current_joints["Right" + part])
+            horizontal = np.array([right[0], left[1], right[2]])
+
+            v1 = left - right
+            v2 = left - horizontal
+
+            self.current_metrics[part] = get_AngleBetweenVectors(v1, v2)
+
+    def check_necessary_joints(self):
+
+        for jnt in self.necessary_joints:
+            if jnt not in self.aux_current_joints:
+                return False
+        return True
 
     # =============== Slots methods for State Machine ===================
     # ===================================================================
@@ -106,8 +197,6 @@ class SpecificWorker(GenericWorker):
 
         if not os.path.isdir(patient_dir):
             os.mkdir(patient_dir)
-        else:
-            print ("el paciente ya existe")
 
         currentDate = datetime.now()
         date = datetime.strftime(currentDate, "%m%d%H%M")
@@ -135,9 +224,11 @@ class SpecificWorker(GenericWorker):
 
         video_name = therapy.lower() + ".avi"
         joints_name = therapy.lower() + ".txt"
+        metrics_name = therapy.lower() + ".csv"
 
-        self.aux_video_dir = os.path.join(therapy_dir,video_name)
-        self.aux_joints_dir = os.path.join(therapy_dir,joints_name)
+        self.aux_video_dir = os.path.join(therapy_dir, video_name)
+        self.aux_joints_dir = os.path.join(therapy_dir, joints_name)
+        self.aux_metrics_dir = os.path.join(therapy_dir, metrics_name)
 
         self.player.setMedia(QUrl.fromLocalFile("/home/robolab/robocomp/components/robotherapy/components/robotTherapy"
                                                 "/resources/examples/ejercicio_correcto2.avi"))
@@ -170,17 +261,18 @@ class SpecificWorker(GenericWorker):
     def sm_saveFrame(self):
         print("Entered state saveFrame")
         self.data_to_record = None
+        self.aux_current_joints = None
         try:
             self.data_to_record = self.received_data_queue.get_nowait()
         except Empty:
-            QTimer.singleShot(1000/33, self.t_saveFrame_to_saveFrame)
+            QTimer.singleShot(1000 / 33, self.t_saveFrame_to_saveFrame)
 
         else:
             self.ui.info_label.setText("Recording...")
-            self.ui.info_label.setText("....Video...")
 
+            # Video
             if self.data_to_record.rgbImage.height == 0 or self.data_to_record.rgbImage.width == 0:
-                QTimer.singleShot(1000/33, self.t_saveFrame_to_saveFrame)
+                QTimer.singleShot(1000 / 33, self.t_saveFrame_to_saveFrame)
 
             frame = np.frombuffer(self.data_to_record.rgbImage.image, np.uint8).reshape(
                 self.data_to_record.rgbImage.height, self.data_to_record.rgbImage.width,
@@ -193,9 +285,27 @@ class SpecificWorker(GenericWorker):
                                                     (width, height))
             self.video_writer.write(frame)
 
+            # Joints
+            joint_file = open(self.aux_joints_dir, 'a+')
+            joint_file.write(str(self.data_to_record.timeStamp))
+            joint_file.write("#")
 
-            self.ui.info_label.setText("...Joints...")
+            if len(self.data_to_record.persons) > 0:
+                for id, person in self.data_to_record.persons.items():
 
+                    joint_file.write(str(id))
+                    joint_file.write("#")
+
+                    self.aux_current_joints = person.joints
+
+                    for id_joint, j in person.joints.items():
+                        joint_file.writelines([str(id_joint), " ", str(j[0]), " ", str(j[1]), " ", str(j[2]), "#"])
+
+            else:
+                self.ui.info_label.setText("No humans detected")
+
+            joint_file.write("\n")
+            joint_file.close()
 
             self.t_saveFrame_to_computeMetrics.emit()
 
@@ -205,6 +315,23 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def sm_computeMetrics(self):
         print("Entered state computeMetrics")
+        self.reset_metrics()
+        self.current_metrics["Time"] = self.data_to_record.timeStamp
+
+        if self.check_necessary_joints():
+            self.get_elbowAngle("Left")
+            self.get_elbowAngle("Right")
+            self.get_shoulderAngle("Left")
+            self.get_shoulderAngle("Right")
+            self.get_deviationAngle("Spine")
+            self.get_deviationAngle("Shoulder")
+            self.get_deviationAngle("Hip")
+            self.get_deviationAngle("Knee")
+
+            self.saveMetrics = True
+        else:
+            self.saveMetrics = False
+
         self.t_computeMetrics_to_updateMetrics.emit()
 
     #
@@ -213,6 +340,27 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def sm_updateMetrics(self):
         print("Entered state updateMetrics")
+
+        if not os.path.isfile(self.aux_metrics_dir):
+            with open(self.aux_metrics_dir, 'w') as csvFile:
+                writer = csv.writer(csvFile, delimiter=';')
+                writer.writerow(
+                    ["Time", "ElbowLeft", "ElbowRight", "Hip", "Knee", "Shoulder", "ShoulderLeft", "ShoulderRight",
+                     "Spine",])
+            csvFile.close()
+
+        if self.saveMetrics:
+
+            with open(self.aux_metrics_dir, 'a') as csvFile:
+                writer = csv.writer(csvFile, delimiter=';')
+                writer.writerow(
+                    [self.current_metrics["Time"], self.current_metrics["ElbowLeft"], self.current_metrics["ElbowRight"],
+                     self.current_metrics["Hip"], self.current_metrics["Knee"], self.current_metrics["Shoulder"],
+                     self.current_metrics["ShoulderLeft"], self.current_metrics["ShoulderRight"],
+                     self.current_metrics["Spine"]])
+
+            csvFile.close()
+
         self.t_updateMetrics_to_saveFrame.emit()
 
     #
@@ -273,6 +421,5 @@ class SpecificWorker(GenericWorker):
     # newPersonListAndRGB
     #
     def newPersonListAndRGB(self, mixedData):
-        if self.recording: #and len(mixedData.persons) > 0:
-            print("Frame received")
+        if self.recording and len(mixedData.persons) > 0:
             self.received_data_queue.put(mixedData)

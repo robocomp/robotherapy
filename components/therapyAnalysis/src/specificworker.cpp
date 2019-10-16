@@ -60,6 +60,8 @@ SpecificWorker::SpecificWorker(TuplePrx tprx) : GenericWorker(tprx)
 
     connect(this, SIGNAL(newMixDetected(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB)), this, SLOT(recordData(RoboCompHumanTrackerJointsAndRGB::MixedJointsRGB)));
 	this->relateJointsMeshes();
+
+
 }
 
 /**
@@ -244,7 +246,7 @@ void SpecificWorker::record() {
 void SpecificWorker::updateFramesRecorded()
 {
 	//cout<<"Recorded "<<framesRecorded<<endl;
-	this->framesRecorded=this->framesRecorded+1;
+	this->framesRecorded = this->framesRecorded + 1;
 	this->framesRecorded_lcd->display(this->framesRecorded);
 }
 
@@ -335,7 +337,9 @@ void SpecificWorker::load_chart()
 	widget->show();
 	chart->loadData(this->currentMetrics);
 //	chart->saveChart("prueba");
+
 }
+
 
 
 void SpecificWorker::closeEvent(QCloseEvent *event)
@@ -422,8 +426,10 @@ float SpecificWorker::getShoulderAngle(std::string side)
 		return qRadiansToDegrees(-shoulderAngle);
 }
 
+
 float SpecificWorker::getElbowAngleVec(std::string side)
 {
+
 
 	auto v1  = innerModel->transform(mapJointMesh[side +"Elbow"],mapJointMesh[side+"Hand"]);
 	auto v2  = innerModel->transform(mapJointMesh[side +"Elbow"],mapJointMesh[side+"Shoulder"]);
@@ -439,9 +445,11 @@ float SpecificWorker::getShoulderAngleVec(std::string side)
 
     auto elbow = innerModel->transform("world",mapJointMesh[side +"Elbow"]);
     auto shoulder = innerModel->transform("world",mapJointMesh[side +"Shoulder"]);
+    auto vertical =  QVec::vec3(shoulder.x(),0,shoulder.z());
 
     QVec v1 = shoulder - elbow;
-    auto v2 = QVec::vec3(0,v1.y(),v1.z());
+    QVec v2 = shoulder - vertical;
+
 
     return getAngleBetweenVectors(v1,v2);
 
@@ -456,9 +464,10 @@ float SpecificWorker::getDeviation(std::string part)
     {
         auto baseS = innerModel->transform("world",mapJointMesh["BaseSpine"]);
         auto upperS = innerModel->transform("world",mapJointMesh["ShoulderSpine"]);
+        auto vertical =  QVec::vec3(upperS.x(),0,upperS.z());
 
         QVec v1 = upperS- baseS;
-        auto v2 = QVec::vec3(0,v1.y(),v1.z());
+        QVec v2 = upperS - vertical;
 
         angle = getAngleBetweenVectors(v1,v2);
     }
@@ -467,10 +476,12 @@ float SpecificWorker::getDeviation(std::string part)
     {
         auto left = innerModel->transform("world",mapJointMesh["Left"+ part]);
         auto right = innerModel->transform("world",mapJointMesh["Right"+ part]);
+        auto horizontal = QVec::vec3(right.x(),left.y(),right.z());
+
 
         QVec v1 = left - right ;
-        auto v2 = QVec::vec3(v1.x(),0,v1.z());
-//      auto v2 = QVec::vec3(-1,0,0);
+        QVec v2 = left - horizontal;
+
         angle = getAngleBetweenVectors(v1,v2);
     }
 
@@ -753,6 +764,7 @@ qDebug()<<"timeStamp"<<mixedData.timeStamp<<"image size"<<mixedData.rgbImage.ima
 	cv::Mat frame(mixedData.rgbImage.height, mixedData.rgbImage.width, CV_8UC3,  &(mixedData.rgbImage.image)[0]);
 	cv::cvtColor(frame, frame, CV_BGR2RGB);
 	videoWriter.write(frame);
+
 	if(visualizeRecording)
 	{
 		QImage img = QImage(&(mixedData.rgbImage.image)[0], VIDEO_WIDTH, VIDEO_HEIGHT, QImage::Format_RGB888);
@@ -1053,38 +1065,17 @@ void SpecificWorker::sm_initialize()
 
 }
 
-void SpecificWorker::sm_finalize()
+void SpecificWorker::sm_closeApp()
 {
-    std::cout<<"Entered final state finalize"<<std::endl;
+    std::cout<<"Entered final state closeApp"<<std::endl;
 }
 
-// --------- Record sub states -----------------
 void SpecificWorker::sm_record()
 {
 	std::cout<<"Entered state record"<<std::endl;
+	recordMode = true;
     this->playback_gBox->hide();
     this->record_gBox->show();
-}
-
-
-void SpecificWorker::sm_pause()
-{
-    std::cout<<"Entered state pause"<<std::endl;
-}
-
-void SpecificWorker::sm_stop()
-{
-    std::cout<<"Entered state stop"<<std::endl;
-}
-
-void SpecificWorker::sm_processFrame()
-{
-    std::cout<<"Entered state processFrame"<<std::endl;
-}
-
-void SpecificWorker::sm_waitingStart()
-{
-    std::cout<<"Entered state waitingStart"<<std::endl;
 }
 
 
@@ -1092,6 +1083,7 @@ void SpecificWorker::sm_waitingStart()
 void SpecificWorker::sm_playback()
 {
 	std::cout<<"Entered state playback"<<std::endl;
+	recordMode = false;
     playFps = this->fps_spnbox->value();
 	this->stop_playing();
 
@@ -1136,6 +1128,7 @@ void SpecificWorker::sm_playback()
 void SpecificWorker::sm_loadFiles()
 {
     std::cout<<"Entered state loadFiles"<<std::endl;
+
 
 }
 

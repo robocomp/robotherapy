@@ -19,27 +19,21 @@
 #    along with RoboComp.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from datetime import datetime
-from Queue import Queue, Empty
 import csv
-import vg
 import shutil
+from Queue import Queue, Empty
+from datetime import datetime
+
 import cv2
+import numpy as np
+import vg
 from PySide2.QtCore import QTimer, QUrl
 from PySide2.QtMultimedia import QMediaPlayer
 from PySide2.QtMultimediaWidgets import QVideoWidget
-import numpy as np
 from PySide2.QtWidgets import QMessageBox
-from matplotlib import transforms
 
+import plot_therapy as PTH
 from genericworker import *
-
-
-# If RoboComp was compiled with Python bindings you can use InnerModel in Python
-# sys.path.append('/opt/robocomp/lib')
-# import librobocomp_qmat
-# import librobocomp_osgviewer
-# import librobocomp_innermodel
 
 
 # def get_AngleBetweenVectors(v1, v2):
@@ -50,7 +44,6 @@ from genericworker import *
 #     angle = np.arccos(dot_product / (np.linalg.norm(v1) * np.linalg.norm(v2)))
 #
 #     return np.degrees(angle)
-
 
 def get_AngleBetweenVectors(v1, v2):
     v1 = vg.normalize(v1)
@@ -427,7 +420,9 @@ class SpecificWorker(GenericWorker):
             self.video_writer.release()
 
         self.t_finalizeTherapy_to_waitTherapy.emit()
-        
+
+        PTH.save_graph(self.aux_metrics_dir, True)
+
         reply = QMessageBox.question(self.focusWidget(), '',
                                      ' Desea guardar los datos de la terapia?', QMessageBox.Yes, QMessageBox.No)
         if reply == QMessageBox.No:

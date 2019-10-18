@@ -171,9 +171,9 @@ class SpecificWorker(GenericWorker):
 
             self.current_metrics[part] = round(get_AngleBetweenVectors(v1, v2), 4)
 
-    def check_necessary_joints(self, list):
+    def check_necessary_joints(self, list_joints):
 
-        for jnt in list:
+        for jnt in list_joints:
             if jnt not in self.aux_current_joints:
                 return False
         return True
@@ -361,8 +361,8 @@ class SpecificWorker(GenericWorker):
             with open(self.aux_metrics_dir, 'w') as csvFile:
                 writer = csv.writer(csvFile, delimiter=';')
                 writer.writerow(
-                    ["Time", "ElbowLeft", "ElbowRight", "Hip", "Knee", "Shoulder", "ShoulderLeft", "ShoulderRight",
-                     "Spine"])
+                    ["Time", "ElbowLeft", "ElbowRight", "Hip", "Knee",
+                     "Shoulder", "ShoulderLeft", "ShoulderRight", "Spine"])
             csvFile.close()
 
         with open(self.aux_metrics_dir, 'a') as csvFile:
@@ -424,7 +424,7 @@ class SpecificWorker(GenericWorker):
         PTH.save_graph(self.aux_metrics_dir, True)
 
         reply = QMessageBox.question(self.focusWidget(), '',
-                                     ' Desea guardar los datos de la terapia?', QMessageBox.Yes, QMessageBox.No)
+                                     ' ¿Desea guardar los datos de la terapia?', QMessageBox.Yes, QMessageBox.No)
         if reply == QMessageBox.No:
             shutil.rmtree(self.aux_therapy_dir)
 
@@ -446,3 +446,90 @@ class SpecificWorker(GenericWorker):
     def newPersonListAndRGB(self, mixedData):
         if self.recording and len(mixedData.persons) > 0:
             self.received_data_queue.put(mixedData)
+
+
+# =============== Methods for Component Implements ==================
+# ===================================================================
+
+	#
+	# adminPauseTherapy
+	#
+	def adminPauseTherapy(self):
+		#
+		# implementCODE
+		#
+		pass
+
+
+	#
+	# adminStopApp
+	#
+	def adminStopApp(self):
+		#
+		# implementCODE
+		#
+		pass
+
+
+	#
+	# adminContinueTherapy
+	#
+	def adminContinueTherapy(self):
+		#
+		# implementCODE
+		#
+		pass
+
+
+	#
+	# adminEndSession
+	#
+	def adminEndSession(self):
+		#
+		# implementCODE
+		#
+		pass
+
+
+	#
+	# adminStartTherapy
+	#
+	def adminStartTherapy(self, therapy):
+		#
+		# implementCODE
+		#
+		pass
+
+
+	#
+	# adminStartSession
+	#
+	def adminStartSession(self, player):
+		#
+		# implementCODE
+		#
+		pass
+
+
+	#
+	# adminStopTherapy
+	#
+	def adminStopTherapy(self):
+		#
+		# implementCODE
+		#
+		pass
+
+
+	#
+	# adminResetTherapy
+	#
+	def adminResetTherapy(self):
+		#
+		# implementCODE
+		#
+		pass
+
+# ===================================================================
+# ===================================================================
+

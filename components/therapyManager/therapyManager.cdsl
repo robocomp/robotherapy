@@ -1,0 +1,15 @@
+import "AdminTherapy.idsl";
+
+Component therapyManager 
+{
+    Communications
+    {
+        requires AdminTherapy;
+
+    };
+	language python;
+	gui Qt(QMainWindow);
+	statemachine "adminstatemachine.smdsl";
+
+};
+

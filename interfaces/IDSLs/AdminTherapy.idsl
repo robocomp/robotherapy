@@ -1,0 +1,16 @@
+module TherapyAdmin
+{
+  
+interface AdminTherapy
+    {
+     	void adminStartSession(string player);
+	    void adminStartTherapy (string therapy);
+     	void adminStopTherapy();
+     	void adminPauseTherapy();
+     	void adminContinueTherapy();
+     	void adminResetTherapy();
+	    void adminEndSession();
+	    void adminStopApp();
+    };
+};
+

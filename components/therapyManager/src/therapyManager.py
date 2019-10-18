@@ -20,7 +20,7 @@
 #    along with RoboComp.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-# \mainpage RoboComp::robotTherapy
+# \mainpage RoboComp::therapyManager
 #
 # \section intro_sec Introduction
 #
@@ -48,7 +48,7 @@
 #
 # \subsection execution_ssec Execution
 #
-# Just: "${PATH_TO_BINARY}/robotTherapy --Ice.Config=${PATH_TO_CONFIG_FILE}"
+# Just: "${PATH_TO_BINARY}/therapyManager --Ice.Config=${PATH_TO_CONFIG_FILE}"
 #
 # \subsection running_ssec Once running
 #
@@ -108,48 +108,28 @@ if __name__ == '__main__':
 	for i in ic.getProperties():
 		parameters[str(i)] = str(ic.getProperties().getProperty(i))
 
-	# Topic Manager
-	proxy = ic.getProperties().getProperty("TopicManager.Proxy")
-	obj = ic.stringToProxy(proxy)
+	# Remote object connection for AdminTherapy
 	try:
-		topicManager = IceStorm.TopicManagerPrx.checkedCast(obj)
-	except Ice.ConnectionRefusedException, e:
-		print 'Cannot connect to IceStorm! ('+proxy+')'
+		proxyString = ic.getProperties().getProperty('AdminTherapyProxy')
+		try:
+			basePrx = ic.stringToProxy(proxyString)
+			admintherapy_proxy = AdminTherapyPrx.checkedCast(basePrx)
+			mprx["AdminTherapyProxy"] = admintherapy_proxy
+		except Ice.Exception:
+			print 'Cannot connect to the remote object (AdminTherapy)', proxyString
+			#traceback.print_exc()
+			status = 1
+	except Ice.Exception, e:
+		print e
+		print 'Cannot get AdminTherapyProxy property.'
 		status = 1
+
 	if status == 0:
 		worker = SpecificWorker(mprx)
 		worker.setParams(parameters)
 	else:
 		print "Error getting required connections, check config file"
 		sys.exit(-1)
-
-	adapter = ic.createObjectAdapter('AdminTherapy')
-	adapter.add(AdminTherapyI(worker), ic.stringToIdentity('admintherapy'))
-	adapter.activate()
-
-
-	HumanTrackerJointsAndRGB_adapter = ic.createObjectAdapter("HumanTrackerJointsAndRGBTopic")
-	humantrackerjointsandrgbI_ = HumanTrackerJointsAndRGBI(worker)
-	humantrackerjointsandrgb_proxy = HumanTrackerJointsAndRGB_adapter.addWithUUID(humantrackerjointsandrgbI_).ice_oneway()
-
-	subscribeDone = False
-	while not subscribeDone:
-		try:
-			humantrackerjointsandrgb_topic = topicManager.retrieve("HumanTrackerJointsAndRGB")
-			subscribeDone = True
-		except Ice.Exception, e:
-			print "Error. Topic does not exist (creating)"
-			time.sleep(1)
-			try:
-				humantrackerjointsandrgb_topic = topicManager.create("HumanTrackerJointsAndRGB")
-				subscribeDone = True
-			except:
-				print "Error. Topic could not be created. Exiting"
-				status = 0
-	qos = {}
-	humantrackerjointsandrgb_topic.subscribeAndGetPublisher(qos, humantrackerjointsandrgb_proxy)
-	HumanTrackerJointsAndRGB_adapter.activate()
-
 
 	signal.signal(signal.SIGINT, sigint_handler)
 	app.exec_()

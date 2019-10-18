@@ -1,0 +1,28 @@
+manager_machine{
+    initial_state admin;
+    end_state app_end;
+    transitions{
+    admin => app_end;
+    };
+};
+
+:admin{
+    states create_user, session_init, create_player, wait_ready, admin_games, wait_play, playing, paused, game_end,session_end;
+    initial_state user_login;
+
+    transitions{
+        user_login => create_user,session_init;
+        create_user => user_login;
+        session_init => create_player, wait_ready;
+        create_player => session_init;
+        wait_ready => admin_games;
+        admin_games => wait_play, session_end;
+        wait_play => playing, session_end;
+        playing => paused, game_end;
+        paused => admin_games, playing, game_end;
+        game_end => admin_games;
+	session_end => session_init;
+    };
+};
+
+

@@ -1,11 +1,10 @@
-# Endpoints for implemented interfaces
-AdminTherapy.Endpoints=tcp -p 15555
+# Proxies for required interfaces
+AdminTherapyProxy = admintherapy:tcp -h localhost -p 15555
+
+
 
 # This property is used by the clients to connect to IceStorm.
 TopicManager.Proxy=IceStorm/TopicManager:default -p 9999
-
-# Proxies for required interfaces
-HumanTrackerJointsAndRGBTopic.Endpoints = tcp -p 11677
 
 
 Ice.Warn.Connections=0

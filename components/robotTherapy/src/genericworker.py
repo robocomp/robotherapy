@@ -56,8 +56,21 @@ if not ice_HumanTrackerJointsAndRGB:
 	print 'Couln\'t load HumanTrackerJointsAndRGB'
 	sys.exit(-1)
 from RoboCompHumanTrackerJointsAndRGB import *
+ice_HumanTrackerJointsAndRGB = False
+for p in icePaths:
+	if os.path.isfile(p+'/HumanTrackerJointsAndRGB.ice'):
+		preStr = "-I/opt/robocomp/interfaces/ -I"+ROBOCOMP+"/interfaces/ " + additionalPathStr + " --all "+p+'/'
+		wholeStr = preStr+"HumanTrackerJointsAndRGB.ice"
+		Ice.loadSlice(wholeStr)
+		ice_HumanTrackerJointsAndRGB = True
+		break
+if not ice_HumanTrackerJointsAndRGB:
+	print 'Couln\'t load HumanTrackerJointsAndRGB'
+	sys.exit(-1)
+from RoboCompHumanTrackerJointsAndRGB import *
 
 
+from admintherapyI import *
 from humantrackerjointsandrgbI import *
 
 try:

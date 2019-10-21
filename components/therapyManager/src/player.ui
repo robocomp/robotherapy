@@ -17,7 +17,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
-      <string>Nuevo jugador:</string>
+      <string>Nuevo paciente:</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
@@ -80,7 +80,7 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
-         <widget class="QPushButton" name="back_player_button">
+         <widget class="QPushButton" name="back_patient_button">
           <property name="text">
            <string>Atrás</string>
           </property>
@@ -100,9 +100,9 @@
          </spacer>
         </item>
         <item>
-         <widget class="QPushButton" name="create_player_button">
+         <widget class="QPushButton" name="create_patient_button">
           <property name="text">
-           <string>Crear nuevo jugador</string>
+           <string>Crear nuevo paciente</string>
           </property>
          </widget>
         </item>

@@ -1,27 +1,28 @@
 manager_machine{
     initial_state admin;
-    end_state app_end;
+    end_state appEnd;
     transitions{
-    admin => app_end;
+    admin => appEnd;
     };
 };
 
 :admin{
-    states create_user, session_init, create_player, wait_ready, admin_games, wait_play, playing, paused, game_end,session_end;
-    initial_state user_login;
+    states createUser, adminSessions, consultPatient, createPatient, waitTherapyReady, adminTherapies, waitingStart, performingTherapy, pausedTherapy, endTherapy,endSession;
+    initial_state userLogin;
 
     transitions{
-        user_login => create_user,session_init;
-        create_user => user_login;
-        session_init => create_player, wait_ready;
-        create_player => session_init;
-        wait_ready => admin_games;
-        admin_games => wait_play, session_end;
-        wait_play => playing, session_end;
-        playing => paused, game_end;
-        paused => admin_games, playing, game_end;
-        game_end => admin_games;
-	session_end => session_init;
+        userLogin => createUser,adminSessions;
+        createUser => userLogin;
+        adminSessions => createPatient, waitTherapyReady, consultPatient;
+        consultPatient => adminSessions;
+        createPatient => adminSessions;
+        waitTherapyReady => adminTherapies;
+        adminTherapies => waitingStart, endSession;
+        waitingStart => performingTherapy, endSession;
+        performingTherapy => pausedTherapy, endTherapy;
+        pausedTherapy => adminTherapies, performingTherapy, endTherapy;
+        endTherapy => adminTherapies;
+        endSession => adminSessions;
     };
 };
 

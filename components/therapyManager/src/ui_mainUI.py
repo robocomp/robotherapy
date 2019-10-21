@@ -19,5 +19,5 @@ class Ui_guiDlg(object):
         QtCore.QMetaObject.connectSlotsByName(guiDlg)
 
     def retranslateUi(self, guiDlg):
-        guiDlg.setWindowTitle(QtWidgets.QApplication.translate("guiDlg", "gameManager", None, -1))
+        guiDlg.setWindowTitle(QtWidgets.QApplication.translate("guiDlg", "therapyManager", None, -1))
 

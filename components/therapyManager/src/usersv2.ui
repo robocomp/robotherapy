@@ -17,14 +17,14 @@
    <item>
     <widget class="QLabel" name="label_2">
      <property name="text">
-      <string>Seleccionar jugador:</string>
+      <string>Seleccionar paciente:</string>
      </property>
     </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QComboBox" name="selplayer_combobox">
+      <widget class="QComboBox" name="selpatient_combobox">
        <property name="editable">
         <bool>true</bool>
        </property>
@@ -48,14 +48,14 @@
    <item>
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>Seleccionar juegos:</string>
+      <string>Seleccionar terapia:</string>
      </property>
     </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_5">
      <item>
-      <widget class="QComboBox" name="selgame_combobox">
+      <widget class="QComboBox" name="selTh_combobox">
        <property name="editable">
         <bool>true</bool>
        </property>
@@ -67,9 +67,9 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="addgame_button">
+      <widget class="QPushButton" name="addTh_button">
        <property name="text">
-        <string>Añadir juego</string>
+        <string>Añadir Terapia</string>
        </property>
       </widget>
      </item>
@@ -80,14 +80,14 @@
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_7">
        <item>
-        <widget class="QListWidget" name="games_list"/>
+        <widget class="QListWidget" name="therapies_list"/>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_7">
          <item>
-          <widget class="QPushButton" name="deletegame_button">
+          <widget class="QPushButton" name="deleteTh_button">
            <property name="text">
-            <string>Eliminar juego</string>
+            <string>Eliminar terapia</string>
            </property>
           </widget>
          </item>

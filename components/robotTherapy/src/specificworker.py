@@ -35,6 +35,7 @@ from PySide2.QtWidgets import QMessageBox
 import plot_therapy as PTH
 from genericworker import *
 
+
 # def get_AngleBetweenVectors(v1, v2):
 #     v1 = v1 / np.linalg.norm(v1)
 #     v2 = v2 / np.linalg.norm(v2)
@@ -94,19 +95,35 @@ class SpecificWorker(GenericWorker):
 
     def reset_metrics(self):
         self.current_metrics["Time"] = np.nan
-        self.current_metrics["ElbowLeft"] = np.nan
-        self.current_metrics["ElbowRight"] = np.nan
-        self.current_metrics["ShoulderLeft"] = np.nan
-        self.current_metrics["ShoulderRight"] = np.nan
-        self.current_metrics["Spine"] = np.nan
-        self.current_metrics["Shoulder"] = np.nan
-        self.current_metrics["Hip"] = np.nan
-        self.current_metrics["Knee"] = np.nan
+        self.current_metrics["LeftArmFlexion"] = np.nan
+        self.current_metrics["RightArmFlexion"] = np.nan
+        self.current_metrics["LeftArmElevation"] = np.nan
+        self.current_metrics["RightArmElevation"] = np.nan
 
-    def get_elbowAngle(self, side):
+        self.current_metrics["LeftKneeFlexion"] = np.nan
+        self.current_metrics["RightKneeFlexion"] = np.nan
+        self.current_metrics["LeftLegElevation"] = np.nan
+        self.current_metrics["RightLegElevation"] = np.nan
 
+        self.current_metrics["SpineDeviation"] = np.nan
+        self.current_metrics["ShoulderDeviation"] = np.nan
+        self.current_metrics["HipDeviation"] = np.nan
+        self.current_metrics["KneeDeviation"] = np.nan
+
+    def check_necessary_joints(self, list_joints):
+        for jnt in list_joints:
+            if jnt not in self.aux_current_joints:
+                return False
+        return True
+
+    # WARNING --> los joints vienne dados en la posicion de la camara.
+    # A la hora de calcular la elevacion de los brazos y piernas el calculo es diferente
+    # porque unos joints son negativos y otros positivos
+
+    # Pierna o brazo sin flexionar --> 0º
+    
+    def get_armFlexion(self, side):
         necessary_joints = [side + "Elbow", side + "Shoulder", side + "Hand"]
-
         if not self.check_necessary_joints(necessary_joints):
             return
 
@@ -115,13 +132,24 @@ class SpecificWorker(GenericWorker):
         hand = np.array(self.aux_current_joints[side + "Hand"])
 
         v1 = elbow - hand
-        v2 = elbow - shoulder
-        self.current_metrics["Elbow" + side] = round(get_AngleBetweenVectors(v1, v2), 4)
+        v2 = shoulder - elbow
+        self.current_metrics[side + "ArmFlexion"] = round(get_AngleBetweenVectors(v1, v2), 4)
 
-    def get_shoulderAngle(self, side):
+    def get_legFlexion(self, side):
+        necessary_joints = [side + "Knee", side + "Hip", side + "Foot"]
+        if not self.check_necessary_joints(necessary_joints):
+            return
 
+        knee = np.array(self.aux_current_joints[side + "Knee"])
+        hip = np.array(self.aux_current_joints[side + "Hip"])
+        foot = np.array(self.aux_current_joints[side + "Foot"])
+
+        v1 = knee - foot
+        v2 = hip - knee
+        self.current_metrics[side + "KneeFlexion"] = round(get_AngleBetweenVectors(v1, v2), 4)
+
+    def get_armElevation(self, side):
         necessary_joints = [side + "Elbow", side + "Shoulder"]
-
         if not self.check_necessary_joints(necessary_joints):
             return
 
@@ -132,16 +160,27 @@ class SpecificWorker(GenericWorker):
         v1 = shoulder - elbow
         v2 = shoulder - vertical
 
-        print get_AngleBetweenVectors(v1, v2)
+        self.current_metrics[side + "ArmElevation"] = round(get_AngleBetweenVectors(v1, v2), 4)
 
-        self.current_metrics["Shoulder" + side] = round(get_AngleBetweenVectors(v1, v2), 4)
+    def get_legElevation(self, side):
+        necessary_joints = [side + "Knee", side + "Hip"]
+        if not self.check_necessary_joints(necessary_joints):
+            return
+
+        knee = np.array(self.aux_current_joints[side + "Knee"])
+        hip = np.array(self.aux_current_joints[side + "Hip"])
+        vertical = np.array([hip[0], 0, hip[2]])
+
+        v1 = hip - knee
+        v2 = vertical - hip
+
+        print(v1,v2)
+
+        self.current_metrics[side + "LegElevation"] = round(get_AngleBetweenVectors(v1, v2), 4)
 
     def get_deviationAngle(self, part):
-
         if part == "Spine":
-
             necessary_joints = ["BaseSpine", "ShoulderSpine"]
-
             if not self.check_necessary_joints(necessary_joints):
                 return
 
@@ -152,12 +191,10 @@ class SpecificWorker(GenericWorker):
             v1 = upper - base
             v2 = upper - vertical
 
-            self.current_metrics[part] = round(get_AngleBetweenVectors(v1, v2), 4)
+            self.current_metrics[part + "Deviation"] = round(get_AngleBetweenVectors(v1, v2), 4)
 
         else:
-
             necessary_joints = ["Left" + part, "Right" + part]
-
             if not self.check_necessary_joints(necessary_joints):
                 return
 
@@ -168,14 +205,9 @@ class SpecificWorker(GenericWorker):
             v1 = left - right
             v2 = left - horizontal
 
-            self.current_metrics[part] = round(get_AngleBetweenVectors(v1, v2), 4)
+            self.current_metrics[part + "Deviation"] = round(get_AngleBetweenVectors(v1, v2), 4)
 
-    def check_necessary_joints(self, list_joints):
 
-        for jnt in list_joints:
-            if jnt not in self.aux_current_joints:
-                return False
-        return True
 
     # =============== Slots methods for State Machine ===================
     # ===================================================================
@@ -220,7 +252,7 @@ class SpecificWorker(GenericWorker):
         if not os.path.isdir(self.aux_session_dir):
             os.mkdir(self.aux_session_dir)
 
-        self.t_waitSession_to_waitTherapy.emit()
+        self.t_waitSession_to_initializingSession.emit()
 
     #
     # sm_initializingSession
@@ -228,7 +260,7 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def sm_initializingSession(self):
         print("Entered state initializingSession")
-        pass
+        self.t_initializingSession_to_waitTherapy.emit()
 
     #
     # sm_waitTherapy
@@ -346,15 +378,18 @@ class SpecificWorker(GenericWorker):
             self.aux_firstMetric = False
 
         self.current_metrics["Time"] = round((self.data_to_record.timeStamp - self.aux_firstTime_metric) / 1000., 4)
-        self.get_elbowAngle("Left")
-        self.get_elbowAngle("Right")
-        self.get_shoulderAngle("Left")
-        self.get_shoulderAngle("Right")
+        self.get_armFlexion("Left")
+        self.get_armFlexion("Right")
+        self.get_armElevation("Left")
+        self.get_armElevation("Right")
         self.get_deviationAngle("Spine")
         self.get_deviationAngle("Shoulder")
         self.get_deviationAngle("Hip")
         self.get_deviationAngle("Knee")
-
+        self.get_legFlexion("Left")
+        self.get_legFlexion("Right")
+        self.get_legElevation("Left")
+        self.get_legElevation("Right")
         self.t_computeMetrics_to_updateMetrics.emit()
 
     #
@@ -368,18 +403,21 @@ class SpecificWorker(GenericWorker):
             with open(self.aux_metrics_dir, 'w') as csvFile:
                 writer = csv.writer(csvFile, delimiter=';')
                 writer.writerow(
-                    ["Time", "ElbowLeft", "ElbowRight", "Hip", "Knee",
-                     "Shoulder", "ShoulderLeft", "ShoulderRight", "Spine"])
+                    ["Time", "LeftArmFlexion", "RightArmFlexion", "HipDeviation", "KneeDeviation",
+                     "ShoulderDeviation", "LeftArmElevation", "RightArmElevation", "SpineDeviation", "LeftKneeFlexion",
+                     "RightKneeFlexion", "LeftLegElevation", "RightLegElevation"])
             csvFile.close()
 
         with open(self.aux_metrics_dir, 'a') as csvFile:
             writer = csv.writer(csvFile, delimiter=';')
             writer.writerow(
-                [self.current_metrics["Time"], self.current_metrics["ElbowLeft"],
-                 self.current_metrics["ElbowRight"], self.current_metrics["Hip"],
-                 self.current_metrics["Knee"], self.current_metrics["Shoulder"],
-                 self.current_metrics["ShoulderLeft"], self.current_metrics["ShoulderRight"],
-                 self.current_metrics["Spine"]])
+                [self.current_metrics["Time"], self.current_metrics["LeftArmFlexion"],
+                 self.current_metrics["RightArmFlexion"], self.current_metrics["HipDeviation"],
+                 self.current_metrics["KneeDeviation"], self.current_metrics["ShoulderDeviation"],
+                 self.current_metrics["LeftArmElevation"], self.current_metrics["RightArmElevation"],
+                 self.current_metrics["SpineDeviation"], self.current_metrics["LeftKneeFlexion"],
+                 self.current_metrics["RightKneeFlexion"], self.current_metrics["LeftLegElevation"],
+                 self.current_metrics["RightLegElevation"]])
 
             csvFile.close()
 
@@ -478,7 +516,6 @@ class SpecificWorker(GenericWorker):
     def adminContinueTherapy(self):
         print("adminContinueTherapy")
         self.t_pauseTherapy_to_loopTherapy.emit()
-
 
     #
     # adminEndSession

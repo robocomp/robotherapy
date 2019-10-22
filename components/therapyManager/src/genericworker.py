@@ -70,25 +70,27 @@ class GenericWorker(QtWidgets.QMainWindow):
 
 	kill = QtCore.Signal()
 #Signals for State Machine
-	t_admin_to_app_end = QtCore.Signal()
-	t_user_login_to_create_user = QtCore.Signal()
-	t_user_login_to_session_init = QtCore.Signal()
-	t_create_user_to_user_login = QtCore.Signal()
-	t_session_init_to_create_player = QtCore.Signal()
-	t_session_init_to_wait_ready = QtCore.Signal()
-	t_create_player_to_session_init = QtCore.Signal()
-	t_wait_ready_to_admin_games = QtCore.Signal()
-	t_admin_games_to_wait_play = QtCore.Signal()
-	t_admin_games_to_session_end = QtCore.Signal()
-	t_wait_play_to_playing = QtCore.Signal()
-	t_wait_play_to_session_end = QtCore.Signal()
-	t_playing_to_paused = QtCore.Signal()
-	t_playing_to_game_end = QtCore.Signal()
-	t_paused_to_admin_games = QtCore.Signal()
-	t_paused_to_playing = QtCore.Signal()
-	t_paused_to_game_end = QtCore.Signal()
-	t_game_end_to_admin_games = QtCore.Signal()
-	t_session_end_to_session_init = QtCore.Signal()
+	t_admin_to_appEnd = QtCore.Signal()
+	t_userLogin_to_createUser = QtCore.Signal()
+	t_userLogin_to_adminSessions = QtCore.Signal()
+	t_createUser_to_userLogin = QtCore.Signal()
+	t_adminSessions_to_createPatient = QtCore.Signal()
+	t_adminSessions_to_waitTherapyReady = QtCore.Signal()
+	t_adminSessions_to_consultPatient = QtCore.Signal()
+	t_consultPatient_to_adminSessions = QtCore.Signal()
+	t_createPatient_to_adminSessions = QtCore.Signal()
+	t_waitTherapyReady_to_adminTherapies = QtCore.Signal()
+	t_adminTherapies_to_waitingStart = QtCore.Signal()
+	t_adminTherapies_to_endSession = QtCore.Signal()
+	t_waitingStart_to_performingTherapy = QtCore.Signal()
+	t_waitingStart_to_endSession = QtCore.Signal()
+	t_performingTherapy_to_pausedTherapy = QtCore.Signal()
+	t_performingTherapy_to_endTherapy = QtCore.Signal()
+	t_pausedTherapy_to_adminTherapies = QtCore.Signal()
+	t_pausedTherapy_to_performingTherapy = QtCore.Signal()
+	t_pausedTherapy_to_endTherapy = QtCore.Signal()
+	t_endTherapy_to_adminTherapies = QtCore.Signal()
+	t_endSession_to_adminSessions = QtCore.Signal()
 
 #-------------------------
 
@@ -110,63 +112,67 @@ class GenericWorker(QtWidgets.QMainWindow):
 		self.manager_machine= QtCore.QStateMachine()
 		self.admin_state = QtCore.QState(self.manager_machine)
 
-		self.app_end_state = QtCore.QFinalState(self.manager_machine)
+		self.appEnd_state = QtCore.QFinalState(self.manager_machine)
 
 
 
-		self.create_user_state = QtCore.QState(self.admin_state)
-		self.session_init_state = QtCore.QState(self.admin_state)
-		self.create_player_state = QtCore.QState(self.admin_state)
-		self.wait_ready_state = QtCore.QState(self.admin_state)
-		self.admin_games_state = QtCore.QState(self.admin_state)
-		self.wait_play_state = QtCore.QState(self.admin_state)
-		self.playing_state = QtCore.QState(self.admin_state)
-		self.paused_state = QtCore.QState(self.admin_state)
-		self.game_end_state = QtCore.QState(self.admin_state)
-		self.session_end_state = QtCore.QState(self.admin_state)
-		self.user_login_state = QtCore.QState(self.admin_state)
+		self.createUser_state = QtCore.QState(self.admin_state)
+		self.adminSessions_state = QtCore.QState(self.admin_state)
+		self.consultPatient_state = QtCore.QState(self.admin_state)
+		self.createPatient_state = QtCore.QState(self.admin_state)
+		self.waitTherapyReady_state = QtCore.QState(self.admin_state)
+		self.adminTherapies_state = QtCore.QState(self.admin_state)
+		self.waitingStart_state = QtCore.QState(self.admin_state)
+		self.performingTherapy_state = QtCore.QState(self.admin_state)
+		self.pausedTherapy_state = QtCore.QState(self.admin_state)
+		self.endTherapy_state = QtCore.QState(self.admin_state)
+		self.endSession_state = QtCore.QState(self.admin_state)
+		self.userLogin_state = QtCore.QState(self.admin_state)
 
 
 
 #------------------
 #Initialization State machine
-		self.admin_state.addTransition(self.t_admin_to_app_end, self.app_end_state)
-		self.user_login_state.addTransition(self.t_user_login_to_create_user, self.create_user_state)
-		self.user_login_state.addTransition(self.t_user_login_to_session_init, self.session_init_state)
-		self.create_user_state.addTransition(self.t_create_user_to_user_login, self.user_login_state)
-		self.session_init_state.addTransition(self.t_session_init_to_create_player, self.create_player_state)
-		self.session_init_state.addTransition(self.t_session_init_to_wait_ready, self.wait_ready_state)
-		self.create_player_state.addTransition(self.t_create_player_to_session_init, self.session_init_state)
-		self.wait_ready_state.addTransition(self.t_wait_ready_to_admin_games, self.admin_games_state)
-		self.admin_games_state.addTransition(self.t_admin_games_to_wait_play, self.wait_play_state)
-		self.admin_games_state.addTransition(self.t_admin_games_to_session_end, self.session_end_state)
-		self.wait_play_state.addTransition(self.t_wait_play_to_playing, self.playing_state)
-		self.wait_play_state.addTransition(self.t_wait_play_to_session_end, self.session_end_state)
-		self.playing_state.addTransition(self.t_playing_to_paused, self.paused_state)
-		self.playing_state.addTransition(self.t_playing_to_game_end, self.game_end_state)
-		self.paused_state.addTransition(self.t_paused_to_admin_games, self.admin_games_state)
-		self.paused_state.addTransition(self.t_paused_to_playing, self.playing_state)
-		self.paused_state.addTransition(self.t_paused_to_game_end, self.game_end_state)
-		self.game_end_state.addTransition(self.t_game_end_to_admin_games, self.admin_games_state)
-		self.session_end_state.addTransition(self.t_session_end_to_session_init, self.session_init_state)
+		self.admin_state.addTransition(self.t_admin_to_appEnd, self.appEnd_state)
+		self.userLogin_state.addTransition(self.t_userLogin_to_createUser, self.createUser_state)
+		self.userLogin_state.addTransition(self.t_userLogin_to_adminSessions, self.adminSessions_state)
+		self.createUser_state.addTransition(self.t_createUser_to_userLogin, self.userLogin_state)
+		self.adminSessions_state.addTransition(self.t_adminSessions_to_createPatient, self.createPatient_state)
+		self.adminSessions_state.addTransition(self.t_adminSessions_to_waitTherapyReady, self.waitTherapyReady_state)
+		self.adminSessions_state.addTransition(self.t_adminSessions_to_consultPatient, self.consultPatient_state)
+		self.consultPatient_state.addTransition(self.t_consultPatient_to_adminSessions, self.adminSessions_state)
+		self.createPatient_state.addTransition(self.t_createPatient_to_adminSessions, self.adminSessions_state)
+		self.waitTherapyReady_state.addTransition(self.t_waitTherapyReady_to_adminTherapies, self.adminTherapies_state)
+		self.adminTherapies_state.addTransition(self.t_adminTherapies_to_waitingStart, self.waitingStart_state)
+		self.adminTherapies_state.addTransition(self.t_adminTherapies_to_endSession, self.endSession_state)
+		self.waitingStart_state.addTransition(self.t_waitingStart_to_performingTherapy, self.performingTherapy_state)
+		self.waitingStart_state.addTransition(self.t_waitingStart_to_endSession, self.endSession_state)
+		self.performingTherapy_state.addTransition(self.t_performingTherapy_to_pausedTherapy, self.pausedTherapy_state)
+		self.performingTherapy_state.addTransition(self.t_performingTherapy_to_endTherapy, self.endTherapy_state)
+		self.pausedTherapy_state.addTransition(self.t_pausedTherapy_to_adminTherapies, self.adminTherapies_state)
+		self.pausedTherapy_state.addTransition(self.t_pausedTherapy_to_performingTherapy, self.performingTherapy_state)
+		self.pausedTherapy_state.addTransition(self.t_pausedTherapy_to_endTherapy, self.endTherapy_state)
+		self.endTherapy_state.addTransition(self.t_endTherapy_to_adminTherapies, self.adminTherapies_state)
+		self.endSession_state.addTransition(self.t_endSession_to_adminSessions, self.adminSessions_state)
 
 
 		self.admin_state.entered.connect(self.sm_admin)
-		self.app_end_state.entered.connect(self.sm_app_end)
-		self.user_login_state.entered.connect(self.sm_user_login)
-		self.create_user_state.entered.connect(self.sm_create_user)
-		self.session_init_state.entered.connect(self.sm_session_init)
-		self.create_player_state.entered.connect(self.sm_create_player)
-		self.wait_ready_state.entered.connect(self.sm_wait_ready)
-		self.admin_games_state.entered.connect(self.sm_admin_games)
-		self.wait_play_state.entered.connect(self.sm_wait_play)
-		self.playing_state.entered.connect(self.sm_playing)
-		self.paused_state.entered.connect(self.sm_paused)
-		self.game_end_state.entered.connect(self.sm_game_end)
-		self.session_end_state.entered.connect(self.sm_session_end)
+		self.appEnd_state.entered.connect(self.sm_appEnd)
+		self.userLogin_state.entered.connect(self.sm_userLogin)
+		self.createUser_state.entered.connect(self.sm_createUser)
+		self.adminSessions_state.entered.connect(self.sm_adminSessions)
+		self.consultPatient_state.entered.connect(self.sm_consultPatient)
+		self.createPatient_state.entered.connect(self.sm_createPatient)
+		self.waitTherapyReady_state.entered.connect(self.sm_waitTherapyReady)
+		self.adminTherapies_state.entered.connect(self.sm_adminTherapies)
+		self.waitingStart_state.entered.connect(self.sm_waitingStart)
+		self.performingTherapy_state.entered.connect(self.sm_performingTherapy)
+		self.pausedTherapy_state.entered.connect(self.sm_pausedTherapy)
+		self.endTherapy_state.entered.connect(self.sm_endTherapy)
+		self.endSession_state.entered.connect(self.sm_endSession)
 
 		self.manager_machine.setInitialState(self.admin_state)
-		self.admin_state.setInitialState(self.user_login_state)
+		self.admin_state.setInitialState(self.userLogin_state)
 
 #------------------
 
@@ -197,63 +203,68 @@ class GenericWorker(QtWidgets.QMainWindow):
 		sys.exit(-1)
 
 	@QtCore.Slot()
-	def sm_app_end(self):
-		print "Error: lack sm_app_end in Specificworker"
+	def sm_appEnd(self):
+		print "Error: lack sm_appEnd in Specificworker"
 		sys.exit(-1)
 
 	@QtCore.Slot()
-	def sm_create_user(self):
-		print "Error: lack sm_create_user in Specificworker"
+	def sm_createUser(self):
+		print "Error: lack sm_createUser in Specificworker"
 		sys.exit(-1)
 
 	@QtCore.Slot()
-	def sm_session_init(self):
-		print "Error: lack sm_session_init in Specificworker"
+	def sm_adminSessions(self):
+		print "Error: lack sm_adminSessions in Specificworker"
 		sys.exit(-1)
 
 	@QtCore.Slot()
-	def sm_create_player(self):
-		print "Error: lack sm_create_player in Specificworker"
+	def sm_consultPatient(self):
+		print "Error: lack sm_consultPatient in Specificworker"
 		sys.exit(-1)
 
 	@QtCore.Slot()
-	def sm_wait_ready(self):
-		print "Error: lack sm_wait_ready in Specificworker"
+	def sm_createPatient(self):
+		print "Error: lack sm_createPatient in Specificworker"
 		sys.exit(-1)
 
 	@QtCore.Slot()
-	def sm_admin_games(self):
-		print "Error: lack sm_admin_games in Specificworker"
+	def sm_waitTherapyReady(self):
+		print "Error: lack sm_waitTherapyReady in Specificworker"
 		sys.exit(-1)
 
 	@QtCore.Slot()
-	def sm_wait_play(self):
-		print "Error: lack sm_wait_play in Specificworker"
+	def sm_adminTherapies(self):
+		print "Error: lack sm_adminTherapies in Specificworker"
 		sys.exit(-1)
 
 	@QtCore.Slot()
-	def sm_playing(self):
-		print "Error: lack sm_playing in Specificworker"
+	def sm_waitingStart(self):
+		print "Error: lack sm_waitingStart in Specificworker"
 		sys.exit(-1)
 
 	@QtCore.Slot()
-	def sm_paused(self):
-		print "Error: lack sm_paused in Specificworker"
+	def sm_performingTherapy(self):
+		print "Error: lack sm_performingTherapy in Specificworker"
 		sys.exit(-1)
 
 	@QtCore.Slot()
-	def sm_game_end(self):
-		print "Error: lack sm_game_end in Specificworker"
+	def sm_pausedTherapy(self):
+		print "Error: lack sm_pausedTherapy in Specificworker"
 		sys.exit(-1)
 
 	@QtCore.Slot()
-	def sm_session_end(self):
-		print "Error: lack sm_session_end in Specificworker"
+	def sm_endTherapy(self):
+		print "Error: lack sm_endTherapy in Specificworker"
 		sys.exit(-1)
 
 	@QtCore.Slot()
-	def sm_user_login(self):
-		print "Error: lack sm_user_login in Specificworker"
+	def sm_endSession(self):
+		print "Error: lack sm_endSession in Specificworker"
+		sys.exit(-1)
+
+	@QtCore.Slot()
+	def sm_userLogin(self):
+		print "Error: lack sm_userLogin in Specificworker"
 		sys.exit(-1)
 
 

@@ -195,7 +195,7 @@ void  SpecificWorker::reverse_playing(int state)
 //void SpecificWorker::playback_mode() {
 //
 //	this->stackedWidget->setCurrentIndex(0);
-//	this->playbackMode_action->setEnabled(false);
+
 //	this->recordMode_action->setEnabled(true);
 //	this->osgLayout->addWidget(this->osgView);
 //}
@@ -337,6 +337,8 @@ void SpecificWorker::load_chart()
 	widget->show();
 	chart->loadData(this->currentMetrics);
 //	chart->saveChart("prueba");
+
+
 
 }
 
@@ -1057,9 +1059,11 @@ void SpecificWorker::sm_initialize()
     connect(this->record_btn, SIGNAL(clicked()), this, SLOT(record()));
     connect(this->visualizeRecording_chck, SIGNAL(toggled(bool)), this, SLOT(visualizeRecordingToggled(bool)));
 
+    connect(this->playback_action, SIGNAL(triggered()), this, SIGNAL(t_record_to_playback()));
+    connect(this->record_action, SIGNAL(triggered()),this, SIGNAL(t_playback_to_record()));
 
 
-    this->t_initialize_to_playback();
+    emit this->t_initialize_to_playback();
 //    this->t_initialize_to_record();
 
 
@@ -1076,6 +1080,10 @@ void SpecificWorker::sm_record()
 	recordMode = true;
     this->playback_gBox->hide();
     this->record_gBox->show();
+
+    this->playback_action->setEnabled(true);
+    this->record_action->setEnabled(false);
+
 }
 
 
@@ -1118,8 +1126,12 @@ void SpecificWorker::sm_playback()
     connect(this->fps_spnbox, SIGNAL(valueChanged(double)), this, SLOT(changePlayFps(double)));
     connect(this->chart_pb, SIGNAL(clicked()), this, SLOT(load_chart()));
 
+
     this->playback_gBox->show();
     this->record_gBox->hide();
+
+    this->playback_action->setEnabled(false);
+    this->record_action->setEnabled(true);
 
 //	this->setEnabledPlayControls(false);
 

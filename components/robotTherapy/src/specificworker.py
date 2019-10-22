@@ -35,7 +35,6 @@ from PySide2.QtWidgets import QMessageBox
 import plot_therapy as PTH
 from genericworker import *
 
-
 # def get_AngleBetweenVectors(v1, v2):
 #     v1 = v1 / np.linalg.norm(v1)
 #     v2 = v2 / np.linalg.norm(v2)
@@ -224,6 +223,14 @@ class SpecificWorker(GenericWorker):
         self.t_waitSession_to_waitTherapy.emit()
 
     #
+    # sm_initializingSession
+    #
+    @QtCore.Slot()
+    def sm_initializingSession(self):
+        print("Entered state initializingSession")
+        pass
+
+    #
     # sm_waitTherapy
     #
     @QtCore.Slot()
@@ -338,7 +345,7 @@ class SpecificWorker(GenericWorker):
             self.aux_firstTime_metric = self.data_to_record.timeStamp
             self.aux_firstMetric = False
 
-        self.current_metrics["Time"] = round((self.data_to_record.timeStamp - self.aux_firstTime_metric)/1000., 4)
+        self.current_metrics["Time"] = round((self.data_to_record.timeStamp - self.aux_firstTime_metric) / 1000., 4)
         self.get_elbowAngle("Left")
         self.get_elbowAngle("Right")
         self.get_shoulderAngle("Left")
@@ -447,89 +454,67 @@ class SpecificWorker(GenericWorker):
         if self.recording and len(mixedData.persons) > 0:
             self.received_data_queue.put(mixedData)
 
+    # =============== Methods for Component Implements ==================
+    # ===================================================================
 
-# =============== Methods for Component Implements ==================
-# ===================================================================
+    #
+    # adminPauseTherapy
+    #
+    def adminPauseTherapy(self):
 
-	#
-	# adminPauseTherapy
-	#
-	def adminPauseTherapy(self):
-		#
-		# implementCODE
-		#
-		pass
+        print("adminPauseTherapy")
+        pass
 
+    #
+    # adminStopApp
+    #
+    def adminStopApp(self):
+        print("adminStopApp")
+        pass
 
-	#
-	# adminStopApp
-	#
-	def adminStopApp(self):
-		#
-		# implementCODE
-		#
-		pass
-
-
-	#
-	# adminContinueTherapy
-	#
-	def adminContinueTherapy(self):
-		#
-		# implementCODE
-		#
-		pass
+    #
+    # adminContinueTherapy
+    #
+    def adminContinueTherapy(self):
+        print("adminContinueTherapy")
+        self.t_pauseTherapy_to_loopTherapy.emit()
 
 
-	#
-	# adminEndSession
-	#
-	def adminEndSession(self):
-		#
-		# implementCODE
-		#
-		pass
+    #
+    # adminEndSession
+    #
+    def adminEndSession(self):
+        print("adminEndSession")
+        pass
 
+    #
+    # adminStartTherapy
+    #
+    def adminStartTherapy(self, therapy):
+        print("adminStartTherapy ", therapy)
+        pass
 
-	#
-	# adminStartTherapy
-	#
-	def adminStartTherapy(self, therapy):
-		#
-		# implementCODE
-		#
-		pass
+    #
+    # adminStartSession
+    #
+    def adminStartSession(self, patient):
+        print("adminStartSession ", patient)
+        pass
 
+    #
+    # adminStopTherapy
+    #
+    def adminStopTherapy(self):
+        print("adminStopTherapy")
 
-	#
-	# adminStartSession
-	#
-	def adminStartSession(self, player):
-		#
-		# implementCODE
-		#
-		pass
+        pass
 
-
-	#
-	# adminStopTherapy
-	#
-	def adminStopTherapy(self):
-		#
-		# implementCODE
-		#
-		pass
-
-
-	#
-	# adminResetTherapy
-	#
-	def adminResetTherapy(self):
-		#
-		# implementCODE
-		#
-		pass
+    #
+    # adminResetTherapy
+    #
+    def adminResetTherapy(self):
+        print("adminResetTherapy")
+        pass
 
 # ===================================================================
 # ===================================================================
-

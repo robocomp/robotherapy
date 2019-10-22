@@ -95,11 +95,7 @@ public slots:
     void sm_record();
     void sm_playback();
     void sm_initialize();
-    void sm_finalize();
-    void sm_pause();
-    void sm_stop();
-    void sm_processFrame();
-    void sm_waitingStart();
+    void sm_closeApp();
     void sm_showTherapy();
     void sm_loadFiles();
 //--------------------
@@ -134,6 +130,7 @@ private:
 	osgGA::TrackballManipulator *manipulator;
 	Chart *chart;
 	//record
+	bool recordMode = false;
 	bool recording;
 	bool visualizeRecording=false;
 	int framesRecorded;

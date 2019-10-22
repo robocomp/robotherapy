@@ -85,7 +85,8 @@ class GenericWorker(QtWidgets.QWidget):
 	kill = QtCore.Signal()
 #Signals for State Machine
 	t_initialize_to_waitSession = QtCore.Signal()
-	t_waitSession_to_waitTherapy = QtCore.Signal()
+	t_waitSession_to_initializingSession = QtCore.Signal()
+	t_initializingSession_to_waitTherapy = QtCore.Signal()
 	t_waitTherapy_to_waitStartTherapy = QtCore.Signal()
 	t_waitTherapy_to_finalizeSession = QtCore.Signal()
 	t_waitStartTherapy_to_loopTherapy = QtCore.Signal()
@@ -120,6 +121,7 @@ class GenericWorker(QtWidgets.QWidget):
 #State Machine
 		self.robotTherapyMachine= QtCore.QStateMachine()
 		self.waitSession_state = QtCore.QState(self.robotTherapyMachine)
+		self.initializingSession_state = QtCore.QState(self.robotTherapyMachine)
 		self.waitTherapy_state = QtCore.QState(self.robotTherapyMachine)
 		self.waitStartTherapy_state = QtCore.QState(self.robotTherapyMachine)
 		self.loopTherapy_state = QtCore.QState(self.robotTherapyMachine)
@@ -141,7 +143,8 @@ class GenericWorker(QtWidgets.QWidget):
 #------------------
 #Initialization State machine
 		self.initialize_state.addTransition(self.t_initialize_to_waitSession, self.waitSession_state)
-		self.waitSession_state.addTransition(self.t_waitSession_to_waitTherapy, self.waitTherapy_state)
+		self.waitSession_state.addTransition(self.t_waitSession_to_initializingSession, self.initializingSession_state)
+		self.initializingSession_state.addTransition(self.t_initializingSession_to_waitTherapy, self.waitTherapy_state)
 		self.waitTherapy_state.addTransition(self.t_waitTherapy_to_waitStartTherapy, self.waitStartTherapy_state)
 		self.waitTherapy_state.addTransition(self.t_waitTherapy_to_finalizeSession, self.finalizeSession_state)
 		self.waitStartTherapy_state.addTransition(self.t_waitStartTherapy_to_loopTherapy, self.loopTherapy_state)
@@ -160,6 +163,7 @@ class GenericWorker(QtWidgets.QWidget):
 
 
 		self.waitSession_state.entered.connect(self.sm_waitSession)
+		self.initializingSession_state.entered.connect(self.sm_initializingSession)
 		self.waitTherapy_state.entered.connect(self.sm_waitTherapy)
 		self.waitStartTherapy_state.entered.connect(self.sm_waitStartTherapy)
 		self.loopTherapy_state.entered.connect(self.sm_loopTherapy)
@@ -181,6 +185,11 @@ class GenericWorker(QtWidgets.QWidget):
 	@QtCore.Slot()
 	def sm_waitSession(self):
 		print "Error: lack sm_waitSession in Specificworker"
+		sys.exit(-1)
+
+	@QtCore.Slot()
+	def sm_initializingSession(self):
+		print "Error: lack sm_initializingSession in Specificworker"
 		sys.exit(-1)
 
 	@QtCore.Slot()

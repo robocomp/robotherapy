@@ -379,7 +379,7 @@ class SpecificWorker(GenericWorker):
             # username = username.strip().lower()
             password = unicode(self.ui.password_lineedit_reg.text())
 
-            if (self.user_ddbb_connector.check_user(username) == True):  # The user already exist
+            if self.user_ddbb_connector.check_user(username):  # The user already exist
                 QMessageBox().information(self.focusWidget(), 'Error',
                                           'El nombre de usuario ya existe',
                                           QMessageBox.Ok)
@@ -628,9 +628,9 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def sm_pausedTherapy(self):
         print("Entered state pausedTherapy")
-        self.ui.continue_game_button.setEnabled(True);
-        self.ui.reset_game_button.setEnabled(True);
-        self.ui.pause_game_button.setEnabled(False);
+        self.ui.continue_game_button.setEnabled(True)
+        self.ui.reset_game_button.setEnabled(True)
+        self.ui.pause_game_button.setEnabled(False)
 
         self.aux_datePaused = self.aux_currentDate
 
@@ -640,20 +640,20 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def sm_performingTherapy(self):
         print("Entered state performingTherapy")
-        self.ui.start_game_button.setEnabled(False);
-        self.ui.pause_game_button.setEnabled(True);
-        self.ui.finish_game_button.setEnabled(True);
-        self.ui.reset_game_button.setEnabled(False);
+        self.ui.start_game_button.setEnabled(False)
+        self.ui.pause_game_button.setEnabled(True)
+        self.ui.finish_game_button.setEnabled(True)
+        self.ui.reset_game_button.setEnabled(False)
         self.ui.reset_game_button.setToolTip("Debe pausar la terapia para poder reiniciarla")
-        self.ui.end_session_button.setEnabled(False);  # No se puede finalizar la sesion si hay un juego en marcha
+        self.ui.end_session_button.setEnabled(False)  # No se puede finalizar la sesion si hay un juego en marcha
         self.ui.end_session_button.setToolTip("Debe finalizar la terapia para poder terminar la sesión")
 
         if self.currentGame.date is None:
             self.currentGame.date = self.aux_currentDate
 
         if self.aux_datePaused is not None:
-            self.ui.continue_game_button.setEnabled(False);
-            self.ui.pause_game_button.setEnabled(True);
+            self.ui.continue_game_button.setEnabled(False)
+            self.ui.pause_game_button.setEnabled(True)
             time = self.aux_currentDate - self.aux_datePaused
             self.currentGame.timePaused += time.total_seconds() * 1000
             self.aux_datePaused = None
@@ -725,10 +725,10 @@ class SpecificWorker(GenericWorker):
                 game = self.list_therapies_todo[0]
                 self.ui.info_game_label.setText(game)
 
-        self.ui.pause_game_button.setEnabled(False);
-        self.ui.continue_game_button.setEnabled(False);
-        self.ui.finish_game_button.setEnabled(False);
-        self.ui.reset_game_button.setEnabled(False);
+        self.ui.pause_game_button.setEnabled(False)
+        self.ui.continue_game_button.setEnabled(False)
+        self.ui.finish_game_button.setEnabled(False)
+        self.ui.reset_game_button.setEnabled(False)
 
     #
     # sm_wait_play
@@ -736,8 +736,8 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def sm_waitingStart(self):
         print("Entered state waitingStart")
-        self.ui.start_game_button.setEnabled(True);
-        self.ui.end_session_button.setEnabled(True);
+        self.ui.start_game_button.setEnabled(True)
+        self.ui.end_session_button.setEnabled(True)
 
         self.ui.status_label.setText(self.aux_currentStatus)
         self.ui.num_screentouched_label.setText("-")
@@ -758,12 +758,12 @@ class SpecificWorker(GenericWorker):
         print("Entered state waitTherapyReady")
         self.ui.stackedWidget.setCurrentIndex(4)
 
-        self.ui.start_game_button.setEnabled(False);
-        self.ui.pause_game_button.setEnabled(False);
-        self.ui.continue_game_button.setEnabled(False);
-        self.ui.finish_game_button.setEnabled(False);
-        self.ui.reset_game_button.setEnabled(False);
-        self.ui.end_session_button.setEnabled(False);
+        self.ui.start_game_button.setEnabled(False)
+        self.ui.pause_game_button.setEnabled(False)
+        self.ui.continue_game_button.setEnabled(False)
+        self.ui.finish_game_button.setEnabled(False)
+        self.ui.reset_game_button.setEnabled(False)
+        self.ui.end_session_button.setEnabled(False)
 
         self.aux_firtsGameInSession = True
 

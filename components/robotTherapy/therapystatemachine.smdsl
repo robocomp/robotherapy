@@ -3,12 +3,13 @@
    ANY CHANGE TO THE DEFAULT STATES OR TRANSITIONS */
 
 robotTherapyMachine{
-    states waitSession, waitTherapy, waitStartTherapy, loopTherapy, resetTherapy, pauseTherapy, finalizeTherapy;
+    states waitSession, initializingSession, waitTherapy, waitStartTherapy, loopTherapy, resetTherapy, pauseTherapy, finalizeTherapy;
     initial_state initialize;
     end_state finalizeSession;
     transitions{
         initialize => waitSession;
-	    waitSession => waitTherapy;
+	    waitSession => initializingSession;
+	    initializingSession => waitTherapy;
 	    waitTherapy => waitStartTherapy, finalizeSession;
 	    waitStartTherapy => loopTherapy;
 	    loopTherapy => resetTherapy,pauseTherapy,finalizeTherapy;

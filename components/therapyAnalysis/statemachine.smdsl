@@ -4,18 +4,20 @@
 therapyAnalysisMachine{
     states record, playback;
     initial_state initialize;
-    end_state finalize;
+    end_state closeApp;
     transitions{
         initialize => record;
         initialize => playback;
-	    initialize => finalize;
+	    initialize => closeApp;
         record => playback;
-	    record => finalize;
-	    playback => finalize;
+	    record => closeApp;
+	    playback => closeApp;
+	    playback => record;
 
     };
  };
-:record{
+
+/*:record{
 	states pause, stop, processFrame;
 	initial_state waitingStart;
  	transitions{
@@ -27,6 +29,7 @@ therapyAnalysisMachine{
 	
     };
  };
+*/
 
 :playback{
 	states showTherapy;

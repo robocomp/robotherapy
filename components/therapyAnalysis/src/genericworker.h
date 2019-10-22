@@ -72,11 +72,7 @@ protected:
 	QState *recordState = new QState();
 	QState *playbackState = new QState();
 	QState *initializeState = new QState();
-	QFinalState *finalizeState = new QFinalState();
-	QState *pauseState = new QState(recordState);
-	QState *stopState = new QState(recordState);
-	QState *processFrameState = new QState(recordState);
-	QState *waitingStartState = new QState(recordState);
+	QFinalState *closeAppState = new QFinalState();
 	QState *showTherapyState = new QState(playbackState);
 	QState *loadFilesState = new QState(playbackState);
 
@@ -93,11 +89,7 @@ public slots:
 	virtual void sm_record() = 0;
 	virtual void sm_playback() = 0;
 	virtual void sm_initialize() = 0;
-	virtual void sm_finalize() = 0;
-	virtual void sm_pause() = 0;
-	virtual void sm_stop() = 0;
-	virtual void sm_processFrame() = 0;
-	virtual void sm_waitingStart() = 0;
+	virtual void sm_closeApp() = 0;
 	virtual void sm_showTherapy() = 0;
 	virtual void sm_loadFiles() = 0;
 
@@ -109,15 +101,11 @@ signals:
 //Signals for State Machine
 	void t_initialize_to_record();
 	void t_initialize_to_playback();
-	void t_initialize_to_finalize();
+	void t_initialize_to_closeApp();
 	void t_record_to_playback();
-	void t_record_to_finalize();
-	void t_playback_to_finalize();
-	void t_waitingStart_to_processFrame();
-	void t_processFrame_to_stop();
-	void t_processFrame_to_pause();
-	void t_pause_to_processFrame();
-	void t_pause_to_stop();
+	void t_record_to_closeApp();
+	void t_playback_to_closeApp();
+	void t_playback_to_record();
 	void t_loadFiles_to_showTherapy();
 
 //-------------------------

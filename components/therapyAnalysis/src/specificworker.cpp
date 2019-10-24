@@ -384,10 +384,10 @@ void SpecificWorker::obtainFeatures()
 
 //	qDebug()<<"Left "<<getElbowAngleVec("Left")<<getShoulderAngleVec("Left");
 //	qDebug()<<"Right "<<getElbowAngleVec("Right")<<getShoulderAngleVec("Right");
-	this->angle1_lcd->display(getElbowAngleVec("Left"));
-	this->angle2_lcd->display(getElbowAngleVec("Right"));
-	this->height1_lcd->display(getShoulderAngleVec("Left"));
-	this->height2_lcd->display(getShoulderAngleVec("Right"));
+	this->angle1_lcd->display(getArmFlexion("Left"));
+	this->angle2_lcd->display(getArmFlexion("Right"));
+	this->height1_lcd->display(getArmElevation("Left"));
+	this->height2_lcd->display(getArmElevation("Right"));
 
 	this->spinedev_lcd->display(getDeviation("Spine"));
 	this->shoulderdev_lcd->display(getDeviation("Shoulder"));
@@ -429,17 +429,25 @@ float SpecificWorker::getShoulderAngle(std::string side)
 }
 
 
-float SpecificWorker::getElbowAngleVec(std::string side)
+float SpecificWorker::getArmFlexion(std::string side)
 {
 
+    auto elbow = innerModel->transform("world", mapJointMesh[side +"Elbow"]);
+    auto shoulder = innerModel->transform("world", mapJointMesh[side +"Shoulder"]);
+    auto hand = innerModel->transform("world", mapJointMesh[side +"Hand"]);
 
-	auto v1  = innerModel->transform(mapJointMesh[side +"Elbow"],mapJointMesh[side+"Hand"]);
-	auto v2  = innerModel->transform(mapJointMesh[side +"Elbow"],mapJointMesh[side+"Shoulder"]);
+    auto v1 = elbow - hand;
+    auto v2 = shoulder - elbow;
+
+//	auto v1  = innerModel->transform(mapJointMesh[side +"Elbow"],mapJointMesh[side+"Hand"]);
+//	auto v2  = innerModel->transform(mapJointMesh[side +"Shoulder"],mapJointMesh[side+"Elbow"]);
+//
+
 
     return getAngleBetweenVectors(v1,v2);
 }
 
-float SpecificWorker::getShoulderAngleVec(std::string side)
+float SpecificWorker::getArmElevation(std::string side)
 {
 //
 //	auto v1  = innerModel->transform(mapJointMesh[side +"Shoulder"],mapJointMesh[side +"Elbow"]);
@@ -447,7 +455,7 @@ float SpecificWorker::getShoulderAngleVec(std::string side)
 
     auto elbow = innerModel->transform("world",mapJointMesh[side +"Elbow"]);
     auto shoulder = innerModel->transform("world",mapJointMesh[side +"Shoulder"]);
-    auto vertical =  QVec::vec3(shoulder.x(),0,shoulder.z());
+    auto vertical =  QVec::vec3(shoulder.x(),elbow.y(),shoulder.z());
 
     QVec v1 = shoulder - elbow;
     QVec v2 = shoulder - vertical;
@@ -466,7 +474,7 @@ float SpecificWorker::getDeviation(std::string part)
     {
         auto baseS = innerModel->transform("world",mapJointMesh["BaseSpine"]);
         auto upperS = innerModel->transform("world",mapJointMesh["ShoulderSpine"]);
-        auto vertical =  QVec::vec3(upperS.x(),0,upperS.z());
+        auto vertical =  QVec::vec3(upperS.x(),baseS.y(),upperS.z());
 
         QVec v1 = upperS- baseS;
         QVec v2 = upperS - vertical;
@@ -614,27 +622,27 @@ void SpecificWorker::initializeMetrics()
 {
 	currentMetrics.clear();
 	currentMetrics["Time"] = std::vector<float>();
-	currentMetrics["Elbow_left"] = std::vector<float>();
-	currentMetrics["Elbow_right"] = std::vector<float>();
-	currentMetrics["Shoulder_left"] = std::vector<float>();
-	currentMetrics["Shoulder_right"] = std::vector<float>();
-	currentMetrics["Spine"] = std::vector<float>();
-	currentMetrics["Shoulder"] = std::vector<float>();
-	currentMetrics["Hip"] = std::vector<float>();
-	currentMetrics["Knee"] = std::vector<float>();
+	currentMetrics["LeftArmFlexion"] = std::vector<float>();
+	currentMetrics["RightArmFlexion"] = std::vector<float>();
+	currentMetrics["LeftArmElevation"] = std::vector<float>();
+	currentMetrics["RightArmElevation"] = std::vector<float>();
+	currentMetrics["SpineDeviation"] = std::vector<float>();
+	currentMetrics["ShoulderDeviation"] = std::vector<float>();
+	currentMetrics["HipDeviation"] = std::vector<float>();
+	currentMetrics["KneeDeviation"] = std::vector<float>();
 }
 
 void SpecificWorker::saveActualFrameMetrics(float time){
 	currentMetrics["Time"].push_back(float(time));
-	currentMetrics["Elbow_left"].push_back(getElbowAngleVec("Left"));
-	currentMetrics["Elbow_right"].push_back(getElbowAngleVec("Right"));
-	currentMetrics["Shoulder_left"].push_back(getShoulderAngleVec("Left"));
-	currentMetrics["Shoulder_right"].push_back(getShoulderAngleVec("Right"));
+	currentMetrics["LeftArmFlexion"].push_back(getArmFlexion("Left"));
+	currentMetrics["RightArmFlexion"].push_back(getArmFlexion("Right"));
+	currentMetrics["LeftArmElevation"].push_back(getArmElevation("Left"));
+	currentMetrics["RightArmElevation"].push_back(getArmElevation("Right"));
 
-	currentMetrics["Spine"].push_back(getDeviation("Spine"));
-	currentMetrics["Shoulder"].push_back(getDeviation("Shoulder"));
-	currentMetrics["Hip"].push_back(getDeviation("Hip"));
-	currentMetrics["Knee"].push_back(getDeviation("Knee"));
+	currentMetrics["SpineDeviation"].push_back(getDeviation("Spine"));
+	currentMetrics["ShoulderDeviation"].push_back(getDeviation("Shoulder"));
+	currentMetrics["HipDeviation"].push_back(getDeviation("Hip"));
+	currentMetrics["KneeDeviation"].push_back(getDeviation("Knee"));
 }
 
 int SpecificWorker::loadJointsFromFile(QString filename)
@@ -1062,9 +1070,7 @@ void SpecificWorker::sm_initialize()
     connect(this->playback_action, SIGNAL(triggered()), this, SIGNAL(t_record_to_playback()));
     connect(this->record_action, SIGNAL(triggered()),this, SIGNAL(t_playback_to_record()));
 
-
     emit this->t_initialize_to_playback();
-//    this->t_initialize_to_record();
 
 
 }

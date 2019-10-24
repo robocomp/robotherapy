@@ -404,13 +404,6 @@
      </widget>
     </item>
     <item>
-     <widget class="Line" name="line_3">
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
-     </widget>
-    </item>
-    <item>
      <widget class="QGroupBox" name="playback_gBox">
       <property name="title">
        <string>Playing controls</string>
@@ -490,16 +483,16 @@
           </spacer>
          </item>
          <item>
-          <widget class="QToolButton" name="fwd1_btn">
+          <widget class="QToolButton" name="start_btn">
            <property name="text">
-            <string>&gt;</string>
+            <string>|&lt;&lt;</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QToolButton" name="start_btn">
+          <widget class="QToolButton" name="fwd1_btn">
            <property name="text">
-            <string>|&lt;&lt;</string>
+            <string>&gt;</string>
            </property>
           </widget>
          </item>
@@ -569,8 +562,16 @@
     <addaction name="bwd5_action"/>
     <addaction name="endPos_action"/>
    </widget>
+   <widget class="QMenu" name="menuMode">
+    <property name="title">
+     <string>Mode</string>
+    </property>
+    <addaction name="playback_action"/>
+    <addaction name="record_action"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuActions"/>
+   <addaction name="menuMode"/>
   </widget>
   <widget class="QStatusBar" name="status"/>
   <action name="loadFile_action">
@@ -626,6 +627,16 @@
   <action name="endPos_action">
    <property name="text">
     <string>End</string>
+   </property>
+  </action>
+  <action name="playback_action">
+   <property name="text">
+    <string>PlayBack</string>
+   </property>
+  </action>
+  <action name="record_action">
+   <property name="text">
+    <string>Record</string>
    </property>
   </action>
  </widget>

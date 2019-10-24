@@ -148,8 +148,9 @@ private:
 	void obtainFeatures();
 	float getShoulderAngle(std::string side);
 	float getElbowAngle(std::string side);
-	float getShoulderAngleVec(std::string side);
-	float getElbowAngleVec(std::string side);
+
+	float getArmElevation(std::string side);
+	float getArmFlexion(std::string side);
 	float getAngleBetweenVectors(QVec v1, QVec v2);
 	float getDeviation(std::string part);
 	void saveActualFrameMetrics(float time);

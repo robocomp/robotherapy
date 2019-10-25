@@ -37,15 +37,6 @@ import plot_therapy as PTH
 from genericworker import *
 
 
-# def get_AngleBetweenVectors(v1, v2):
-#     v1 = v1 / np.linalg.norm(v1)
-#     v2 = v2 / np.linalg.norm(v2)
-#
-#     dot_product = np.dot(v1, v2)
-#     angle = np.arccos(dot_product / (np.linalg.norm(v1) * np.linalg.norm(v2)))
-#
-#     return np.degrees(angle)
-
 def get_AngleBetweenVectors(v1, v2):
     v1 = vg.normalize(v1)
     v2 = vg.normalize(v2)

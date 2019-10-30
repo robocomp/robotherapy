@@ -1,10 +1,12 @@
 import "AdminTherapy.idsl";
+import "TherapyMetrics.idsl";
 
 Component therapyManager 
 {
     Communications
     {
         requires AdminTherapy;
+        subscribesTo TherapyMetrics;
 
     };
 	language python;

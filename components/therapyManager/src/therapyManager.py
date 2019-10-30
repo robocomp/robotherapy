@@ -108,6 +108,15 @@ if __name__ == '__main__':
 	for i in ic.getProperties():
 		parameters[str(i)] = str(ic.getProperties().getProperty(i))
 
+	# Topic Manager
+	proxy = ic.getProperties().getProperty("TopicManager.Proxy")
+	obj = ic.stringToProxy(proxy)
+	try:
+		topicManager = IceStorm.TopicManagerPrx.checkedCast(obj)
+	except Ice.ConnectionRefusedException, e:
+		print 'Cannot connect to IceStorm! ('+proxy+')'
+		status = 1
+
 	# Remote object connection for AdminTherapy
 	try:
 		proxyString = ic.getProperties().getProperty('AdminTherapyProxy')
@@ -130,6 +139,29 @@ if __name__ == '__main__':
 	else:
 		print "Error getting required connections, check config file"
 		sys.exit(-1)
+
+	TherapyMetrics_adapter = ic.createObjectAdapter("TherapyMetricsTopic")
+	therapymetricsI_ = TherapyMetricsI(worker)
+	therapymetrics_proxy = TherapyMetrics_adapter.addWithUUID(therapymetricsI_).ice_oneway()
+
+	subscribeDone = False
+	while not subscribeDone:
+		try:
+			therapymetrics_topic = topicManager.retrieve("TherapyMetrics")
+			subscribeDone = True
+		except Ice.Exception, e:
+			print "Error. Topic does not exist (creating)"
+			time.sleep(1)
+			try:
+				therapymetrics_topic = topicManager.create("TherapyMetrics")
+				subscribeDone = True
+			except:
+				print "Error. Topic could not be created. Exiting"
+				status = 0
+	qos = {}
+	therapymetrics_topic.subscribeAndGetPublisher(qos, therapymetrics_proxy)
+	TherapyMetrics_adapter.activate()
+
 
 	signal.signal(signal.SIGINT, sigint_handler)
 	app.exec_()

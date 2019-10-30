@@ -1,11 +1,14 @@
 import "HumanTrackerJointsAndRGB.idsl";
 import "AdminTherapy.idsl";
+import "TherapyMetrics.idsl";
+
 Component robotTherapy
 {
     Communications
     {
         subscribesTo HumanTrackerJointsAndRGB;
         implements AdminTherapy;
+        publishes TherapyMetrics;
 
     };
 	language python;

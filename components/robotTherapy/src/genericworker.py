@@ -44,30 +44,42 @@ except:
 	print 'SLICE_PATH environment variable was not exported. Using only the default paths'
 	pass
 
-ice_HumanTrackerJointsAndRGB = False
+ice_TherapyMetrics = False
 for p in icePaths:
-	if os.path.isfile(p+'/HumanTrackerJointsAndRGB.ice'):
+	if os.path.isfile(p+'/TherapyMetrics.ice'):
 		preStr = "-I/opt/robocomp/interfaces/ -I"+ROBOCOMP+"/interfaces/ " + additionalPathStr + " --all "+p+'/'
-		wholeStr = preStr+"HumanTrackerJointsAndRGB.ice"
+		wholeStr = preStr+"TherapyMetrics.ice"
 		Ice.loadSlice(wholeStr)
-		ice_HumanTrackerJointsAndRGB = True
+		ice_TherapyMetrics = True
 		break
-if not ice_HumanTrackerJointsAndRGB:
-	print 'Couln\'t load HumanTrackerJointsAndRGB'
+if not ice_TherapyMetrics:
+	print 'Couln\'t load TherapyMetrics'
 	sys.exit(-1)
-from RoboCompHumanTrackerJointsAndRGB import *
-ice_HumanTrackerJointsAndRGB = False
+from RoboCompTherapyMetrics import *
+ice_TherapyMetrics = False
 for p in icePaths:
-	if os.path.isfile(p+'/HumanTrackerJointsAndRGB.ice'):
+	if os.path.isfile(p+'/TherapyMetrics.ice'):
 		preStr = "-I/opt/robocomp/interfaces/ -I"+ROBOCOMP+"/interfaces/ " + additionalPathStr + " --all "+p+'/'
-		wholeStr = preStr+"HumanTrackerJointsAndRGB.ice"
+		wholeStr = preStr+"TherapyMetrics.ice"
 		Ice.loadSlice(wholeStr)
-		ice_HumanTrackerJointsAndRGB = True
+		ice_TherapyMetrics = True
 		break
-if not ice_HumanTrackerJointsAndRGB:
-	print 'Couln\'t load HumanTrackerJointsAndRGB'
+if not ice_TherapyMetrics:
+	print 'Couln\'t load TherapyMetrics'
 	sys.exit(-1)
-from RoboCompHumanTrackerJointsAndRGB import *
+from RoboCompTherapyMetrics import *
+ice_TherapyMetrics = False
+for p in icePaths:
+	if os.path.isfile(p+'/TherapyMetrics.ice'):
+		preStr = "-I/opt/robocomp/interfaces/ -I"+ROBOCOMP+"/interfaces/ " + additionalPathStr + " --all "+p+'/'
+		wholeStr = preStr+"TherapyMetrics.ice"
+		Ice.loadSlice(wholeStr)
+		ice_TherapyMetrics = True
+		break
+if not ice_TherapyMetrics:
+	print 'Couln\'t load TherapyMetrics'
+	sys.exit(-1)
+from RoboCompTherapyMetrics import *
 
 
 from admintherapyI import *
@@ -109,6 +121,7 @@ class GenericWorker(QtWidgets.QWidget):
 		super(GenericWorker, self).__init__()
 
 
+		self.therapymetrics_proxy = mprx["TherapyMetricsPub"]
 		self.ui = Ui_guiDlg()
 		self.ui.setupUi(self)
 		self.show()

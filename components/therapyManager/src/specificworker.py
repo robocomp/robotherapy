@@ -671,14 +671,14 @@ class SpecificWorker(GenericWorker):
         self.ui.selpatient_combobox.setCurrentIndex(0)
         self.ui.selTh_combobox.setCurrentIndex(0)
 
-        if self.aux_sessionInit == False:
+        if not self.aux_sessionInit:
             self.bbdd = BBDD()
-            self.bbdd.open_database("/home/robocomp/robocomp/components/euroage-tv/components/bbdd/prueba.db")
+            self.bbdd.open_database("/home/robocomp/robocomp/components/euroage-tv/components/bbdd/prueba1.db")
 
             patients = self.bbdd.get_all_patients()
             patients_list = []
             for p in patients:
-                patients_list.append(p.name + " " + p.surname)
+                patients_list.append(p.username)
 
             completer2 = QCompleter(patients_list)
 
@@ -754,8 +754,8 @@ class SpecificWorker(GenericWorker):
     # sm_wait_ready
     #
     @QtCore.Slot()
-    def sm_waitTherapyReady(self):
-        print("Entered state waitTherapyReady")
+    def sm_waitSessionReady(self):
+        print("Entered state waitSessionReady")
         self.ui.stackedWidget.setCurrentIndex(4)
 
         self.ui.start_game_button.setEnabled(False)
@@ -771,6 +771,10 @@ class SpecificWorker(GenericWorker):
                                   'Asegurese que el paciente está dentro del rango de visión de la cámara',
                                   QMessageBox.Ok)
 
+        #TODO FIX
+        if self.__readySessionReceived:
+            self.t_waitSessionReady_to_adminTherapies.emit()
+            self.__readySessionReceived = False
         # self.currentSession.date = self.aux_currentDate
 
     #
@@ -780,7 +784,7 @@ class SpecificWorker(GenericWorker):
     def sm_endSession(self):
         print("Entered state endSession")
 
-        if (self.aux_savedGames):
+        if self.aux_savedGames:
             reply = QMessageBox.question(self.focusWidget(), 'Juegos finalizados',
                                          ' Desea guardar los datos de la sesion actual?', QMessageBox.Yes,
                                          QMessageBox.No)
@@ -804,9 +808,9 @@ class SpecificWorker(GenericWorker):
     # =================================================================
 
     # #
-    # # metricsObtained
+    # # newDataObtained
     # #
-    # def metricsObtained(self, m):
+    # def newDataObtained(self, m):
     #     self.aux_currentDate = datetime.strptime(m.currentDate, "%Y-%m-%dT%H:%M:%S.%f")
     #     current_metrics = Metrics()
     #     current_metrics.time = self.aux_currentDate
@@ -832,55 +836,45 @@ class SpecificWorker(GenericWorker):
     #     else:
     #         print ("NO se ha iniciado el juego")
     #
-    # #
-    # # statusChanged
-    # #
-    # def statusChanged(self, s):
-    #     state_name = str(s.currentStatus.name)
-    #     self.aux_currentStatus = state_name
-    #     self.aux_currentDate = datetime.strptime(s.date, "%Y-%m-%dT%H:%M:%S.%f")
     #
-    #     self.updateUISig.emit()
-    #
-    #     if state_name == "initializingSession":
-    #         self.t_session_init_to_wait_ready.emit()
-    #
-    #     if state_name == "readySession":
-    #         self.t_wait_ready_to_admin_games.emit()
-    #
-    #     if state_name == "waitingGame":
-    #         self.t_admin_games_to_wait_play.emit()
-    #
-    #     if state_name == "playingGame":
-    #         self.t_wait_play_to_playing.emit()
-    #         self.t_paused_to_playing.emit()
-    #
-    #     if state_name == "pausedGame":
-    #         self.t_playing_to_paused.emit()
-    #
-    #     if state_name == "wonGame":
-    #         self.aux_wonGame = True
-    #         self.t_playing_to_game_end.emit()
-    #         self.t_paused_to_game_end.emit()
-    #
-    #     if state_name == "lostGame":
-    #         self.aux_wonGame = False
-    #         self.t_playing_to_game_end.emit()
-    #         self.t_paused_to_game_end.emit()
-    #
-    #     if state_name == "resetedGame":
-    #         self.aux_reseted = True
-    #         self.t_paused_to_admin_games.emit()
-    #
-    #     if state_name == "endSession":
-    #         self.t_admin_games_to_session_end.emit()
-    #         self.t_wait_play_to_session_end.emit()
-    #
-    # def compute_distance_travelled(self, x, y):
-    #     prev_x = self.aux_prevPos.x
-    #     prev_y = self.aux_prevPos.y
-    #     return math.sqrt(((x - prev_x) ** 2) + ((y - prev_y) ** 2))
-    #
+    # statusChanged
+    #{waitingSession, initializingSession, readySession, waitingTherapy, playingTherapy, pausedTherapy, resetedTherapy, endTherapy, endSession };
+    def statusChanged(self, s):
+        self.aux_currentStatus = str(s.currentStatus.name)
+        print "ESTADO ",self.aux_currentStatus
+        self.aux_currentDate = datetime.strptime(s.date, "%Y-%m-%dT%H:%M:%S.%f")
+
+        # self.updateUISig.emit()
+
+        if s.currentStatus == StatusType.initializingSession:
+            self.t_adminSessions_to_waitSessionReady.emit()
+
+        if s.currentStatus == StatusType.readySession:
+            self.__readySessionReceived = True
+            self.t_waitSessionReady_to_adminTherapies.emit()
+
+        if s.currentStatus == StatusType.waitingTherapy:
+            self.t_adminTherapies_to_waitingStart.emit()
+
+        if s.currentStatus == StatusType.playingTherapy:
+            self.t_waitingStart_to_performingTherapy.emit()
+            self.t_pausedTherapy_to_performingTherapy.emit()
+
+        if s.currentStatus == StatusType.pausedTherapy:
+            self.t_performingTherapy_to_pausedTherapy.emit()
+
+        if s.currentStatus == StatusType.endTherapy:
+            self.t_performingTherapy_to_endTherapy.emit()
+            self.t_pausedTherapy_to_endTherapy.emit()
+
+        if s.currentStatus == StatusType.resetedTherapy:
+            self.aux_reseted = True
+            self.t_pausedTherapy_to_adminTherapies.emit()
+
+        if s.currentStatus == StatusType.endSession:
+            self.t_adminTherapies_to_endSession.emit()
+            self.t_waitingStart_to_endSession.emit()
+
     # def compute_session_metrics(self):
     #     for game in self.currentSession.games:
     #

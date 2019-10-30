@@ -28,7 +28,7 @@ from pprint import pprint
 import cv2
 import numpy as np
 import vg
-from PySide2.QtCore import QTimer, QUrl
+from PySide2.QtCore import  QTimer, QUrl
 from PySide2.QtMultimedia import QMediaPlayer
 from PySide2.QtMultimediaWidgets import QVideoWidget
 from PySide2.QtWidgets import QMessageBox
@@ -38,8 +38,6 @@ from genericworker import *
 
 
 def get_AngleBetweenVectors(v1, v2):
-    v1 = vg.normalize(v1)
-    v2 = vg.normalize(v2)
     return vg.angle(v1, v2)
 
 
@@ -61,6 +59,7 @@ class SpecificWorker(GenericWorker):
         if not os.path.isdir(self.aux_saving_dir):
             os.mkdir(self.aux_saving_dir)
 
+        self.aux_patient_name = None
         self.aux_session_dir = None
         self.aux_therapy_dir = None
         self.aux_video_dir = None
@@ -108,12 +107,7 @@ class SpecificWorker(GenericWorker):
                 return False
         return True
 
-    # WARNING --> los joints vienne dados en la posicion de la camara.
-    # A la hora de calcular la elevacion de los brazos y piernas el calculo es diferente
-    # porque unos joints son negativos y otros positivos
-
     # Pierna o brazo sin flexionar --> 0º
-
     def get_armFlexion(self, side):
         necessary_joints = [side + "Elbow", side + "Shoulder", side + "Hand"]
         if not self.check_necessary_joints(necessary_joints):
@@ -203,8 +197,6 @@ class SpecificWorker(GenericWorker):
 
             self.current_metrics[part + "Deviation"] = round(get_AngleBetweenVectors(v1, v2), 4)
 
-
-
     # =============== Slots methods for State Machine ===================
     # ===================================================================
     #
@@ -234,9 +226,18 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def sm_waitSession(self):
         print("Entered state waitSession")
-        patient_name = "Sergio Barroso Ramirez"
-        patient = patient_name.replace(" ", "").strip()
-        patient_dir = os.path.join(self.aux_saving_dir, patient)
+        self.send_status_change(StatusType.waitingSession)
+
+    #
+    # sm_initializingSession
+    #
+    @QtCore.Slot()
+    def sm_initializingSession(self):
+        print("Entered state initializingSession")
+        self.send_status_change(StatusType.initializingSession)
+
+        # TODO sustituir el guardar a fichero --> guardara el manager en la bbdd
+        patient_dir = os.path.join(self.aux_saving_dir, self.aux_patient_name)
 
         if not os.path.isdir(patient_dir):
             os.mkdir(patient_dir)
@@ -248,15 +249,9 @@ class SpecificWorker(GenericWorker):
         if not os.path.isdir(self.aux_session_dir):
             os.mkdir(self.aux_session_dir)
 
-        self.t_waitSession_to_initializingSession.emit()
+        self.send_status_change(StatusType.readySession)
+        QTimer.singleShot(200, self.t_initializingSession_to_waitTherapy)
 
-    #
-    # sm_initializingSession
-    #
-    @QtCore.Slot()
-    def sm_initializingSession(self):
-        print("Entered state initializingSession")
-        self.t_initializingSession_to_waitTherapy.emit()
 
     #
     # sm_waitTherapy
@@ -264,6 +259,7 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def sm_waitTherapy(self):
         print("Entered state waitTherapy")
+        self.send_status_change(StatusType.waitingTherapy)
 
         therapy_name = "Levantar Brazos"
         therapy = therapy_name.replace(" ", "").strip()
@@ -284,7 +280,6 @@ class SpecificWorker(GenericWorker):
         self.player.setMedia(QUrl.fromLocalFile("/home/robolab/robocomp/components/robotherapy/components/robotTherapy"
                                                 "/resources/examples/ejercicio_correcto2.avi"))
 
-        self.t_waitTherapy_to_waitStartTherapy.emit()
 
     #
     # sm_waitStartTherapy
@@ -480,7 +475,6 @@ class SpecificWorker(GenericWorker):
 
     # =================================================================
     # =================================================================
-
     #
     # newPersonListAndRGB
     #
@@ -525,14 +519,16 @@ class SpecificWorker(GenericWorker):
     #
     def adminStartTherapy(self, therapy):
         print("adminStartTherapy ", therapy)
-        pass
+        self.t_waitTherapy_to_waitStartTherapy.emit()
 
     #
     # adminStartSession
     #
     def adminStartSession(self, patient):
         print("adminStartSession ", patient)
-        pass
+        self.aux_patient_name = patient
+        self.t_waitSession_to_initializingSession.emit()
+
 
     #
     # adminStopTherapy
@@ -549,5 +545,12 @@ class SpecificWorker(GenericWorker):
         print("adminResetTherapy")
         pass
 
-# ===================================================================
-# ===================================================================
+    # ===================================================================
+    # ===================================================================
+
+    def send_status_change(self, status_type):
+        initialicing_status = Status()
+        initialicing_status.currentStatus = status_type
+        initialicing_status.date = datetime.now().isoformat()
+        print("Sending %s" % str(status_type))
+        self.therapymetrics_proxy.statusChanged(initialicing_status)

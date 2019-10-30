@@ -38,6 +38,7 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <opencv2/opencv.hpp>
+#include <limits>
 
 #ifdef USE_QTGUI
 	#include <osgviewer/osgview.h>
@@ -46,6 +47,7 @@
 
 #define VIDEO_WIDTH 640
 #define VIDEO_HEIGHT 480
+
 
 struct Pose3D
 {
@@ -79,6 +81,8 @@ class SpecificWorker : public GenericWorker
 
 	bool upperTrunkFound = false;
 	bool lowerTrunkFound = false;
+
+	jointListType currentJoints;
 
 Q_OBJECT
 public:
@@ -146,17 +150,16 @@ private:
 	void updateFramesRecorded();
 	void restartPlayTimer();
 	void obtainFeatures();
-	float getShoulderAngle(std::string side);
-	float getElbowAngle(std::string side);
 
 	float getArmElevation(std::string side);
+	float getLegElevation(std::string side);
 	float getArmFlexion(std::string side);
+	float getLegFlexion(std::string side);
 	float getAngleBetweenVectors(QVec v1, QVec v2);
 	float getDeviation(std::string part);
 	void saveActualFrameMetrics(float time);
 	void initializeMetrics();
 	void closeEvent(QCloseEvent *event);
-//	void calculateAllMetrics();
 
 
 //	=============== Capture Methods ===========
@@ -168,6 +171,9 @@ private:
 	bool RotateTorso (const QVec &lshoulder, const QVec &rshoulder); //This method allows to rotate the torso from the position and rotation of the shoulders
 	bool SetPoses (Pose3D &pose, string joint);
 	bool checkNecessaryJoints(RoboCompHumanTrackerJointsAndRGB::TPerson &person);
+
+	bool checkJointList(vector<string> list);
+
 	bool loadTrainingFromFile();
 	int loadJointsFromFile(QString filename);
 	int loadVideoFromFile(QString filename);

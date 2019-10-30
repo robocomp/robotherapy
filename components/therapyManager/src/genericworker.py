@@ -56,8 +56,21 @@ if not ice_AdminTherapy:
 	print 'Couln\'t load AdminTherapy'
 	sys.exit(-1)
 from TherapyAdmin import *
+ice_AdminTherapy = False
+for p in icePaths:
+	if os.path.isfile(p+'/AdminTherapy.ice'):
+		preStr = "-I/opt/robocomp/interfaces/ -I"+ROBOCOMP+"/interfaces/ " + additionalPathStr + " --all "+p+'/'
+		wholeStr = preStr+"AdminTherapy.ice"
+		Ice.loadSlice(wholeStr)
+		ice_AdminTherapy = True
+		break
+if not ice_AdminTherapy:
+	print 'Couln\'t load AdminTherapy'
+	sys.exit(-1)
+from TherapyAdmin import *
 
 
+from therapymetricsI import *
 
 try:
 	from ui_mainUI import *
@@ -75,11 +88,11 @@ class GenericWorker(QtWidgets.QMainWindow):
 	t_userLogin_to_adminSessions = QtCore.Signal()
 	t_createUser_to_userLogin = QtCore.Signal()
 	t_adminSessions_to_createPatient = QtCore.Signal()
-	t_adminSessions_to_waitTherapyReady = QtCore.Signal()
+	t_adminSessions_to_waitSessionReady = QtCore.Signal()
 	t_adminSessions_to_consultPatient = QtCore.Signal()
 	t_consultPatient_to_adminSessions = QtCore.Signal()
 	t_createPatient_to_adminSessions = QtCore.Signal()
-	t_waitTherapyReady_to_adminTherapies = QtCore.Signal()
+	t_waitSessionReady_to_adminTherapies = QtCore.Signal()
 	t_adminTherapies_to_waitingStart = QtCore.Signal()
 	t_adminTherapies_to_endSession = QtCore.Signal()
 	t_waitingStart_to_performingTherapy = QtCore.Signal()
@@ -120,7 +133,7 @@ class GenericWorker(QtWidgets.QMainWindow):
 		self.adminSessions_state = QtCore.QState(self.admin_state)
 		self.consultPatient_state = QtCore.QState(self.admin_state)
 		self.createPatient_state = QtCore.QState(self.admin_state)
-		self.waitTherapyReady_state = QtCore.QState(self.admin_state)
+		self.waitSessionReady_state = QtCore.QState(self.admin_state)
 		self.adminTherapies_state = QtCore.QState(self.admin_state)
 		self.waitingStart_state = QtCore.QState(self.admin_state)
 		self.performingTherapy_state = QtCore.QState(self.admin_state)
@@ -138,11 +151,11 @@ class GenericWorker(QtWidgets.QMainWindow):
 		self.userLogin_state.addTransition(self.t_userLogin_to_adminSessions, self.adminSessions_state)
 		self.createUser_state.addTransition(self.t_createUser_to_userLogin, self.userLogin_state)
 		self.adminSessions_state.addTransition(self.t_adminSessions_to_createPatient, self.createPatient_state)
-		self.adminSessions_state.addTransition(self.t_adminSessions_to_waitTherapyReady, self.waitTherapyReady_state)
+		self.adminSessions_state.addTransition(self.t_adminSessions_to_waitSessionReady, self.waitSessionReady_state)
 		self.adminSessions_state.addTransition(self.t_adminSessions_to_consultPatient, self.consultPatient_state)
 		self.consultPatient_state.addTransition(self.t_consultPatient_to_adminSessions, self.adminSessions_state)
 		self.createPatient_state.addTransition(self.t_createPatient_to_adminSessions, self.adminSessions_state)
-		self.waitTherapyReady_state.addTransition(self.t_waitTherapyReady_to_adminTherapies, self.adminTherapies_state)
+		self.waitSessionReady_state.addTransition(self.t_waitSessionReady_to_adminTherapies, self.adminTherapies_state)
 		self.adminTherapies_state.addTransition(self.t_adminTherapies_to_waitingStart, self.waitingStart_state)
 		self.adminTherapies_state.addTransition(self.t_adminTherapies_to_endSession, self.endSession_state)
 		self.waitingStart_state.addTransition(self.t_waitingStart_to_performingTherapy, self.performingTherapy_state)
@@ -163,7 +176,7 @@ class GenericWorker(QtWidgets.QMainWindow):
 		self.adminSessions_state.entered.connect(self.sm_adminSessions)
 		self.consultPatient_state.entered.connect(self.sm_consultPatient)
 		self.createPatient_state.entered.connect(self.sm_createPatient)
-		self.waitTherapyReady_state.entered.connect(self.sm_waitTherapyReady)
+		self.waitSessionReady_state.entered.connect(self.sm_waitSessionReady)
 		self.adminTherapies_state.entered.connect(self.sm_adminTherapies)
 		self.waitingStart_state.entered.connect(self.sm_waitingStart)
 		self.performingTherapy_state.entered.connect(self.sm_performingTherapy)
@@ -228,8 +241,8 @@ class GenericWorker(QtWidgets.QMainWindow):
 		sys.exit(-1)
 
 	@QtCore.Slot()
-	def sm_waitTherapyReady(self):
-		print "Error: lack sm_waitTherapyReady in Specificworker"
+	def sm_waitSessionReady(self):
+		print "Error: lack sm_waitSessionReady in Specificworker"
 		sys.exit(-1)
 
 	@QtCore.Slot()

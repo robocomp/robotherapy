@@ -116,6 +116,25 @@ if __name__ == '__main__':
 	except Ice.ConnectionRefusedException, e:
 		print 'Cannot connect to IceStorm! ('+proxy+')'
 		status = 1
+
+	# Create a proxy to publish a TherapyMetrics topic
+	topic = False
+	try:
+		topic = topicManager.retrieve("TherapyMetrics")
+	except:
+		pass
+	while not topic:
+		try:
+			topic = topicManager.retrieve("TherapyMetrics")
+		except IceStorm.NoSuchTopic:
+			try:
+				topic = topicManager.create("TherapyMetrics")
+			except:
+				print 'Another client created the TherapyMetrics topic? ...'
+	pub = topic.getPublisher().ice_oneway()
+	therapymetricsTopic = TherapyMetricsPrx.uncheckedCast(pub)
+	mprx["TherapyMetricsPub"] = therapymetricsTopic
+
 	if status == 0:
 		worker = SpecificWorker(mprx)
 		worker.setParams(parameters)

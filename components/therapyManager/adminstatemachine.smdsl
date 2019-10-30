@@ -7,16 +7,16 @@ manager_machine{
 };
 
 :admin{
-    states createUser, adminSessions, consultPatient, createPatient, waitTherapyReady, adminTherapies, waitingStart, performingTherapy, pausedTherapy, endTherapy,endSession;
+    states createUser, adminSessions, consultPatient, createPatient, waitSessionReady, adminTherapies, waitingStart, performingTherapy, pausedTherapy, endTherapy,endSession;
     initial_state userLogin;
 
     transitions{
         userLogin => createUser,adminSessions;
         createUser => userLogin;
-        adminSessions => createPatient, waitTherapyReady, consultPatient;
+        adminSessions => createPatient, waitSessionReady, consultPatient;
         consultPatient => adminSessions;
         createPatient => adminSessions;
-        waitTherapyReady => adminTherapies;
+        waitSessionReady => adminTherapies;
         adminTherapies => waitingStart, endSession;
         waitingStart => performingTherapy, endSession;
         performingTherapy => pausedTherapy, endTherapy;

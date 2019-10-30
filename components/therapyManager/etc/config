@@ -1,6 +1,8 @@
 # Proxies for required interfaces
 AdminTherapyProxy = admintherapy:tcp -h localhost -p 15555
 
+# Endpoints for subscriptions
+TherapyMetricsTopic.Endpoints=tcp -p 17878
 
 
 # This property is used by the clients to connect to IceStorm.

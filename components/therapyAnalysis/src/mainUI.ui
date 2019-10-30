@@ -23,17 +23,56 @@
          <string>Metrics</string>
         </property>
         <layout class="QGridLayout" name="gridLayout">
-         <item row="0" column="1">
-          <widget class="QLabel" name="label">
-           <property name="text">
-            <string>Left</string>
+         <item row="1" column="1">
+          <widget class="QLCDNumber" name="angle1_lcd">
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>0</height>
+            </size>
            </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
+           <property name="maximumSize">
+            <size>
+             <width>100</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="smallDecimalPoint">
+            <bool>false</bool>
+           </property>
+           <property name="digitCount">
+            <number>3</number>
+           </property>
+           <property name="segmentStyle">
+            <enum>QLCDNumber::Flat</enum>
            </property>
           </widget>
          </item>
-         <item row="7" column="1">
+         <item row="6" column="0">
+          <widget class="QLabel" name="label_5">
+           <property name="text">
+            <string>Shoulder Deviation:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="1" colspan="2">
+          <widget class="QLCDNumber" name="shoulderdev_lcd">
+           <property name="digitCount">
+            <number>3</number>
+           </property>
+           <property name="segmentStyle">
+            <enum>QLCDNumber::Flat</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="10" column="1">
+          <widget class="QPushButton" name="chart_pb">
+           <property name="text">
+            <string>Charts</string>
+           </property>
+          </widget>
+         </item>
+         <item row="9" column="1">
           <spacer name="verticalSpacer_2">
            <property name="orientation">
             <enum>Qt::Vertical</enum>
@@ -46,10 +85,43 @@
            </property>
           </spacer>
          </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="metric1_label">
+         <item row="2" column="0">
+          <widget class="QLabel" name="metric2_label">
            <property name="text">
-            <string>Elbow Angle:</string>
+            <string>Arms Elevation:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Left</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>Right</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="QLCDNumber" name="angle2_lcd">
+           <property name="smallDecimalPoint">
+            <bool>false</bool>
+           </property>
+           <property name="digitCount">
+            <number>3</number>
+           </property>
+           <property name="segmentStyle">
+            <enum>QLCDNumber::Flat</enum>
            </property>
           </widget>
          </item>
@@ -78,20 +150,10 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="metric2_label">
+         <item row="1" column="0">
+          <widget class="QLabel" name="metric1_label">
            <property name="text">
-            <string>Shoulder Height:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="2">
-          <widget class="QLabel" name="label_2">
-           <property name="text">
-            <string>Right</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
+            <string>Arms Flexion:</string>
            </property>
           </widget>
          </item>
@@ -123,34 +185,14 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="2">
-          <widget class="QLCDNumber" name="angle2_lcd">
-           <property name="smallDecimalPoint">
-            <bool>false</bool>
-           </property>
-           <property name="digitCount">
-            <number>3</number>
-           </property>
-           <property name="segmentStyle">
-            <enum>QLCDNumber::Flat</enum>
-           </property>
-          </widget>
-         </item>
-         <item row="8" column="1">
-          <widget class="QPushButton" name="chart_pb">
-           <property name="text">
-            <string>Charts</string>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="0">
+         <item row="7" column="0">
           <widget class="QLabel" name="label_6">
            <property name="text">
             <string>Hips Deviation:</string>
            </property>
           </widget>
          </item>
-         <item row="6" column="1" colspan="2">
+         <item row="8" column="1" colspan="2">
           <widget class="QLCDNumber" name="kneesdev_lcd">
            <property name="digitCount">
             <number>3</number>
@@ -160,63 +202,21 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="1">
-          <widget class="QLCDNumber" name="angle1_lcd">
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>100</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="smallDecimalPoint">
-            <bool>false</bool>
-           </property>
-           <property name="digitCount">
-            <number>3</number>
-           </property>
-           <property name="segmentStyle">
-            <enum>QLCDNumber::Flat</enum>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="0">
-          <widget class="QLabel" name="label_5">
-           <property name="text">
-            <string>Shoulder Deviation:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="1" colspan="2">
-          <widget class="QLCDNumber" name="shoulderdev_lcd">
-           <property name="digitCount">
-            <number>3</number>
-           </property>
-           <property name="segmentStyle">
-            <enum>QLCDNumber::Flat</enum>
-           </property>
-          </widget>
-         </item>
-         <item row="6" column="0">
+         <item row="8" column="0">
           <widget class="QLabel" name="label_7">
            <property name="text">
             <string>Knees Deviation:</string>
            </property>
           </widget>
          </item>
-         <item row="3" column="0">
+         <item row="5" column="0">
           <widget class="QLabel" name="metric3_label">
            <property name="text">
             <string>Spine Deviation:</string>
            </property>
           </widget>
          </item>
-         <item row="3" column="1" colspan="2">
+         <item row="5" column="1" colspan="2">
           <widget class="QLCDNumber" name="spinedev_lcd">
            <property name="digitCount">
             <number>3</number>
@@ -226,9 +226,63 @@
            </property>
           </widget>
          </item>
-         <item row="5" column="1" colspan="2">
+         <item row="7" column="1" colspan="2">
           <widget class="QLCDNumber" name="hipsdev_lcd">
            <property name="digitCount">
+            <number>3</number>
+           </property>
+           <property name="segmentStyle">
+            <enum>QLCDNumber::Flat</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_3">
+           <property name="text">
+            <string>Legs Flexion:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="label_9">
+           <property name="text">
+            <string>Legs Elevation:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QLCDNumber" name="legflex1_lcd">
+           <property name="numDigits">
+            <number>3</number>
+           </property>
+           <property name="segmentStyle">
+            <enum>QLCDNumber::Flat</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="2">
+          <widget class="QLCDNumber" name="legflex2_lcd">
+           <property name="numDigits">
+            <number>3</number>
+           </property>
+           <property name="segmentStyle">
+            <enum>QLCDNumber::Flat</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QLCDNumber" name="legelevation1_lcd">
+           <property name="numDigits">
+            <number>3</number>
+           </property>
+           <property name="segmentStyle">
+            <enum>QLCDNumber::Flat</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="2">
+          <widget class="QLCDNumber" name="legelevation2_lcd">
+           <property name="numDigits">
             <number>3</number>
            </property>
            <property name="segmentStyle">
@@ -490,20 +544,6 @@
           </widget>
          </item>
          <item>
-          <widget class="QToolButton" name="fwd1_btn">
-           <property name="text">
-            <string>&gt;</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QToolButton" name="fwd5_btn">
-           <property name="text">
-            <string>&gt;&gt;</string>
-           </property>
-          </widget>
-         </item>
-         <item>
           <widget class="QToolButton" name="bwd5_btn">
            <property name="text">
             <string>&lt;&lt;</string>
@@ -514,6 +554,20 @@
           <widget class="QToolButton" name="bwd1_btn">
            <property name="text">
             <string>&lt;</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="fwd1_btn">
+           <property name="text">
+            <string>&gt;</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="fwd5_btn">
+           <property name="text">
+            <string>&gt;&gt;</string>
            </property>
           </widget>
          </item>

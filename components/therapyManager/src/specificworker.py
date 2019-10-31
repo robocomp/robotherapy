@@ -69,96 +69,6 @@ class Singleton(type(QObject), type):
             cls.instance = super(Singleton, cls).__call__(*args, **kw)
         return cls.instance
 
-
-#
-# class Session():
-#     def __init__(self):
-#         self.date = None
-#         self.patient = None
-#         self.totaltime = 0
-#         self.games = []
-#         self.numGames = 0
-#         self.totalHelps = 0
-#         self.totalChecks = 0
-#         self.wonGames = 0
-#         self.lostGames = 0
-#
-#     def save_session(self):
-#         saving_dir = os.path.join(CURRENT_PATH, "../savedSessions")
-#         print ("Saving session in ", saving_dir)
-#
-#         if not os.path.isdir(saving_dir):
-#             os.mkdir(saving_dir)
-#
-#         patient = self.patient.replace(" ", "").strip()
-#         patient_dir = os.path.join(saving_dir, patient)
-#
-#         if not os.path.isdir(patient_dir):
-#             os.mkdir(patient_dir)
-#
-#         date = datetime.strftime(self.date, "%y%m%d_%H%M%S")
-#         date_dir = os.path.join(patient_dir, date)
-#
-#         if os.path.isdir(date_dir):
-#             print ("Error, la sesion ya ha sido guardada")
-#             return
-#         else:
-#             os.mkdir(date_dir)
-#
-#             for game in self.games:
-#                 game.save_game(date_dir)
-#
-#             rows = [
-#                 ['tiempo total', 'num juegos', 'num ayudas', 'num comprobaciones', 'juegos ganados', 'juegos perdidos'],
-#                 [self.totaltime, len(self.games), self.totalHelps, self.totalChecks, self.wonGames, self.lostGames]]
-#
-#             filename = os.path.join(date_dir, "resumeSession" + ".csv")
-#
-#             with open(filename, 'w') as csvFile:
-#                 writer = csv.writer(csvFile)
-#                 writer.writerows(rows)
-#             csvFile.close()
-
-
-# class Metrics():
-#     def __init__(self):
-#         self.time = None
-#         self.distance = 0
-#         self.touched = 0
-#         self.handClosed = 0
-#         self.helps = 0
-#         self.checks = 0
-#         self.hits = 0
-#         self.fails = 0
-#
-#
-# class Game():
-#     def __init__(self):
-#         self.nameGame = None
-#         self.date = None
-#         self.timePlayed = 0
-#         self.timePaused = 0
-#         self.metrics = []
-#         self.gameWon = False
-#
-#     def save_game(self, dir):
-#         name = self.nameGame
-#         filename = os.path.join(dir, name.replace(" ", "").strip().lower() + ".csv")
-#         date = datetime.strftime(self.date, "%H:%M:%S")
-#
-#         rows = [['hora comienzo', 'tiempo total', 'tiempo pausado', 'distancia recorrida', 'num pantalla pulsada',
-#                  'num mano cerrada', 'num ayudas', 'num comprobaciones', 'aciertos', 'fallos', 'juego ganado']]
-#
-#         for m in self.metrics:
-#             rows.append([date, self.timePlayed, self.timePaused, m.distance, m.touched, m.handClosed, m.helps,
-#                          m.checks, m.hits, m.fails, self.gameWon])
-#
-#         with open(filename, 'w') as csvFile:
-#             writer = csv.writer(csvFile)
-#             writer.writerows(rows)
-#         csvFile.close()
-
-
 class QUserManager(QObject):
     __metaclass__ = Singleton
 
@@ -251,7 +161,7 @@ class SpecificWorker(GenericWorker):
         self.aux_currentDate = None
         self.aux_currentStatus = None
         self.aux_wonGame = False
-        self.aux_firtsGameInSession = True
+        self.aux_firstTherapyInSession = True
         self.aux_reseted = False
         self.aux_firstMetricReceived = True
         self.aux_savedGames = False
@@ -261,7 +171,9 @@ class SpecificWorker(GenericWorker):
         self.selected_game_incombo = ""
         self.list_therapies_todo = []
 
-        # self.updateUISig.connect(self.updateUI)
+        self.__readySessionReceived = False
+        self.__waitingTherapyReceived = False
+        self.updateUISig.connect(self.updateUI)
 
         self.manager_machine.start()
 
@@ -483,7 +395,7 @@ class SpecificWorker(GenericWorker):
 
     # Game window functions
     def start_clicked(self):
-        self.admintherapy_proxy.adminStartTherapy(self.currentGame.nameGame)
+        self.admintherapy_proxy.adminStartTherapy(self.list_therapies_todo[0])
 
     def pause_clicked(self):
         self.admintherapy_proxy.adminPauseTherapy()
@@ -603,8 +515,8 @@ class SpecificWorker(GenericWorker):
     def sm_endTherapy(self):
         print("Entered state endTherapy")
 
-        reply = QMessageBox.question(self.focusWidget(), 'Juego terminado',
-                                     ' ¿Desea guardar los datos del juego?', QMessageBox.Yes, QMessageBox.No)
+        reply = QMessageBox.question(self.focusWidget(), 'Terapia terminado',
+                                     ' ¿Desea guardar los datos de la terapia?', QMessageBox.Yes, QMessageBox.No)
         if reply == QMessageBox.Yes:
             self.aux_savedGames = True
             timeplayed = self.aux_currentDate - self.currentGame.date
@@ -648,8 +560,8 @@ class SpecificWorker(GenericWorker):
         self.ui.end_session_button.setEnabled(False)  # No se puede finalizar la sesion si hay un juego en marcha
         self.ui.end_session_button.setToolTip("Debe finalizar la terapia para poder terminar la sesión")
 
-        if self.currentGame.date is None:
-            self.currentGame.date = self.aux_currentDate
+        # if self.currentGame.date is None:
+        #     self.currentGame.date = self.aux_currentDate
 
         if self.aux_datePaused is not None:
             self.ui.continue_game_button.setEnabled(False)
@@ -705,30 +617,35 @@ class SpecificWorker(GenericWorker):
     def sm_adminTherapies(self):
         print("Entered state adminTherapies")
 
-        if self.aux_firtsGameInSession or self.aux_reseted:
+        if self.aux_firstTherapyInSession or self.aux_reseted:
+            therapy = self.list_therapies_todo[0]
 
-            game = self.list_therapies_todo[0]
+            self.ui.info_game_label.setText(therapy)
 
-            self.ui.info_game_label.setText(game)
-
-            self.aux_firtsGameInSession = False
+            self.aux_firstTherapyInSession = False
             self.aux_reseted = False
 
         else:
             self.list_therapies_todo.pop(0)
 
             if len(self.list_therapies_todo) == 0:
-                print("No quedan juegos")
+                print("No quedan terapias")
                 self.admintherapy_proxy.adminEndSession()
 
             else:
-                game = self.list_therapies_todo[0]
-                self.ui.info_game_label.setText(game)
+                therapy = self.list_therapies_todo[0]
+                self.ui.info_game_label.setText(therapy)
 
         self.ui.pause_game_button.setEnabled(False)
         self.ui.continue_game_button.setEnabled(False)
         self.ui.finish_game_button.setEnabled(False)
         self.ui.reset_game_button.setEnabled(False)
+
+        # TODO: FIX
+        if self.__waitingTherapyReceived:
+            print ("waitingTherapy already received")
+            self.t_adminTherapies_to_waitingStart.emit()
+            self.__waitingTherapyReceived = False
 
     #
     # sm_wait_play
@@ -740,14 +657,6 @@ class SpecificWorker(GenericWorker):
         self.ui.end_session_button.setEnabled(True)
 
         self.ui.status_label.setText(self.aux_currentStatus)
-        self.ui.num_screentouched_label.setText("-")
-        self.ui.num_closedhand_label.setText("-")
-        self.ui.timeplayed_label.setText("-")
-        self.ui.num_helps_label.setText("-")
-        self.ui.num_checks_label.setText("-")
-        self.ui.distance_label.setText("-")
-        self.ui.num_hits_label.setText("-")
-        self.ui.num_fails_label.setText("-")
         self.ui.date_label.setText("-")
 
     #
@@ -765,14 +674,15 @@ class SpecificWorker(GenericWorker):
         self.ui.reset_game_button.setEnabled(False)
         self.ui.end_session_button.setEnabled(False)
 
-        self.aux_firtsGameInSession = True
+        self.aux_firstTherapyInSession = True
 
         QMessageBox().information(self.focusWidget(), 'Info',
                                   'Asegurese que el paciente está dentro del rango de visión de la cámara',
                                   QMessageBox.Ok)
 
-        #TODO FIX
+        #TODO: FIX
         if self.__readySessionReceived:
+            print ("readySession already received")
             self.t_waitSessionReady_to_adminTherapies.emit()
             self.__readySessionReceived = False
         # self.currentSession.date = self.aux_currentDate
@@ -785,7 +695,7 @@ class SpecificWorker(GenericWorker):
         print("Entered state endSession")
 
         if self.aux_savedGames:
-            reply = QMessageBox.question(self.focusWidget(), 'Juegos finalizados',
+            reply = QMessageBox.question(self.focusWidget(), 'Terapias finalizados',
                                          ' Desea guardar los datos de la sesion actual?', QMessageBox.Yes,
                                          QMessageBox.No)
             if reply == QMessageBox.Yes:
@@ -838,13 +748,12 @@ class SpecificWorker(GenericWorker):
     #
     #
     # statusChanged
-    #{waitingSession, initializingSession, readySession, waitingTherapy, playingTherapy, pausedTherapy, resetedTherapy, endTherapy, endSession };
     def statusChanged(self, s):
         self.aux_currentStatus = str(s.currentStatus.name)
-        print "ESTADO ",self.aux_currentStatus
+        print "ESTADO ", self.aux_currentStatus
         self.aux_currentDate = datetime.strptime(s.date, "%Y-%m-%dT%H:%M:%S.%f")
 
-        # self.updateUISig.emit()
+        self.updateUISig.emit()
 
         if s.currentStatus == StatusType.initializingSession:
             self.t_adminSessions_to_waitSessionReady.emit()
@@ -854,6 +763,7 @@ class SpecificWorker(GenericWorker):
             self.t_waitSessionReady_to_adminTherapies.emit()
 
         if s.currentStatus == StatusType.waitingTherapy:
+            self.__waitingTherapyReceived = True
             self.t_adminTherapies_to_waitingStart.emit()
 
         if s.currentStatus == StatusType.playingTherapy:
@@ -886,11 +796,11 @@ class SpecificWorker(GenericWorker):
     #         self.currentSession.totalHelps += game.metrics[-1].helps
     #         self.currentSession.totalChecks += game.metrics[-1].checks
     #
-    # def updateUI(self):
-    #     if self.currentGame.date is not None:
-    #         self.ui.date_label.setText(self.currentGame.date.strftime("%c"))
-    #
-    #         self.ui.status_label.setText(self.aux_currentStatus)
+    def updateUI(self):
+        self.ui.date_label.setText(self.aux_currentDate.strftime("%c"))
+        self.ui.status_label.setText(self.aux_currentStatus)
+
+        # if self.currentGame.date is not None:
     #         self.ui.num_screentouched_label.setText(str(self.currentGame.metrics[-1].touched))
     #         self.ui.num_closedhand_label.setText(str(self.currentGame.metrics[-1].handClosed))
     #         self.ui.num_helps_label.setText(str(self.currentGame.metrics[-1].helps))

@@ -30,11 +30,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QImageWidget" name="admin_image" native="true">
-      <zorder>groupBox</zorder>
-      <zorder>groupBox</zorder>
-      <zorder>groupBox</zorder>
-     </widget>
+     <widget class="QImageWidget" name="admin_image" native="true"/>
     </item>
     <item>
      <widget class="QPushButton" name="start_game_button">
@@ -64,7 +60,7 @@
        <bool>false</bool>
       </property>
       <property name="text">
-       <string>EMPEZAR JUEGO</string>
+       <string>EMPEZAR TERAPIA</string>
       </property>
      </widget>
     </item>
@@ -129,150 +125,52 @@
        <property name="fieldGrowthPolicy">
         <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
        </property>
-       <item row="1" column="0">
+       <item row="2" column="0">
         <widget class="QLabel" name="label_8">
          <property name="text">
-          <string>Fecha de Inicio:</string>
+          <string>Fecha de Inicio:            </string>
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
+       <item row="2" column="1">
         <widget class="QLabel" name="date_label">
          <property name="text">
           <string>date</string>
          </property>
         </widget>
        </item>
-       <item row="2" column="0">
+       <item row="3" column="0">
         <widget class="QLabel" name="label_11">
          <property name="text">
-          <string>Tiempo jugado:</string>
+          <string>Tiempo empleado:</string>
          </property>
         </widget>
        </item>
-       <item row="3" column="0">
+       <item row="3" column="1">
+        <widget class="QLabel" name="timeplayed_label">
+         <property name="text">
+          <string>timeplayed</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
         <widget class="QLabel" name="label">
          <property name="text">
           <string>Estado:</string>
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
+       <item row="4" column="1">
         <widget class="QLabel" name="status_label">
          <property name="text">
           <string>Status</string>
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="label_5">
-         <property name="text">
-          <string>Nº pantalla pulsada:               </string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QLabel" name="num_screentouched_label">
-         <property name="text">
-          <string>num_screen_touched</string>
-         </property>
-        </widget>
-       </item>
        <item row="5" column="0">
-        <widget class="QLabel" name="label_4">
-         <property name="text">
-          <string>Nº mano cerrada:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1">
-        <widget class="QLabel" name="num_closedhand_label">
-         <property name="text">
-          <string>num_close_hand</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="0">
-        <widget class="QLabel" name="label_10">
-         <property name="text">
-          <string>Distancia recorrida:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="1">
-        <widget class="QLabel" name="distance_label">
-         <property name="text">
-          <string>distance</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="0">
-        <widget class="QLabel" name="label_6">
-         <property name="text">
-          <string>Nº ayudas:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="1">
-        <widget class="QLabel" name="num_helps_label">
-         <property name="text">
-          <string>num_helps</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="0">
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>Nº comprobaciones:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="1">
-        <widget class="QLabel" name="num_checks_label">
-         <property name="text">
-          <string>num_checks</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="0">
-        <widget class="QLabel" name="label_7">
-         <property name="text">
-          <string>Aciertos:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="1">
-        <widget class="QLabel" name="num_hits_label">
-         <property name="text">
-          <string>num_hits</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="0">
-        <widget class="QLabel" name="label_9">
-         <property name="text">
-          <string>Fallos:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="1">
-        <widget class="QLabel" name="num_fails_label">
-         <property name="text">
-          <string>num_fails</string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="0">
         <widget class="QLabel" name="label_2">
          <property name="text">
           <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QLabel" name="timeplayed_label">
-         <property name="text">
-          <string>timeplayed</string>
          </property>
         </widget>
        </item>

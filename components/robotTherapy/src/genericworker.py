@@ -99,21 +99,22 @@ class GenericWorker(QtWidgets.QWidget):
 	t_initialize_to_waitSession = QtCore.Signal()
 	t_waitSession_to_initializingSession = QtCore.Signal()
 	t_initializingSession_to_waitTherapy = QtCore.Signal()
-	t_waitTherapy_to_waitStartTherapy = QtCore.Signal()
+	t_waitTherapy_to_initializingTherapy = QtCore.Signal()
 	t_waitTherapy_to_finalizeSession = QtCore.Signal()
-	t_waitStartTherapy_to_loopTherapy = QtCore.Signal()
+	t_initializingTherapy_to_waitTherapy = QtCore.Signal()
+	t_initializingTherapy_to_loopTherapy = QtCore.Signal()
 	t_loopTherapy_to_resetTherapy = QtCore.Signal()
 	t_loopTherapy_to_pauseTherapy = QtCore.Signal()
 	t_loopTherapy_to_finalizeTherapy = QtCore.Signal()
-	t_resetTherapy_to_waitStartTherapy = QtCore.Signal()
+	t_resetTherapy_to_waitTherapy = QtCore.Signal()
 	t_pauseTherapy_to_loopTherapy = QtCore.Signal()
 	t_pauseTherapy_to_resetTherapy = QtCore.Signal()
 	t_pauseTherapy_to_finalizeTherapy = QtCore.Signal()
 	t_finalizeTherapy_to_waitTherapy = QtCore.Signal()
-	t_saveFrame_to_saveFrame = QtCore.Signal()
-	t_saveFrame_to_computeMetrics = QtCore.Signal()
+	t_captureFrame_to_captureFrame = QtCore.Signal()
+	t_captureFrame_to_computeMetrics = QtCore.Signal()
 	t_computeMetrics_to_updateMetrics = QtCore.Signal()
-	t_updateMetrics_to_saveFrame = QtCore.Signal()
+	t_updateMetrics_to_captureFrame = QtCore.Signal()
 
 #-------------------------
 
@@ -136,7 +137,7 @@ class GenericWorker(QtWidgets.QWidget):
 		self.waitSession_state = QtCore.QState(self.robotTherapyMachine)
 		self.initializingSession_state = QtCore.QState(self.robotTherapyMachine)
 		self.waitTherapy_state = QtCore.QState(self.robotTherapyMachine)
-		self.waitStartTherapy_state = QtCore.QState(self.robotTherapyMachine)
+		self.initializingTherapy_state = QtCore.QState(self.robotTherapyMachine)
 		self.loopTherapy_state = QtCore.QState(self.robotTherapyMachine)
 		self.resetTherapy_state = QtCore.QState(self.robotTherapyMachine)
 		self.pauseTherapy_state = QtCore.QState(self.robotTherapyMachine)
@@ -149,7 +150,7 @@ class GenericWorker(QtWidgets.QWidget):
 
 		self.computeMetrics_state = QtCore.QState(self.loopTherapy_state)
 		self.updateMetrics_state = QtCore.QState(self.loopTherapy_state)
-		self.saveFrame_state = QtCore.QState(self.loopTherapy_state)
+		self.captureFrame_state = QtCore.QState(self.loopTherapy_state)
 
 
 
@@ -158,39 +159,40 @@ class GenericWorker(QtWidgets.QWidget):
 		self.initialize_state.addTransition(self.t_initialize_to_waitSession, self.waitSession_state)
 		self.waitSession_state.addTransition(self.t_waitSession_to_initializingSession, self.initializingSession_state)
 		self.initializingSession_state.addTransition(self.t_initializingSession_to_waitTherapy, self.waitTherapy_state)
-		self.waitTherapy_state.addTransition(self.t_waitTherapy_to_waitStartTherapy, self.waitStartTherapy_state)
+		self.waitTherapy_state.addTransition(self.t_waitTherapy_to_initializingTherapy, self.initializingTherapy_state)
 		self.waitTherapy_state.addTransition(self.t_waitTherapy_to_finalizeSession, self.finalizeSession_state)
-		self.waitStartTherapy_state.addTransition(self.t_waitStartTherapy_to_loopTherapy, self.loopTherapy_state)
+		self.initializingTherapy_state.addTransition(self.t_initializingTherapy_to_waitTherapy, self.waitTherapy_state)
+		self.initializingTherapy_state.addTransition(self.t_initializingTherapy_to_loopTherapy, self.loopTherapy_state)
 		self.loopTherapy_state.addTransition(self.t_loopTherapy_to_resetTherapy, self.resetTherapy_state)
 		self.loopTherapy_state.addTransition(self.t_loopTherapy_to_pauseTherapy, self.pauseTherapy_state)
 		self.loopTherapy_state.addTransition(self.t_loopTherapy_to_finalizeTherapy, self.finalizeTherapy_state)
-		self.resetTherapy_state.addTransition(self.t_resetTherapy_to_waitStartTherapy, self.waitStartTherapy_state)
+		self.resetTherapy_state.addTransition(self.t_resetTherapy_to_waitTherapy, self.waitTherapy_state)
 		self.pauseTherapy_state.addTransition(self.t_pauseTherapy_to_loopTherapy, self.loopTherapy_state)
 		self.pauseTherapy_state.addTransition(self.t_pauseTherapy_to_resetTherapy, self.resetTherapy_state)
 		self.pauseTherapy_state.addTransition(self.t_pauseTherapy_to_finalizeTherapy, self.finalizeTherapy_state)
 		self.finalizeTherapy_state.addTransition(self.t_finalizeTherapy_to_waitTherapy, self.waitTherapy_state)
-		self.saveFrame_state.addTransition(self.t_saveFrame_to_saveFrame, self.saveFrame_state)
-		self.saveFrame_state.addTransition(self.t_saveFrame_to_computeMetrics, self.computeMetrics_state)
+		self.captureFrame_state.addTransition(self.t_captureFrame_to_captureFrame, self.captureFrame_state)
+		self.captureFrame_state.addTransition(self.t_captureFrame_to_computeMetrics, self.computeMetrics_state)
 		self.computeMetrics_state.addTransition(self.t_computeMetrics_to_updateMetrics, self.updateMetrics_state)
-		self.updateMetrics_state.addTransition(self.t_updateMetrics_to_saveFrame, self.saveFrame_state)
+		self.updateMetrics_state.addTransition(self.t_updateMetrics_to_captureFrame, self.captureFrame_state)
 
 
 		self.waitSession_state.entered.connect(self.sm_waitSession)
 		self.initializingSession_state.entered.connect(self.sm_initializingSession)
 		self.waitTherapy_state.entered.connect(self.sm_waitTherapy)
-		self.waitStartTherapy_state.entered.connect(self.sm_waitStartTherapy)
+		self.initializingTherapy_state.entered.connect(self.sm_initializingTherapy)
 		self.loopTherapy_state.entered.connect(self.sm_loopTherapy)
 		self.resetTherapy_state.entered.connect(self.sm_resetTherapy)
 		self.pauseTherapy_state.entered.connect(self.sm_pauseTherapy)
 		self.finalizeTherapy_state.entered.connect(self.sm_finalizeTherapy)
 		self.initialize_state.entered.connect(self.sm_initialize)
 		self.finalizeSession_state.entered.connect(self.sm_finalizeSession)
-		self.saveFrame_state.entered.connect(self.sm_saveFrame)
+		self.captureFrame_state.entered.connect(self.sm_captureFrame)
 		self.computeMetrics_state.entered.connect(self.sm_computeMetrics)
 		self.updateMetrics_state.entered.connect(self.sm_updateMetrics)
 
 		self.robotTherapyMachine.setInitialState(self.initialize_state)
-		self.loopTherapy_state.setInitialState(self.saveFrame_state)
+		self.loopTherapy_state.setInitialState(self.captureFrame_state)
 
 #------------------
 
@@ -211,8 +213,8 @@ class GenericWorker(QtWidgets.QWidget):
 		sys.exit(-1)
 
 	@QtCore.Slot()
-	def sm_waitStartTherapy(self):
-		print "Error: lack sm_waitStartTherapy in Specificworker"
+	def sm_initializingTherapy(self):
+		print "Error: lack sm_initializingTherapy in Specificworker"
 		sys.exit(-1)
 
 	@QtCore.Slot()
@@ -256,8 +258,8 @@ class GenericWorker(QtWidgets.QWidget):
 		sys.exit(-1)
 
 	@QtCore.Slot()
-	def sm_saveFrame(self):
-		print "Error: lack sm_saveFrame in Specificworker"
+	def sm_captureFrame(self):
+		print "Error: lack sm_captureFrame in Specificworker"
 		sys.exit(-1)
 
 

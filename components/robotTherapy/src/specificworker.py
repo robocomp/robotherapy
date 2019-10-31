@@ -59,6 +59,7 @@ class SpecificWorker(GenericWorker):
         if not os.path.isdir(self.aux_saving_dir):
             os.mkdir(self.aux_saving_dir)
 
+        self.aux_therapy_name = None
         self.aux_patient_name = None
         self.aux_session_dir = None
         self.aux_therapy_dir = None
@@ -208,7 +209,7 @@ class SpecificWorker(GenericWorker):
         self.ui.video_layout.addWidget(self.videoWidget)
         self.player.setVideoOutput(self.videoWidget)
 
-        self.ui.start_button.clicked.connect(self.t_waitStartTherapy_to_loopTherapy)
+        self.ui.start_button.clicked.connect(self.t_initializingTherapy_to_loopTherapy)
         self.ui.start_button.clicked.connect(self.t_pauseTherapy_to_loopTherapy)
         self.ui.stop_button.clicked.connect(self.t_loopTherapy_to_finalizeTherapy)
         self.ui.stop_button.clicked.connect(self.t_pauseTherapy_to_finalizeTherapy)
@@ -259,14 +260,23 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def sm_waitTherapy(self):
         print("Entered state waitTherapy")
+
         self.send_status_change(StatusType.waitingTherapy)
 
-        therapy_name = "Levantar Brazos"
-        therapy = therapy_name.replace(" ", "").strip()
+
+
+#
+    # sm_initializingTherapy
+    #
+    @QtCore.Slot()
+    def sm_initializingTherapy(self):
+        print("Entered state initializingTherapy")
+
+        therapy = self.aux_therapy_name.replace(" ", "").strip()
         self.aux_therapy_dir = os.path.join(self.aux_session_dir, therapy)
 
         if not os.path.isdir(self.aux_therapy_dir):
-            print ("creating" + self.aux_therapy_dir)
+            print ("[CREATING] " + self.aux_therapy_dir)
             os.mkdir(self.aux_therapy_dir)
 
         video_name = therapy.lower() + ".avi"
@@ -281,13 +291,10 @@ class SpecificWorker(GenericWorker):
                                                 "/resources/examples/ejercicio_correcto2.avi"))
 
 
-    #
-    # sm_waitStartTherapy
-    #
-    @QtCore.Slot()
-    def sm_waitStartTherapy(self):
-        self.aux_firstMetric = True
-        print("Entered state waitStartTherapy")
+        self.send_status_change(StatusType.readyTherapy)
+
+        self.t_initializingTherapy_to_loopTherapy.emit()
+
 
     #
     # sm_loopTherapy
@@ -300,26 +307,27 @@ class SpecificWorker(GenericWorker):
         self.player.setMuted(True)
         self.player.play()
         self.recording = True
+        self.send_status_change(StatusType.playingTherapy)
 
     #
     # sm_captureFrame
     #
     @QtCore.Slot()
-    def sm_saveFrame(self):
-        # print("Entered state saveFrame")
+    def sm_captureFrame(self):
+        # print("Entered state captureFrame")
         self.data_to_record = None
         self.aux_current_joints = None
         try:
             self.data_to_record = self.received_data_queue.get_nowait()
         except Empty:
-            QTimer.singleShot(1000 / 33, self.t_saveFrame_to_saveFrame)
+            QTimer.singleShot(1000 / 33, self.t_captureFrame_to_captureFrame)
 
         else:
             self.ui.info_label.setText("Recording...")
 
             # Video
             if self.data_to_record.rgbImage.height == 0 or self.data_to_record.rgbImage.width == 0:
-                QTimer.singleShot(1000 / 33, self.t_saveFrame_to_saveFrame)
+                QTimer.singleShot(1000 / 33, self.t_captureFrame_to_captureFrame)
 
             frame = np.frombuffer(self.data_to_record.rgbImage.image, np.uint8).reshape(
                 self.data_to_record.rgbImage.height, self.data_to_record.rgbImage.width,
@@ -354,7 +362,7 @@ class SpecificWorker(GenericWorker):
             joint_file.write("\n")
             joint_file.close()
 
-            self.t_saveFrame_to_computeMetrics.emit()
+            self.t_captureFrame_to_computeMetrics.emit()
 
     #
     # sm_computeMetrics
@@ -412,7 +420,7 @@ class SpecificWorker(GenericWorker):
 
             csvFile.close()
 
-        self.t_updateMetrics_to_saveFrame.emit()
+        self.t_updateMetrics_to_captureFrame.emit()
 
     #
     # sm_pauseTherapy
@@ -422,7 +430,7 @@ class SpecificWorker(GenericWorker):
         print("Entered state pauseTherapy")
         self.player.pause()
         self.recording = False
-
+        self.send_status_change(StatusType.pausedTherapy)
         self.ui.info_label.setText("Paused...")
 
     #
@@ -439,7 +447,8 @@ class SpecificWorker(GenericWorker):
 
         self.ui.info_label.setText("Reseted...")
 
-        self.t_resetTherapy_to_waitStartTherapy.emit()
+        self.send_status_change(StatusType.resetedTherapy)
+        self.t_resetTherapy_to_waitTherapy.emit()
 
     #
     # sm_finalizeTherapy
@@ -464,6 +473,7 @@ class SpecificWorker(GenericWorker):
         if reply == QMessageBox.No:
             shutil.rmtree(self.aux_therapy_dir)
 
+        self.send_status_change(StatusType.endTherapy)
     #
     # sm_finalizeSession
     #
@@ -471,7 +481,7 @@ class SpecificWorker(GenericWorker):
     def sm_finalizeSession(self):
 
         print("Entered state finalizeSession")
-        pass
+        self.send_status_change(StatusType.endSession)
 
     # =================================================================
     # =================================================================
@@ -491,14 +501,14 @@ class SpecificWorker(GenericWorker):
     def adminPauseTherapy(self):
 
         print("adminPauseTherapy")
-        pass
+        self.t_loopTherapy_to_pauseTherapy.emit()
 
     #
     # adminStopApp
     #
     def adminStopApp(self):
         print("adminStopApp")
-        pass
+        qApp.quit()
 
     #
     # adminContinueTherapy
@@ -512,14 +522,15 @@ class SpecificWorker(GenericWorker):
     #
     def adminEndSession(self):
         print("adminEndSession")
-        pass
+        self.t_waitTherapy_to_finalizeSession.emit()
 
     #
     # adminStartTherapy
     #
     def adminStartTherapy(self, therapy):
         print("adminStartTherapy ", therapy)
-        self.t_waitTherapy_to_waitStartTherapy.emit()
+        self.aux_therapy_name = therapy
+        self.t_waitTherapy_to_initializingTherapy.emit()
 
     #
     # adminStartSession
@@ -535,15 +546,18 @@ class SpecificWorker(GenericWorker):
     #
     def adminStopTherapy(self):
         print("adminStopTherapy")
+        self.t_loopTherapy_to_finalizeTherapy.emit()
+        self.t_pauseTherapy_to_finalizeTherapy.emit()
 
-        pass
 
     #
     # adminResetTherapy
     #
     def adminResetTherapy(self):
         print("adminResetTherapy")
-        pass
+        self.t_loopTherapy_to_resetTherapy.emit()
+        self.t_pauseTherapy_to_resetTherapy.emit()
+
 
     # ===================================================================
     # ===================================================================

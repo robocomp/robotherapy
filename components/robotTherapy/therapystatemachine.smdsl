@@ -3,17 +3,17 @@
    ANY CHANGE TO THE DEFAULT STATES OR TRANSITIONS */
 
 robotTherapyMachine{
-    states waitSession, initializingSession, waitTherapy, waitStartTherapy, loopTherapy, resetTherapy, pauseTherapy, finalizeTherapy;
+    states waitSession, initializingSession, waitTherapy,initializingTherapy, loopTherapy, resetTherapy, pauseTherapy, finalizeTherapy;
     initial_state initialize;
     end_state finalizeSession;
     transitions{
         initialize => waitSession;
 	    waitSession => initializingSession;
 	    initializingSession => waitTherapy;
-	    waitTherapy => waitStartTherapy, finalizeSession;
-	    waitStartTherapy => loopTherapy;
+	    waitTherapy => initializingTherapy, finalizeSession;
+	    initializingTherapy => waitTherapy, loopTherapy;
 	    loopTherapy => resetTherapy,pauseTherapy,finalizeTherapy;
-	    resetTherapy => waitStartTherapy;
+	    resetTherapy => waitTherapy;
 	    pauseTherapy => loopTherapy, resetTherapy, finalizeTherapy;
 	    finalizeTherapy => waitTherapy;
 
@@ -22,11 +22,11 @@ robotTherapyMachine{
 
 :loopTherapy {
 	states computeMetrics, updateMetrics;
-	initial_state saveFrame;
+	initial_state captureFrame;
 	transitions{
-	saveFrame => saveFrame, computeMetrics;
+	captureFrame => captureFrame, computeMetrics;
 	computeMetrics => updateMetrics;
-	updateMetrics => saveFrame;
+	updateMetrics => captureFrame;
 	};
 
 };

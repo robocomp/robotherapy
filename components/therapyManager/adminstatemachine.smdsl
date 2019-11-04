@@ -26,4 +26,14 @@ manager_machine{
     };
 };
 
+:performingTherapy{
+    states savingFrame, showingResults;
+    initial_state waitingFrame;
+
+    transitions{
+    waitingFrame => waitingFrame, savingFrame;
+    savingFrame => waitingFrame, showingResults;
+    showingResults => waitingFrame;
+    };
+};
 

@@ -44,30 +44,42 @@ except:
 	print 'SLICE_PATH environment variable was not exported. Using only the default paths'
 	pass
 
-ice_AdminTherapy = False
+ice_TherapyMetrics = False
 for p in icePaths:
-	if os.path.isfile(p+'/AdminTherapy.ice'):
+	if os.path.isfile(p+'/TherapyMetrics.ice'):
 		preStr = "-I/opt/robocomp/interfaces/ -I"+ROBOCOMP+"/interfaces/ " + additionalPathStr + " --all "+p+'/'
-		wholeStr = preStr+"AdminTherapy.ice"
+		wholeStr = preStr+"TherapyMetrics.ice"
 		Ice.loadSlice(wholeStr)
-		ice_AdminTherapy = True
+		ice_TherapyMetrics = True
 		break
-if not ice_AdminTherapy:
-	print 'Couln\'t load AdminTherapy'
+if not ice_TherapyMetrics:
+	print 'Couln\'t load TherapyMetrics'
 	sys.exit(-1)
-from TherapyAdmin import *
-ice_AdminTherapy = False
+from RoboCompTherapyMetrics import *
+ice_TherapyMetrics = False
 for p in icePaths:
-	if os.path.isfile(p+'/AdminTherapy.ice'):
+	if os.path.isfile(p+'/TherapyMetrics.ice'):
 		preStr = "-I/opt/robocomp/interfaces/ -I"+ROBOCOMP+"/interfaces/ " + additionalPathStr + " --all "+p+'/'
-		wholeStr = preStr+"AdminTherapy.ice"
+		wholeStr = preStr+"TherapyMetrics.ice"
 		Ice.loadSlice(wholeStr)
-		ice_AdminTherapy = True
+		ice_TherapyMetrics = True
 		break
-if not ice_AdminTherapy:
-	print 'Couln\'t load AdminTherapy'
+if not ice_TherapyMetrics:
+	print 'Couln\'t load TherapyMetrics'
 	sys.exit(-1)
-from TherapyAdmin import *
+from RoboCompTherapyMetrics import *
+ice_TherapyMetrics = False
+for p in icePaths:
+	if os.path.isfile(p+'/TherapyMetrics.ice'):
+		preStr = "-I/opt/robocomp/interfaces/ -I"+ROBOCOMP+"/interfaces/ " + additionalPathStr + " --all "+p+'/'
+		wholeStr = preStr+"TherapyMetrics.ice"
+		Ice.loadSlice(wholeStr)
+		ice_TherapyMetrics = True
+		break
+if not ice_TherapyMetrics:
+	print 'Couln\'t load TherapyMetrics'
+	sys.exit(-1)
+from RoboCompTherapyMetrics import *
 
 
 from therapymetricsI import *
@@ -104,6 +116,11 @@ class GenericWorker(QtWidgets.QMainWindow):
 	t_pausedTherapy_to_endTherapy = QtCore.Signal()
 	t_endTherapy_to_adminTherapies = QtCore.Signal()
 	t_endSession_to_adminSessions = QtCore.Signal()
+	t_waitingFrame_to_waitingFrame = QtCore.Signal()
+	t_waitingFrame_to_savingFrame = QtCore.Signal()
+	t_savingFrame_to_waitingFrame = QtCore.Signal()
+	t_savingFrame_to_showingResults = QtCore.Signal()
+	t_showingResults_to_waitingFrame = QtCore.Signal()
 
 #-------------------------
 
@@ -144,6 +161,13 @@ class GenericWorker(QtWidgets.QMainWindow):
 
 
 
+
+		self.savingFrame_state = QtCore.QState(self.performingTherapy_state)
+		self.showingResults_state = QtCore.QState(self.performingTherapy_state)
+		self.waitingFrame_state = QtCore.QState(self.performingTherapy_state)
+
+
+
 #------------------
 #Initialization State machine
 		self.admin_state.addTransition(self.t_admin_to_appEnd, self.appEnd_state)
@@ -167,6 +191,11 @@ class GenericWorker(QtWidgets.QMainWindow):
 		self.pausedTherapy_state.addTransition(self.t_pausedTherapy_to_endTherapy, self.endTherapy_state)
 		self.endTherapy_state.addTransition(self.t_endTherapy_to_adminTherapies, self.adminTherapies_state)
 		self.endSession_state.addTransition(self.t_endSession_to_adminSessions, self.adminSessions_state)
+		self.waitingFrame_state.addTransition(self.t_waitingFrame_to_waitingFrame, self.waitingFrame_state)
+		self.waitingFrame_state.addTransition(self.t_waitingFrame_to_savingFrame, self.savingFrame_state)
+		self.savingFrame_state.addTransition(self.t_savingFrame_to_waitingFrame, self.waitingFrame_state)
+		self.savingFrame_state.addTransition(self.t_savingFrame_to_showingResults, self.showingResults_state)
+		self.showingResults_state.addTransition(self.t_showingResults_to_waitingFrame, self.waitingFrame_state)
 
 
 		self.admin_state.entered.connect(self.sm_admin)
@@ -183,9 +212,13 @@ class GenericWorker(QtWidgets.QMainWindow):
 		self.pausedTherapy_state.entered.connect(self.sm_pausedTherapy)
 		self.endTherapy_state.entered.connect(self.sm_endTherapy)
 		self.endSession_state.entered.connect(self.sm_endSession)
+		self.waitingFrame_state.entered.connect(self.sm_waitingFrame)
+		self.savingFrame_state.entered.connect(self.sm_savingFrame)
+		self.showingResults_state.entered.connect(self.sm_showingResults)
 
 		self.manager_machine.setInitialState(self.admin_state)
 		self.admin_state.setInitialState(self.userLogin_state)
+		self.performingTherapy_state.setInitialState(self.waitingFrame_state)
 
 #------------------
 
@@ -278,6 +311,21 @@ class GenericWorker(QtWidgets.QMainWindow):
 	@QtCore.Slot()
 	def sm_userLogin(self):
 		print "Error: lack sm_userLogin in Specificworker"
+		sys.exit(-1)
+
+	@QtCore.Slot()
+	def sm_savingFrame(self):
+		print "Error: lack sm_savingFrame in Specificworker"
+		sys.exit(-1)
+
+	@QtCore.Slot()
+	def sm_showingResults(self):
+		print "Error: lack sm_showingResults in Specificworker"
+		sys.exit(-1)
+
+	@QtCore.Slot()
+	def sm_waitingFrame(self):
+		print "Error: lack sm_waitingFrame in Specificworker"
 		sys.exit(-1)
 
 

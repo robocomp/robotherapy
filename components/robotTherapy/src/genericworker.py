@@ -44,42 +44,42 @@ except:
 	print 'SLICE_PATH environment variable was not exported. Using only the default paths'
 	pass
 
-ice_TherapyMetrics = False
+ice_AdminTherapy = False
 for p in icePaths:
-	if os.path.isfile(p+'/TherapyMetrics.ice'):
+	if os.path.isfile(p+'/AdminTherapy.ice'):
 		preStr = "-I/opt/robocomp/interfaces/ -I"+ROBOCOMP+"/interfaces/ " + additionalPathStr + " --all "+p+'/'
-		wholeStr = preStr+"TherapyMetrics.ice"
+		wholeStr = preStr+"AdminTherapy.ice"
 		Ice.loadSlice(wholeStr)
-		ice_TherapyMetrics = True
+		ice_AdminTherapy = True
 		break
-if not ice_TherapyMetrics:
-	print 'Couln\'t load TherapyMetrics'
+if not ice_AdminTherapy:
+	print 'Couln\'t load AdminTherapy'
 	sys.exit(-1)
-from RoboCompTherapyMetrics import *
-ice_TherapyMetrics = False
+from RoboCompAdminTherapy import *
+ice_AdminTherapy = False
 for p in icePaths:
-	if os.path.isfile(p+'/TherapyMetrics.ice'):
+	if os.path.isfile(p+'/AdminTherapy.ice'):
 		preStr = "-I/opt/robocomp/interfaces/ -I"+ROBOCOMP+"/interfaces/ " + additionalPathStr + " --all "+p+'/'
-		wholeStr = preStr+"TherapyMetrics.ice"
+		wholeStr = preStr+"AdminTherapy.ice"
 		Ice.loadSlice(wholeStr)
-		ice_TherapyMetrics = True
+		ice_AdminTherapy = True
 		break
-if not ice_TherapyMetrics:
-	print 'Couln\'t load TherapyMetrics'
+if not ice_AdminTherapy:
+	print 'Couln\'t load AdminTherapy'
 	sys.exit(-1)
-from RoboCompTherapyMetrics import *
-ice_TherapyMetrics = False
+from RoboCompAdminTherapy import *
+ice_AdminTherapy = False
 for p in icePaths:
-	if os.path.isfile(p+'/TherapyMetrics.ice'):
+	if os.path.isfile(p+'/AdminTherapy.ice'):
 		preStr = "-I/opt/robocomp/interfaces/ -I"+ROBOCOMP+"/interfaces/ " + additionalPathStr + " --all "+p+'/'
-		wholeStr = preStr+"TherapyMetrics.ice"
+		wholeStr = preStr+"AdminTherapy.ice"
 		Ice.loadSlice(wholeStr)
-		ice_TherapyMetrics = True
+		ice_AdminTherapy = True
 		break
-if not ice_TherapyMetrics:
-	print 'Couln\'t load TherapyMetrics'
+if not ice_AdminTherapy:
+	print 'Couln\'t load AdminTherapy'
 	sys.exit(-1)
-from RoboCompTherapyMetrics import *
+from RoboCompAdminTherapy import *
 
 
 from admintherapyI import *

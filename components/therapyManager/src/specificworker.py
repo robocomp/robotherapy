@@ -23,13 +23,17 @@ import csv
 import json
 import math
 from datetime import datetime
+from Queue import Queue, Empty
+
+import cv2
+import numpy as np
 
 from PySide2.QtGui import QKeySequence
 from passlib.hash import pbkdf2_sha256
 from pprint import pprint
 
 import passwordmeter
-from PySide2.QtCore import Signal, QObject, Qt
+from PySide2.QtCore import Signal, QObject, Qt, QTimer
 from PySide2.QtWidgets import QMessageBox, QCompleter, QAction, qApp, QApplication, QShortcut
 
 from admin_widgets import *
@@ -68,6 +72,7 @@ class Singleton(type(QObject), type):
         if cls.instance is None:
             cls.instance = super(Singleton, cls).__call__(*args, **kw)
         return cls.instance
+
 
 class QUserManager(QObject):
     __metaclass__ = Singleton
@@ -140,6 +145,7 @@ class SpecificWorker(GenericWorker):
 
     def __init__(self, proxy_map):
         super(SpecificWorker, self).__init__(proxy_map)
+
         self.Period = 2000
         self.timer.start(self.Period)
 
@@ -166,14 +172,33 @@ class SpecificWorker(GenericWorker):
         self.aux_firstMetricReceived = True
         self.aux_savedGames = False
 
+
+
         self.selected_patient_incombo = ""
         self.selected_game_inlist = ""
-        self.selected_game_incombo = ""
         self.list_therapies_todo = []
 
         self.__readySessionReceived = False
         self.__waitingTherapyReceived = False
         self.updateUISig.connect(self.updateUI)
+
+        ##For saving sessions
+        self.aux_current_joints = None
+        self.data_to_record = None
+        self.received_data_queue = Queue()
+        self.video_writer = None
+
+        self.aux_therapy_name = None
+        self.aux_patient_name = None
+        self.aux_session_dir = None
+        self.aux_therapy_dir = None
+        self.aux_video_dir = None
+        self.aux_joints_dir = None
+        self.aux_metrics_dir = None
+
+        self.aux_saving_dir = "/home/robolab/robocomp/components/robotherapy/components/therapyManager/savedSessions"
+        if not os.path.isdir(self.aux_saving_dir):
+            os.mkdir(self.aux_saving_dir)
 
         self.manager_machine.start()
 
@@ -202,7 +227,10 @@ class SpecificWorker(GenericWorker):
 
         ## Login window
         self.loginShortcut = QShortcut(QKeySequence(Qt.Key_Return), self)
+        self.skiploginShortcut = QShortcut(QKeySequence(Qt.Key_Tab), self)
         self.loginShortcut.activated.connect(self.check_login)
+        self.skiploginShortcut.activated.connect(self.t_userLogin_to_adminSessions)
+
         self.ui.login_button_2.clicked.connect(self.check_login)
         self.ui.newuser_button_2.clicked.connect(self.t_userLogin_to_createUser.emit)
 
@@ -335,9 +363,9 @@ class SpecificWorker(GenericWorker):
         print (self.ui.therapies_list.currentRow())
 
     def addgametolist(self):
-        self.selected_game_incombo = self.ui.selTh_combobox.currentText()
-        if self.selected_game_incombo != "":
-            self.ui.therapies_list.addItem(self.selected_game_incombo)
+        selected_game_incombo = self.ui.selTh_combobox.currentText()
+        if selected_game_incombo != "":
+            self.ui.therapies_list.addItem(selected_game_incombo)
             self.ui.selTh_combobox.setCurrentIndex(0)
             return True
         else:
@@ -350,7 +378,8 @@ class SpecificWorker(GenericWorker):
         current_text = self.ui.therapies_list.currentItem().text()
         current_index = self.ui.therapies_list.currentRow()
 
-        if current_index == 0: return
+        if current_index == 0:
+            return
         new_index = current_index - 1
         previous_text = self.ui.therapies_list.item(new_index).text()
 
@@ -364,7 +393,8 @@ class SpecificWorker(GenericWorker):
         current_text = self.ui.therapies_list.currentItem().text()
         current_index = self.ui.therapies_list.currentRow()
 
-        if current_index == self.ui.therapies_list.count() - 1: return
+        if current_index == self.ui.therapies_list.count() - 1:
+            return
         new_index = current_index + 1
         previous_text = self.ui.therapies_list.item(new_index).text()
 
@@ -418,13 +448,13 @@ class SpecificWorker(GenericWorker):
             self.admintherapy_proxy.adminResetTherapy()
 
     def start_session(self):
-        patient = self.selected_patient_incombo
+        self.aux_patient_name = self.selected_patient_incombo
         self.list_therapies_todo = []
 
         for index in xrange(self.ui.therapies_list.count()):
             self.list_therapies_todo.append(self.ui.therapies_list.item(index).text())
 
-        if patient == "":
+        if self.aux_patient_name == "":
             QMessageBox().information(self.focusWidget(), 'Error',
                                       'No se han seleccionado ningún paciente',
                                       QMessageBox.Ok)
@@ -433,7 +463,20 @@ class SpecificWorker(GenericWorker):
                                       'No se ha seleccionado ninguna terapia',
                                       QMessageBox.Ok)
         else:
-            self.admintherapy_proxy.adminStartSession(patient)
+
+            patient_dir = os.path.join(self.aux_saving_dir, self.aux_patient_name)
+
+            if not os.path.isdir(patient_dir):
+                os.mkdir(patient_dir)
+
+            currentDate = datetime.now()
+            date = datetime.strftime(currentDate, "%m%d%H%M")
+            self.aux_session_dir = os.path.join(patient_dir, "session_" + date)
+
+            if not os.path.isdir(self.aux_session_dir):
+                os.mkdir(self.aux_session_dir)
+
+            self.admintherapy_proxy.adminStartSession(self.aux_patient_name)
 
     def end_session_clicked(self):
 
@@ -547,7 +590,7 @@ class SpecificWorker(GenericWorker):
         self.aux_datePaused = self.aux_currentDate
 
     #
-    # sm_playing
+    # sm_performingTherapy
     #
     @QtCore.Slot()
     def sm_performingTherapy(self):
@@ -570,6 +613,101 @@ class SpecificWorker(GenericWorker):
             self.currentGame.timePaused += time.total_seconds() * 1000
             self.aux_datePaused = None
             print "Time paused =  ", self.currentGame.timePaused, "milliseconds"
+
+
+    #
+    # sm_waitingFrame
+    #
+    @QtCore.Slot()
+    def sm_waitingFrame(self):
+        print("Entered state waitingFrame")
+        self.data_to_record = None
+        self.aux_current_joints = None
+
+        try:
+            self.data_to_record = self.received_data_queue.get_nowait()
+        except Empty:
+            QTimer.singleShot(1000 / 33, self.t_waitingFrame_to_waitingFrame)
+
+        else:
+            self.t_waitingFrame_to_savingFrame.emit()
+
+    #
+    # sm_savingFrame
+    #
+    @QtCore.Slot()
+    def sm_savingFrame(self):
+        print("Entered state savingFrame")
+
+        # Video
+        if self.data_to_record.rgbImage.height == 0 or self.data_to_record.rgbImage.width == 0:
+            QTimer.singleShot(1000 / 33, self.t_captureFrame_to_captureFrame)
+
+        frame = np.frombuffer(self.data_to_record.rgbImage.image, np.uint8).reshape(
+            self.data_to_record.rgbImage.height, self.data_to_record.rgbImage.width,
+            self.data_to_record.rgbImage.depth)
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        if self.video_writer is None:
+            (height, width) = frame.shape[:2]
+            self.video_writer = cv2.VideoWriter(self.aux_video_dir, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 30,
+                                                (width, height))
+        self.video_writer.write(frame)
+
+        # Joints
+        joint_file = open(self.aux_joints_dir, 'a+')
+        joint_file.write(str(self.data_to_record.timeStamp))
+        joint_file.write("#")
+
+        if len(self.data_to_record.persons) > 0:
+            for id, person in self.data_to_record.persons.items():
+
+                joint_file.write(str(id))
+                joint_file.write("#")
+
+                self.aux_current_joints = person.joints
+
+                for id_joint, j in person.joints.items():
+                    joint_file.writelines([str(id_joint), " ", str(j[0]), " ", str(j[1]), " ", str(j[2]), "#"])
+
+        else:
+            self.ui.info_label.setText("No humans detected")
+
+        joint_file.write("\n")
+        joint_file.close()
+
+        # Metrics
+        if not os.path.isfile(self.aux_metrics_dir):
+            with open(self.aux_metrics_dir, 'w') as csvFile:
+                writer = csv.writer(csvFile, delimiter=';')
+                writer.writerow(
+                    ["Time", "LeftArmFlexion", "RightArmFlexion", "HipDeviation", "KneeDeviation",
+                     "ShoulderDeviation", "LeftArmElevation", "RightArmElevation", "SpineDeviation", "LeftLegFlexion",
+                     "RightLegFlexion", "LeftLegElevation", "RightLegElevation"])
+            csvFile.close()
+
+        with open(self.aux_metrics_dir, 'a') as csvFile:
+            writer = csv.writer(csvFile, delimiter=';')
+            writer.writerow(
+                [self.data_to_record.metricsObtained["Time"], self.data_to_record.metricsObtained["LeftArmFlexion"],
+                 self.data_to_record.metricsObtained["RightArmFlexion"], self.data_to_record.metricsObtained["HipDeviation"],
+                 self.data_to_record.metricsObtained["KneeDeviation"], self.data_to_record.metricsObtained["ShoulderDeviation"],
+                 self.data_to_record.metricsObtained["LeftArmElevation"], self.data_to_record.metricsObtained["RightArmElevation"],
+                 self.data_to_record.metricsObtained["SpineDeviation"], self.data_to_record.metricsObtained["LeftLegFlexion"],
+                 self.data_to_record.metricsObtained["RightLegFlexion"], self.data_to_record.metricsObtained["LeftLegElevation"],
+                 self.data_to_record.metricsObtained["RightLegElevation"]])
+
+            csvFile.close()
+
+
+        self.t_savingFrame_to_waitingFrame.emit()
+
+    #
+    # sm_showingResults
+    #
+    @QtCore.Slot()
+    def sm_showingResults(self):
+        print("Entered state showingResults")
+        pass
 
     #
     # sm_session_init
@@ -619,7 +757,7 @@ class SpecificWorker(GenericWorker):
 
         if self.aux_firstTherapyInSession or self.aux_reseted:
             therapy = self.list_therapies_todo[0]
-
+            self.aux_therapy_name = therapy
             self.ui.info_game_label.setText(therapy)
 
             self.aux_firstTherapyInSession = False
@@ -634,6 +772,7 @@ class SpecificWorker(GenericWorker):
 
             else:
                 therapy = self.list_therapies_todo[0]
+                self.aux_therapy_name = therapy
                 self.ui.info_game_label.setText(therapy)
 
         self.ui.pause_game_button.setEnabled(False)
@@ -655,9 +794,23 @@ class SpecificWorker(GenericWorker):
         print("Entered state waitingStart")
         self.ui.start_game_button.setEnabled(True)
         self.ui.end_session_button.setEnabled(True)
-
         self.ui.status_label.setText(self.aux_currentStatus)
         self.ui.date_label.setText("-")
+
+        therapy = self.aux_therapy_name.replace(" ", "").strip()
+        self.aux_therapy_dir = os.path.join(self.aux_session_dir, therapy)
+
+        if not os.path.isdir(self.aux_therapy_dir):
+            print ("[CREATING] " + self.aux_therapy_dir)
+            os.mkdir(self.aux_therapy_dir)
+
+        video_name = therapy.lower() + ".avi"
+        joints_name = therapy.lower() + ".txt"
+        metrics_name = therapy.lower() + ".csv"
+
+        self.aux_video_dir = os.path.join(self.aux_therapy_dir, video_name)
+        self.aux_joints_dir = os.path.join(self.aux_therapy_dir, joints_name)
+        self.aux_metrics_dir = os.path.join(self.aux_therapy_dir, metrics_name)
 
     #
     # sm_wait_ready
@@ -680,7 +833,7 @@ class SpecificWorker(GenericWorker):
                                   'Asegurese que el paciente está dentro del rango de visión de la cámara',
                                   QMessageBox.Ok)
 
-        #TODO: FIX
+        # TODO: FIX
         if self.__readySessionReceived:
             print ("readySession already received")
             self.t_waitSessionReady_to_adminTherapies.emit()
@@ -717,11 +870,17 @@ class SpecificWorker(GenericWorker):
     # =================================================================
     # =================================================================
 
-    # #
-    # # newDataObtained
-    # #
-    # def newDataObtained(self, m):
-    #     self.aux_currentDate = datetime.strptime(m.currentDate, "%Y-%m-%dT%H:%M:%S.%f")
+    #
+    # newDataObtained
+    #
+    def newDataObtained(self, data):
+        print("New Data received")
+
+        if data.rgbImage.height == 0 or data.rgbImage.width == 0:
+            return
+        else:
+            self.received_data_queue.put(data)
+
     #     current_metrics = Metrics()
     #     current_metrics.time = self.aux_currentDate
     #

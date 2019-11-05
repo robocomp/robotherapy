@@ -18,22 +18,15 @@
 #    You should have received a copy of the GNU General Public License
 #    along with RoboComp.  If not, see <http://www.gnu.org/licenses/>.
 #
-import copy
-import csv
-import shutil
 from Queue import Queue, Empty
 from datetime import datetime
-from pprint import pprint
 
-import cv2
 import numpy as np
 import vg
 from PySide2.QtCore import QTimer, QUrl
 from PySide2.QtMultimedia import QMediaPlayer
 from PySide2.QtMultimediaWidgets import QVideoWidget
-from PySide2.QtWidgets import QMessageBox
 
-import plot_therapy as PTH
 from genericworker import *
 
 
@@ -56,17 +49,8 @@ class SpecificWorker(GenericWorker):
         self.data_to_record = None
         self.video_writer = None
 
-        # self.aux_saving_dir = "/home/robolab/robocomp/components/robotherapy/components/robotTherapy/savedSessions"
-        # if not os.path.isdir(self.aux_saving_dir):
-        #     os.mkdir(self.aux_saving_dir)
-
         self.aux_therapy_name = None
         self.aux_patient_name = None
-        self.aux_session_dir = None
-        self.aux_therapy_dir = None
-        self.aux_video_dir = None
-        self.aux_joints_dir = None
-        self.aux_metrics_dir = None
         self.aux_current_joints = None
 
         self.aux_firstTime_metric = None
@@ -240,18 +224,7 @@ class SpecificWorker(GenericWorker):
         print("Entered state initializingSession")
         self.send_status_change(StatusType.initializingSession)
 
-        # TODO sustituir el guardar a fichero --> guardara el manager en la bbdd
-        # patient_dir = os.path.join(self.aux_saving_dir, self.aux_patient_name)
-        #
-        # if not os.path.isdir(patient_dir):
-        #     os.mkdir(patient_dir)
-        #
-        # currentDate = datetime.now()
-        # date = datetime.strftime(currentDate, "%m%d%H%M")
-        # self.aux_session_dir = os.path.join(patient_dir, "session_" + date)
-        #
-        # if not os.path.isdir(self.aux_session_dir):
-        #     os.mkdir(self.aux_session_dir)
+        #TODO comprobar que se detectan todos los joints
 
         self.send_status_change(StatusType.readySession)
         QTimer.singleShot(200, self.t_initializingSession_to_waitTherapy)
@@ -271,21 +244,6 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def sm_initializingTherapy(self):
         print("Entered state initializingTherapy")
-
-        # therapy = self.aux_therapy_name.replace(" ", "").strip()
-        # self.aux_therapy_dir = os.path.join(self.aux_session_dir, therapy)
-        #
-        # if not os.path.isdir(self.aux_therapy_dir):
-        #     print ("[CREATING] " + self.aux_therapy_dir)
-        #     os.mkdir(self.aux_therapy_dir)
-        #
-        # video_name = therapy.lower() + ".avi"
-        # joints_name = therapy.lower() + ".txt"
-        # metrics_name = therapy.lower() + ".csv"
-        #
-        # self.aux_video_dir = os.path.join(self.aux_therapy_dir, video_name)
-        # self.aux_joints_dir = os.path.join(self.aux_therapy_dir, joints_name)
-        # self.aux_metrics_dir = os.path.join(self.aux_therapy_dir, metrics_name)
 
         self.player.setMedia(QUrl.fromLocalFile("/home/robolab/robocomp/components/robotherapy/components/robotTherapy"
                                                 "/resources/examples/ejercicio_correcto2.avi"))
@@ -332,44 +290,6 @@ class SpecificWorker(GenericWorker):
             for id, person in self.data_to_record.persons.items():
                 self.aux_current_joints = person.joints
 
-
-            # Video
-            # if self.data_to_record.rgbImage.height == 0 or self.data_to_record.rgbImage.width == 0:
-            #     QTimer.singleShot(1000 / 33, self.t_captureFrame_to_captureFrame)
-            #
-            # frame = np.frombuffer(self.data_to_record.rgbImage.image, np.uint8).reshape(
-            #     self.data_to_record.rgbImage.height, self.data_to_record.rgbImage.width,
-            #     self.data_to_record.rgbImage.depth)
-            # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            #
-            # if self.video_writer is None:
-            #     (height, width) = frame.shape[:2]
-            #     self.video_writer = cv2.VideoWriter(self.aux_video_dir, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 30,
-            #                                         (width, height))
-            # self.video_writer.write(frame)
-            #
-            # # Joints
-            # joint_file = open(self.aux_joints_dir, 'a+')
-            # joint_file.write(str(self.data_to_record.timeStamp))
-            # joint_file.write("#")
-            #
-            # if len(self.data_to_record.persons) > 0:
-            #     for id, person in self.data_to_record.persons.items():
-            #
-            #         joint_file.write(str(id))
-            #         joint_file.write("#")
-            #
-            #         self.aux_current_joints = person.joints
-            #
-            #         for id_joint, j in person.joints.items():
-            #             joint_file.writelines([str(id_joint), " ", str(j[0]), " ", str(j[1]), " ", str(j[2]), "#"])
-            #
-            # else:
-            #     self.ui.info_label.setText("No humans detected")
-            #
-            # joint_file.write("\n")
-            # joint_file.close()
-
             self.t_captureFrame_to_computeMetrics.emit()
 
     #
@@ -385,22 +305,23 @@ class SpecificWorker(GenericWorker):
             self.aux_firstMetric = False
 
         self.current_metrics["Time"] = round((self.data_to_record.timeStamp - self.aux_firstTime_metric) / 1000., 4)
-        self.get_armFlexion("Left")
-        self.get_armFlexion("Right")
-        self.get_armElevation("Left")
-        self.get_armElevation("Right")
-        self.get_deviationAngle("Spine")
-        self.get_deviationAngle("Shoulder")
-        self.get_deviationAngle("Hip")
-        self.get_deviationAngle("Knee")
-        self.get_legFlexion("Left")
-        self.get_legFlexion("Right")
-        self.get_legElevation("Left")
-        self.get_legElevation("Right")
+
+        if self.aux_current_joints is not None:
+
+            self.get_armFlexion("Left")
+            self.get_armFlexion("Right")
+            self.get_armElevation("Left")
+            self.get_armElevation("Right")
+            self.get_deviationAngle("Spine")
+            self.get_deviationAngle("Shoulder")
+            self.get_deviationAngle("Hip")
+            self.get_deviationAngle("Knee")
+            self.get_legFlexion("Left")
+            self.get_legFlexion("Right")
+            self.get_legElevation("Left")
+            self.get_legElevation("Right")
 
         self.mix_data_to_send.metricsObtained = self.current_metrics
-
-        self.therapymetrics_proxy.newDataObtained(self.mix_data_to_send)
 
         self.t_computeMetrics_to_updateMetrics.emit()
 
@@ -410,28 +331,7 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def sm_updateMetrics(self):
         print("Entered state updateMetrics")
-
-        # if not os.path.isfile(self.aux_metrics_dir):
-        #     with open(self.aux_metrics_dir, 'w') as csvFile:
-        #         writer = csv.writer(csvFile, delimiter=';')
-        #         writer.writerow(
-        #             ["Time", "LeftArmFlexion", "RightArmFlexion", "HipDeviation", "KneeDeviation",
-        #              "ShoulderDeviation", "LeftArmElevation", "RightArmElevation", "SpineDeviation", "LeftLegFlexion",
-        #              "RightLegFlexion", "LeftLegElevation", "RightLegElevation"])
-        #     csvFile.close()
-        #
-        # with open(self.aux_metrics_dir, 'a') as csvFile:
-        #     writer = csv.writer(csvFile, delimiter=';')
-        #     writer.writerow(
-        #         [self.current_metrics["Time"], self.current_metrics["LeftArmFlexion"],
-        #          self.current_metrics["RightArmFlexion"], self.current_metrics["HipDeviation"],
-        #          self.current_metrics["KneeDeviation"], self.current_metrics["ShoulderDeviation"],
-        #          self.current_metrics["LeftArmElevation"], self.current_metrics["RightArmElevation"],
-        #          self.current_metrics["SpineDeviation"], self.current_metrics["LeftLegFlexion"],
-        #          self.current_metrics["RightLegFlexion"], self.current_metrics["LeftLegElevation"],
-        #          self.current_metrics["RightLegElevation"]])
-        #
-        #     csvFile.close()
+        self.therapymetrics_proxy.newDataObtained(self.mix_data_to_send)
 
         self.t_updateMetrics_to_captureFrame.emit()
 
@@ -454,10 +354,6 @@ class SpecificWorker(GenericWorker):
         print("Entered state resetTherapy")
         self.player.stop()
         self.recording = False
-
-        if self.video_writer is not None:
-            self.video_writer.release()
-
         self.ui.info_label.setText("Reseted...")
 
         self.send_status_change(StatusType.resetedTherapy)
@@ -473,18 +369,7 @@ class SpecificWorker(GenericWorker):
         self.player.stop()
         self.recording = False
 
-        if self.video_writer is not None:
-            print("releasing video_writer")
-            self.video_writer.release()
-
         self.t_finalizeTherapy_to_waitTherapy.emit()
-
-        # PTH.save_graph(self.aux_metrics_dir, True)
-
-        # reply = QMessageBox.question(self.focusWidget(), '',
-        #                              ' ¿Desea guardar los datos de la terapia?', QMessageBox.Yes, QMessageBox.No)
-        # if reply == QMessageBox.No:
-        #     shutil.rmtree(self.aux_therapy_dir)
 
         self.send_status_change(StatusType.endTherapy)
 
@@ -503,7 +388,7 @@ class SpecificWorker(GenericWorker):
     # newPersonListAndRGB
     #
     def newPersonListAndRGB(self, mixedData):
-        if self.recording and len(mixedData.persons) > 0:
+        if self.recording: #and len(mixedData.persons) > 0:
             self.received_data_queue.put(mixedData)
 
     # =============== Methods for Component Implements ==================

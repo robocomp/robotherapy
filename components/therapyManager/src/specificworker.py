@@ -22,13 +22,15 @@
 import csv
 import json
 import math
+import random
 from datetime import datetime
 from Queue import Queue, Empty
+from matplotlib import pyplot as plt
 
 import cv2
 import numpy as np
 
-from PySide2.QtGui import QKeySequence
+from PySide2.QtGui import QKeySequence, QImage, QPixmap
 from passlib.hash import pbkdf2_sha256
 from pprint import pprint
 
@@ -38,6 +40,8 @@ from PySide2.QtWidgets import QMessageBox, QCompleter, QAction, qApp, QApplicati
 
 from admin_widgets import *
 from genericworker import *
+
+import plot_therapy as PTH
 
 try:
     from bbdd import BBDD
@@ -166,13 +170,10 @@ class SpecificWorker(GenericWorker):
         self.aux_datePaused = None
         self.aux_currentDate = None
         self.aux_currentStatus = None
-        self.aux_wonGame = False
         self.aux_firstTherapyInSession = True
         self.aux_reseted = False
         self.aux_firstMetricReceived = True
         self.aux_savedGames = False
-
-
 
         self.selected_patient_incombo = ""
         self.selected_game_inlist = ""
@@ -196,9 +197,13 @@ class SpecificWorker(GenericWorker):
         self.aux_joints_dir = None
         self.aux_metrics_dir = None
 
+        self.aux_current_frame = None
+
         self.aux_saving_dir = "/home/robolab/robocomp/components/robotherapy/components/therapyManager/savedSessions"
         if not os.path.isdir(self.aux_saving_dir):
             os.mkdir(self.aux_saving_dir)
+
+        self.aux_timePlayed = None
 
         self.manager_machine.start()
 
@@ -558,19 +563,30 @@ class SpecificWorker(GenericWorker):
     def sm_endTherapy(self):
         print("Entered state endTherapy")
 
-        reply = QMessageBox.question(self.focusWidget(), 'Terapia terminado',
+        reply = QMessageBox.question(self.focusWidget(), 'Terapia terminada',
                                      ' ¿Desea guardar los datos de la terapia?', QMessageBox.Yes, QMessageBox.No)
         if reply == QMessageBox.Yes:
-            self.aux_savedGames = True
-            timeplayed = self.aux_currentDate - self.currentGame.date
-            self.currentGame.timePlayed = timeplayed.total_seconds() * 1000
-            print "Time played =  ", self.currentGame.timePlayed, "milliseconds"
-
+            # self.aux_savedGames = True
+            # timeplayed = self.aux_currentDate - self.currentGame.date
+            # self.currentGame.timePlayed = timeplayed.total_seconds() * 1000
+            # print "Time played =  ", self.currentGame.timePlayed, "milliseconds"
             # self.currentSession.games.append(self.currentGame)
 
+            reply2 = QMessageBox.question(self.focusWidget(), 'Terapia terminada',
+                                          ' ¿Desea visualizar los datos de la terapia?', QMessageBox.Yes,
+                                          QMessageBox.No)
+
+            if reply2 == QMessageBox.Yes:
+                visualization = True
+            else:
+                visualization = False
+
+            PTH.save_graph(self.aux_metrics_dir, visualization)
+
+        if self.video_writer is not None:
+            self.video_writer.release()
+
         self.aux_datePaused = None
-        self.aux_wonGame = False
-        self.aux_firstMetricReceived = True
 
         # self.currentGame = Game()
         # self.game_metrics = []
@@ -603,9 +619,6 @@ class SpecificWorker(GenericWorker):
         self.ui.end_session_button.setEnabled(False)  # No se puede finalizar la sesion si hay un juego en marcha
         self.ui.end_session_button.setToolTip("Debe finalizar la terapia para poder terminar la sesión")
 
-        # if self.currentGame.date is None:
-        #     self.currentGame.date = self.aux_currentDate
-
         if self.aux_datePaused is not None:
             self.ui.continue_game_button.setEnabled(False)
             self.ui.pause_game_button.setEnabled(True)
@@ -613,7 +626,6 @@ class SpecificWorker(GenericWorker):
             self.currentGame.timePaused += time.total_seconds() * 1000
             self.aux_datePaused = None
             print "Time paused =  ", self.currentGame.timePaused, "milliseconds"
-
 
     #
     # sm_waitingFrame
@@ -647,6 +659,8 @@ class SpecificWorker(GenericWorker):
             self.data_to_record.rgbImage.height, self.data_to_record.rgbImage.width,
             self.data_to_record.rgbImage.depth)
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        self.aux_current_frame = frame
+
         if self.video_writer is None:
             (height, width) = frame.shape[:2]
             self.video_writer = cv2.VideoWriter(self.aux_video_dir, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 30,
@@ -670,7 +684,7 @@ class SpecificWorker(GenericWorker):
                     joint_file.writelines([str(id_joint), " ", str(j[0]), " ", str(j[1]), " ", str(j[2]), "#"])
 
         else:
-            self.ui.info_label.setText("No humans detected")
+            print("No humans detected")
 
         joint_file.write("\n")
         joint_file.close()
@@ -688,18 +702,25 @@ class SpecificWorker(GenericWorker):
         with open(self.aux_metrics_dir, 'a') as csvFile:
             writer = csv.writer(csvFile, delimiter=';')
             writer.writerow(
-                [self.data_to_record.metricsObtained["Time"], self.data_to_record.metricsObtained["LeftArmFlexion"],
-                 self.data_to_record.metricsObtained["RightArmFlexion"], self.data_to_record.metricsObtained["HipDeviation"],
-                 self.data_to_record.metricsObtained["KneeDeviation"], self.data_to_record.metricsObtained["ShoulderDeviation"],
-                 self.data_to_record.metricsObtained["LeftArmElevation"], self.data_to_record.metricsObtained["RightArmElevation"],
-                 self.data_to_record.metricsObtained["SpineDeviation"], self.data_to_record.metricsObtained["LeftLegFlexion"],
-                 self.data_to_record.metricsObtained["RightLegFlexion"], self.data_to_record.metricsObtained["LeftLegElevation"],
+                [self.data_to_record.metricsObtained["Time"],
+                 self.data_to_record.metricsObtained["LeftArmFlexion"],
+                 self.data_to_record.metricsObtained["RightArmFlexion"],
+                 self.data_to_record.metricsObtained["HipDeviation"],
+                 self.data_to_record.metricsObtained["KneeDeviation"],
+                 self.data_to_record.metricsObtained["ShoulderDeviation"],
+                 self.data_to_record.metricsObtained["LeftArmElevation"],
+                 self.data_to_record.metricsObtained["RightArmElevation"],
+                 self.data_to_record.metricsObtained["SpineDeviation"],
+                 self.data_to_record.metricsObtained["LeftLegFlexion"],
+                 self.data_to_record.metricsObtained["RightLegFlexion"],
+                 self.data_to_record.metricsObtained["LeftLegElevation"],
                  self.data_to_record.metricsObtained["RightLegElevation"]])
 
             csvFile.close()
 
 
-        self.t_savingFrame_to_waitingFrame.emit()
+        # self.t_savingFrame_to_waitingFrame.emit()
+        self.t_savingFrame_to_showingResults.emit()
 
     #
     # sm_showingResults
@@ -707,8 +728,15 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def sm_showingResults(self):
         print("Entered state showingResults")
-        pass
 
+        (height, width) = self.aux_current_frame.shape[:2]
+        frame = cv2.cvtColor(self.aux_current_frame, cv2.COLOR_BGR2RGB)
+        img = QImage(frame, width, height, QImage.Format_RGB888)
+        self.ui.video_lb.setPixmap(QPixmap.fromImage(img).scaled(320,240,Qt.KeepAspectRatio))
+
+        # PTH.save_graph(self.aux_metrics_dir, True)
+
+        self.t_showingResults_to_waitingFrame.emit()
     #
     # sm_session_init
     #
@@ -743,6 +771,7 @@ class SpecificWorker(GenericWorker):
             self.ui.selTh_combobox.lineEdit().setPlaceholderText("Selecciona terapia...")
 
             self.aux_sessionInit = True
+
         self.ui.therapies_list.clear()
 
         self.mainMenu.setEnabled(True)
@@ -756,6 +785,7 @@ class SpecificWorker(GenericWorker):
         print("Entered state adminTherapies")
 
         if self.aux_firstTherapyInSession or self.aux_reseted:
+
             therapy = self.list_therapies_todo[0]
             self.aux_therapy_name = therapy
             self.ui.info_game_label.setText(therapy)
@@ -779,6 +809,12 @@ class SpecificWorker(GenericWorker):
         self.ui.continue_game_button.setEnabled(False)
         self.ui.finish_game_button.setEnabled(False)
         self.ui.reset_game_button.setEnabled(False)
+
+        self.video_writer = None
+        self.aux_firstMetricReceived = True
+
+        self.aux_therapy_started = True
+
 
         # TODO: FIX
         if self.__waitingTherapyReceived:
@@ -819,7 +855,6 @@ class SpecificWorker(GenericWorker):
     def sm_waitSessionReady(self):
         print("Entered state waitSessionReady")
         self.ui.stackedWidget.setCurrentIndex(4)
-
         self.ui.start_game_button.setEnabled(False)
         self.ui.pause_game_button.setEnabled(False)
         self.ui.continue_game_button.setEnabled(False)
@@ -881,6 +916,9 @@ class SpecificWorker(GenericWorker):
         else:
             self.received_data_queue.put(data)
 
+        self.aux_timePlayed = data.metricsObtained["Time"]
+        self.updateUISig.emit()
+
     #     current_metrics = Metrics()
     #     current_metrics.time = self.aux_currentDate
     #
@@ -905,8 +943,10 @@ class SpecificWorker(GenericWorker):
     #     else:
     #         print ("NO se ha iniciado el juego")
     #
+
     #
     # statusChanged
+    #
     def statusChanged(self, s):
         self.aux_currentStatus = str(s.currentStatus.name)
         print "ESTADO ", self.aux_currentStatus
@@ -958,13 +998,15 @@ class SpecificWorker(GenericWorker):
     def updateUI(self):
         self.ui.date_label.setText(self.aux_currentDate.strftime("%c"))
         self.ui.status_label.setText(self.aux_currentStatus)
-
+        if self.aux_timePlayed is not None:
+            self.ui.timeplayed_label.setText(str("{:.3f}".format(self.aux_timePlayed)) + " s")
+        # self.ui.timeplayed_label.setText(str(self.aux_timePlayed))
         # if self.currentGame.date is not None:
     #         self.ui.num_screentouched_label.setText(str(self.currentGame.metrics[-1].touched))
     #         self.ui.num_closedhand_label.setText(str(self.currentGame.metrics[-1].handClosed))
     #         self.ui.num_helps_label.setText(str(self.currentGame.metrics[-1].helps))
     #         self.ui.num_checks_label.setText(str(self.currentGame.metrics[-1].checks))
-    #         self.ui.timeplayed_label.setText(str("{:.3f}".format(self.currentGame.timePlayed / 1000)) + " s")
+
     #         self.ui.distance_label.setText(str("{:.3f}".format(self.currentGame.metrics[-1].distance)) + " mm")
     #         self.ui.num_hits_label.setText(str(self.currentGame.metrics[-1].hits))
     #         self.ui.num_fails_label.setText(str(self.currentGame.metrics[-1].fails))

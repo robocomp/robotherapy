@@ -204,6 +204,9 @@ class SpecificWorker(GenericWorker):
             os.mkdir(self.aux_saving_dir)
 
         self.aux_timePlayed = None
+        self.current_metrics = None
+        self.visualize_therapy = False
+
 
         self.manager_machine.start()
 
@@ -259,13 +262,16 @@ class SpecificWorker(GenericWorker):
         self.ui.back_patient_button.clicked.connect(self.t_createPatient_to_adminSessions.emit)
         self.ui.create_patient_button.clicked.connect(self.create_patient)
 
-        # Game window
+        # therapy window
         self.ui.start_game_button.clicked.connect(self.start_clicked)
         self.ui.pause_game_button.clicked.connect(self.pause_clicked)
         self.ui.continue_game_button.clicked.connect(self.continue_clicked)
         self.ui.finish_game_button.clicked.connect(self.finish_clicked)
         self.ui.reset_game_button.clicked.connect(self.reset_clicked)
         self.ui.end_session_button.clicked.connect(self.end_session_clicked)
+        self.ui.visualize_check.stateChanged.connect(self.change_visualize_state)
+
+        self.ui.metrics_gbox.hide()
 
     def ddbb_status_changed(self, string):
         self.ui.login_status.setText(string)
@@ -429,6 +435,19 @@ class SpecificWorker(GenericWorker):
         self.t_createPatient_to_adminSessions.emit()
 
     # Game window functions
+    def change_visualize_state(self,state):
+        print "change_visualize_state"
+        if state == QtCore.Qt.Checked:
+            self.visualize_therapy = True
+            self.ui.metrics_gbox.show()
+            self.ui.video_lb.show()
+        else:
+            self.visualize_therapy = False
+            self.ui.metrics_gbox.hide()
+            self.ui.video_lb.hide()
+
+
+
     def start_clicked(self):
         self.admintherapy_proxy.adminStartTherapy(self.list_therapies_todo[0])
 
@@ -619,6 +638,7 @@ class SpecificWorker(GenericWorker):
         self.ui.end_session_button.setEnabled(False)  # No se puede finalizar la sesion si hay un juego en marcha
         self.ui.end_session_button.setToolTip("Debe finalizar la terapia para poder terminar la sesión")
 
+
         if self.aux_datePaused is not None:
             self.ui.continue_game_button.setEnabled(False)
             self.ui.pause_game_button.setEnabled(True)
@@ -717,10 +737,14 @@ class SpecificWorker(GenericWorker):
                  self.data_to_record.metricsObtained["RightLegElevation"]])
 
             csvFile.close()
+        self.current_metrics = self.data_to_record.metricsObtained
 
+        if self.visualize_therapy:
+            print "visualize check is True"
+            self.t_savingFrame_to_showingResults.emit()
 
-        # self.t_savingFrame_to_waitingFrame.emit()
-        self.t_savingFrame_to_showingResults.emit()
+        else:
+            self.t_savingFrame_to_waitingFrame.emit()
 
     #
     # sm_showingResults
@@ -732,11 +756,14 @@ class SpecificWorker(GenericWorker):
         (height, width) = self.aux_current_frame.shape[:2]
         frame = cv2.cvtColor(self.aux_current_frame, cv2.COLOR_BGR2RGB)
         img = QImage(frame, width, height, QImage.Format_RGB888)
-        self.ui.video_lb.setPixmap(QPixmap.fromImage(img).scaled(320,240,Qt.KeepAspectRatio))
 
-        # PTH.save_graph(self.aux_metrics_dir, True)
+        self.ui.video_lb.setPixmap(QPixmap.fromImage(img).scaled(320, 240, Qt.KeepAspectRatio))
 
         self.t_showingResults_to_waitingFrame.emit()
+
+        self.updateUISig.emit()
+
+
     #
     # sm_session_init
     #
@@ -814,7 +841,6 @@ class SpecificWorker(GenericWorker):
         self.aux_firstMetricReceived = True
 
         self.aux_therapy_started = True
-
 
         # TODO: FIX
         if self.__waitingTherapyReceived:
@@ -917,32 +943,6 @@ class SpecificWorker(GenericWorker):
             self.received_data_queue.put(data)
 
         self.aux_timePlayed = data.metricsObtained["Time"]
-        self.updateUISig.emit()
-
-    #     current_metrics = Metrics()
-    #     current_metrics.time = self.aux_currentDate
-    #
-    #     if self.currentGame.date is not None:
-    #         self.currentGame.timePlayed = (self.aux_currentDate - self.currentGame.date).total_seconds() * 1000
-    #         current_metrics.touched = m.numScreenTouched
-    #         current_metrics.handClosed = m.numHandClosed
-    #         current_metrics.helps = m.numHelps
-    #         current_metrics.checks = m.numChecked
-    #         current_metrics.hits = m.numHits
-    #         current_metrics.fails = m.numFails
-    #
-    #         if self.aux_firstMetricReceived:
-    #             current_metrics.distance = 0
-    #             self.aux_firstMetricReceived = False
-    #         else:
-    #             current_metrics.distance += self.compute_distance_travelled(m.pos.x, m.pos.y)
-    #
-    #         self.currentGame.metrics.append(current_metrics)
-    #         self.aux_prevPos = m.pos
-    #         self.updateUISig.emit()
-    #     else:
-    #         print ("NO se ha iniciado el juego")
-    #
 
     #
     # statusChanged
@@ -984,29 +984,23 @@ class SpecificWorker(GenericWorker):
             self.t_adminTherapies_to_endSession.emit()
             self.t_waitingStart_to_endSession.emit()
 
-    # def compute_session_metrics(self):
-    #     for game in self.currentSession.games:
-    #
-    #         if game.gameWon:
-    #             self.currentSession.wonGames += 1
-    #         else:
-    #             self.currentSession.lostGames += 1
-    #
-    #         self.currentSession.totalHelps += game.metrics[-1].helps
-    #         self.currentSession.totalChecks += game.metrics[-1].checks
-    #
+
     def updateUI(self):
         self.ui.date_label.setText(self.aux_currentDate.strftime("%c"))
         self.ui.status_label.setText(self.aux_currentStatus)
         if self.aux_timePlayed is not None:
             self.ui.timeplayed_label.setText(str("{:.3f}".format(self.aux_timePlayed)) + " s")
-        # self.ui.timeplayed_label.setText(str(self.aux_timePlayed))
-        # if self.currentGame.date is not None:
-    #         self.ui.num_screentouched_label.setText(str(self.currentGame.metrics[-1].touched))
-    #         self.ui.num_closedhand_label.setText(str(self.currentGame.metrics[-1].handClosed))
-    #         self.ui.num_helps_label.setText(str(self.currentGame.metrics[-1].helps))
-    #         self.ui.num_checks_label.setText(str(self.currentGame.metrics[-1].checks))
+        if self.current_metrics is not None:
+            self.ui.angle1_lcd.display(self.current_metrics["LeftArmFlexion"])
+            self.ui.angle2_lcd.display(self.current_metrics ["RightArmFlexion"])
+            self.ui.height1_lcd.display(self.current_metrics ["LeftArmElevation"])
+            self.ui.height2_lcd.display(self.current_metrics ["RightArmElevation"])
+            self.ui.legflex1_lcd.display(self.current_metrics ["LeftLegFlexion"])
+            self.ui.legflex2_lcd.display(self.current_metrics ["RightLegFlexion"])
+            self.ui.legelevation1_lcd.display(self.current_metrics ["LeftLegElevation"])
+            self.ui.legelevation2_lcd.display(self.current_metrics ["RightLegElevation"])
 
-    #         self.ui.distance_label.setText(str("{:.3f}".format(self.currentGame.metrics[-1].distance)) + " mm")
-    #         self.ui.num_hits_label.setText(str(self.currentGame.metrics[-1].hits))
-    #         self.ui.num_fails_label.setText(str(self.currentGame.metrics[-1].fails))
+            self.ui.spinedev_lcd.display(self.current_metrics ["SpineDeviation"])
+            self.ui.shoulderdev_lcd.display(self.current_metrics ["ShoulderDeviation"])
+            self.ui.hipsdev_lcd.display(self.current_metrics ["HipDeviation"])
+            self.ui.kneesdev_lcd.display(self.current_metrics ["KneeDeviation"])

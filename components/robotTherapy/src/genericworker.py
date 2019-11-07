@@ -44,42 +44,42 @@ except:
 	print 'SLICE_PATH environment variable was not exported. Using only the default paths'
 	pass
 
-ice_AdminTherapy = False
+ice_TherapyMetrics = False
 for p in icePaths:
-	if os.path.isfile(p+'/AdminTherapy.ice'):
+	if os.path.isfile(p+'/TherapyMetrics.ice'):
 		preStr = "-I/opt/robocomp/interfaces/ -I"+ROBOCOMP+"/interfaces/ " + additionalPathStr + " --all "+p+'/'
-		wholeStr = preStr+"AdminTherapy.ice"
+		wholeStr = preStr+"TherapyMetrics.ice"
 		Ice.loadSlice(wholeStr)
-		ice_AdminTherapy = True
+		ice_TherapyMetrics = True
 		break
-if not ice_AdminTherapy:
-	print 'Couln\'t load AdminTherapy'
+if not ice_TherapyMetrics:
+	print 'Couln\'t load TherapyMetrics'
 	sys.exit(-1)
-from RoboCompAdminTherapy import *
-ice_AdminTherapy = False
+from RoboCompTherapyMetrics import *
+ice_TherapyMetrics = False
 for p in icePaths:
-	if os.path.isfile(p+'/AdminTherapy.ice'):
+	if os.path.isfile(p+'/TherapyMetrics.ice'):
 		preStr = "-I/opt/robocomp/interfaces/ -I"+ROBOCOMP+"/interfaces/ " + additionalPathStr + " --all "+p+'/'
-		wholeStr = preStr+"AdminTherapy.ice"
+		wholeStr = preStr+"TherapyMetrics.ice"
 		Ice.loadSlice(wholeStr)
-		ice_AdminTherapy = True
+		ice_TherapyMetrics = True
 		break
-if not ice_AdminTherapy:
-	print 'Couln\'t load AdminTherapy'
+if not ice_TherapyMetrics:
+	print 'Couln\'t load TherapyMetrics'
 	sys.exit(-1)
-from RoboCompAdminTherapy import *
-ice_AdminTherapy = False
+from RoboCompTherapyMetrics import *
+ice_TherapyMetrics = False
 for p in icePaths:
-	if os.path.isfile(p+'/AdminTherapy.ice'):
+	if os.path.isfile(p+'/TherapyMetrics.ice'):
 		preStr = "-I/opt/robocomp/interfaces/ -I"+ROBOCOMP+"/interfaces/ " + additionalPathStr + " --all "+p+'/'
-		wholeStr = preStr+"AdminTherapy.ice"
+		wholeStr = preStr+"TherapyMetrics.ice"
 		Ice.loadSlice(wholeStr)
-		ice_AdminTherapy = True
+		ice_TherapyMetrics = True
 		break
-if not ice_AdminTherapy:
-	print 'Couln\'t load AdminTherapy'
+if not ice_TherapyMetrics:
+	print 'Couln\'t load TherapyMetrics'
 	sys.exit(-1)
-from RoboCompAdminTherapy import *
+from RoboCompTherapyMetrics import *
 
 
 from admintherapyI import *
@@ -111,6 +111,7 @@ class GenericWorker(QtWidgets.QWidget):
 	t_pauseTherapy_to_resetTherapy = QtCore.Signal()
 	t_pauseTherapy_to_finalizeTherapy = QtCore.Signal()
 	t_finalizeTherapy_to_waitTherapy = QtCore.Signal()
+	t_finalizeSession_to_waitSession = QtCore.Signal()
 	t_captureFrame_to_captureFrame = QtCore.Signal()
 	t_captureFrame_to_computeMetrics = QtCore.Signal()
 	t_computeMetrics_to_updateMetrics = QtCore.Signal()
@@ -142,9 +143,9 @@ class GenericWorker(QtWidgets.QWidget):
 		self.resetTherapy_state = QtCore.QState(self.robotTherapyMachine)
 		self.pauseTherapy_state = QtCore.QState(self.robotTherapyMachine)
 		self.finalizeTherapy_state = QtCore.QState(self.robotTherapyMachine)
+		self.finalizeSession_state = QtCore.QState(self.robotTherapyMachine)
 		self.initialize_state = QtCore.QState(self.robotTherapyMachine)
 
-		self.finalizeSession_state = QtCore.QFinalState(self.robotTherapyMachine)
 
 
 
@@ -171,6 +172,7 @@ class GenericWorker(QtWidgets.QWidget):
 		self.pauseTherapy_state.addTransition(self.t_pauseTherapy_to_resetTherapy, self.resetTherapy_state)
 		self.pauseTherapy_state.addTransition(self.t_pauseTherapy_to_finalizeTherapy, self.finalizeTherapy_state)
 		self.finalizeTherapy_state.addTransition(self.t_finalizeTherapy_to_waitTherapy, self.waitTherapy_state)
+		self.finalizeSession_state.addTransition(self.t_finalizeSession_to_waitSession, self.waitSession_state)
 		self.captureFrame_state.addTransition(self.t_captureFrame_to_captureFrame, self.captureFrame_state)
 		self.captureFrame_state.addTransition(self.t_captureFrame_to_computeMetrics, self.computeMetrics_state)
 		self.computeMetrics_state.addTransition(self.t_computeMetrics_to_updateMetrics, self.updateMetrics_state)
@@ -185,8 +187,9 @@ class GenericWorker(QtWidgets.QWidget):
 		self.resetTherapy_state.entered.connect(self.sm_resetTherapy)
 		self.pauseTherapy_state.entered.connect(self.sm_pauseTherapy)
 		self.finalizeTherapy_state.entered.connect(self.sm_finalizeTherapy)
-		self.initialize_state.entered.connect(self.sm_initialize)
 		self.finalizeSession_state.entered.connect(self.sm_finalizeSession)
+		self.initialize_state.entered.connect(self.sm_initialize)
+		# self.n_state.entered.connect(self.sm_n)
 		self.captureFrame_state.entered.connect(self.sm_captureFrame)
 		self.computeMetrics_state.entered.connect(self.sm_computeMetrics)
 		self.updateMetrics_state.entered.connect(self.sm_updateMetrics)
@@ -238,13 +241,13 @@ class GenericWorker(QtWidgets.QWidget):
 		sys.exit(-1)
 
 	@QtCore.Slot()
-	def sm_initialize(self):
-		print "Error: lack sm_initialize in Specificworker"
+	def sm_finalizeSession(self):
+		print "Error: lack sm_finalizeSession in Specificworker"
 		sys.exit(-1)
 
 	@QtCore.Slot()
-	def sm_finalizeSession(self):
-		print "Error: lack sm_finalizeSession in Specificworker"
+	def sm_initialize(self):
+		print "Error: lack sm_initialize in Specificworker"
 		sys.exit(-1)
 
 	@QtCore.Slot()

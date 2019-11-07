@@ -3,9 +3,8 @@
    ANY CHANGE TO THE DEFAULT STATES OR TRANSITIONS */
 
 robotTherapyMachine{
-    states waitSession, initializingSession, waitTherapy,initializingTherapy, loopTherapy, resetTherapy, pauseTherapy, finalizeTherapy;
+    states waitSession, initializingSession, waitTherapy,initializingTherapy, loopTherapy, resetTherapy, pauseTherapy, finalizeTherapy,finalizeSession;
     initial_state initialize;
-    end_state finalizeSession;
     transitions{
         initialize => waitSession;
 	    waitSession => initializingSession;
@@ -16,6 +15,7 @@ robotTherapyMachine{
 	    resetTherapy => waitTherapy;
 	    pauseTherapy => loopTherapy, resetTherapy, finalizeTherapy;
 	    finalizeTherapy => waitTherapy;
+	    finalizeSession => waitSession;
 
     };
 };

@@ -25,6 +25,16 @@ import math
 import random
 from datetime import datetime
 from Queue import Queue, Empty
+
+import PySide2
+import matplotlib
+
+from PySide2 import QtCore, QtWidgets
+# Make sure that we are using QT5
+matplotlib.use('Qt5Agg')
+# Uncomment this line before running, it breaks sphinx-gallery builds
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+
 from matplotlib import pyplot as plt
 
 import cv2
@@ -760,6 +770,19 @@ class SpecificWorker(GenericWorker):
         self.ui.video_lb.setPixmap(QPixmap.fromImage(img).scaled(320, 240, Qt.KeepAspectRatio))
 
         self.t_showingResults_to_waitingFrame.emit()
+        self.aux_timePlayed = self.current_metrics["Time"]
+
+        # a figure instance to plot on
+        # self.figure = plt.figure()
+        # # this is the Canvas Widget that displays the `figure`
+        # # it takes the `figure` instance as a parameter to __init__
+        # self.canvas = FigureCanvas(self.figure)
+        #
+        # self.ui.result_layout.addWidget(self.canvas)
+        # # PTH.save_graph(self.aux_metrics_dir, False)
+        # data = [random.random() for i in range(10)]
+        # plt.plot(data, '*-')
+        # self.canvas.draw()
 
         self.updateUISig.emit()
 
@@ -890,6 +913,8 @@ class SpecificWorker(GenericWorker):
 
         self.aux_firstTherapyInSession = True
 
+        self.ui.timeplayed_label.setText("-")
+
         QMessageBox().information(self.focusWidget(), 'Info',
                                   'Asegurese que el paciente está dentro del rango de visión de la cámara',
                                   QMessageBox.Ok)
@@ -942,7 +967,6 @@ class SpecificWorker(GenericWorker):
         else:
             self.received_data_queue.put(data)
 
-        self.aux_timePlayed = data.metricsObtained["Time"]
 
     #
     # statusChanged

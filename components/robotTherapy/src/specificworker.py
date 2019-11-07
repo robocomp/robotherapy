@@ -258,7 +258,6 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def sm_loopTherapy(self):
         print("Entered state loopTherapy")
-        # self.videoWidget.setFullScreen(True)
         self.videoWidget.show()
         self.player.setMuted(True)
         self.player.play()
@@ -381,6 +380,8 @@ class SpecificWorker(GenericWorker):
 
         print("Entered state finalizeSession")
         self.send_status_change(StatusType.endSession)
+
+        self.t_finalizeSession_to_waitSession.emit()
 
     # =================================================================
     # =================================================================

@@ -51,6 +51,8 @@ from PySide2.QtWidgets import QMessageBox, QCompleter, QAction, qApp, QApplicati
 from admin_widgets import *
 from genericworker import *
 
+from canvas import DynamicCanvas
+
 import plot_therapy as PTH
 
 try:
@@ -215,8 +217,11 @@ class SpecificWorker(GenericWorker):
 
         self.aux_timePlayed = None
         self.current_metrics = None
-        self.visualize_therapy = False
 
+        self.visualize_therapy = False
+        self.canvas = None
+        self.skip_frames = 10
+        self.total_frames = 0
 
         self.manager_machine.start()
 
@@ -282,6 +287,7 @@ class SpecificWorker(GenericWorker):
         self.ui.visualize_check.stateChanged.connect(self.change_visualize_state)
 
         self.ui.metrics_gbox.hide()
+        self.ui.visualize_gbox.hide()
 
     def ddbb_status_changed(self, string):
         self.ui.login_status.setText(string)
@@ -439,6 +445,8 @@ class SpecificWorker(GenericWorker):
         for p in patients:
             patients_list.append(p.name + " " + p.surname)
 
+        # patients_list = ["AlbertoSerrano","SergioBarroso"]
+
         completer = QCompleter(patients_list)
         self.ui.selpatient_combobox.addItem(patients_list[-1])
         self.ui.selpatient_combobox.setCompleter(completer)
@@ -449,12 +457,20 @@ class SpecificWorker(GenericWorker):
         print "change_visualize_state"
         if state == QtCore.Qt.Checked:
             self.visualize_therapy = True
-            self.ui.metrics_gbox.show()
+            self.ui.visualize_gbox.show()
+            # self.ui.metrics_gbox.show()
             self.ui.video_lb.show()
+            if self.canvas is not None:
+                self.canvas.show()
+
         else:
             self.visualize_therapy = False
             self.ui.metrics_gbox.hide()
+            self.ui.visualize_gbox.hide()
             self.ui.video_lb.hide()
+            if self.canvas is not None:
+                self.canvas.hide()
+
 
 
 
@@ -749,8 +765,9 @@ class SpecificWorker(GenericWorker):
             csvFile.close()
         self.current_metrics = self.data_to_record.metricsObtained
 
+        self.total_frames += 1
+
         if self.visualize_therapy:
-            print "visualize check is True"
             self.t_savingFrame_to_showingResults.emit()
 
         else:
@@ -769,22 +786,25 @@ class SpecificWorker(GenericWorker):
 
         self.ui.video_lb.setPixmap(QPixmap.fromImage(img).scaled(320, 240, Qt.KeepAspectRatio))
 
-        self.t_showingResults_to_waitingFrame.emit()
         self.aux_timePlayed = self.current_metrics["Time"]
-
-        # a figure instance to plot on
-        # self.figure = plt.figure()
-        # # this is the Canvas Widget that displays the `figure`
-        # # it takes the `figure` instance as a parameter to __init__
-        # self.canvas = FigureCanvas(self.figure)
-        #
-        # self.ui.result_layout.addWidget(self.canvas)
-        # # PTH.save_graph(self.aux_metrics_dir, False)
-        # data = [random.random() for i in range(10)]
-        # plt.plot(data, '*-')
-        # self.canvas.draw()
-
         self.updateUISig.emit()
+
+        if self.canvas is None:
+            print ("creating canvas")
+            self.canvas = DynamicCanvas(self.ui,dpi = 50)
+            self.canvas.setStyleSheet("background-color:transparent;")
+            self.ui.result_layout.addWidget(self.canvas)
+
+        if self.total_frames % self.skip_frames == 0:
+            # data = [random.random() for i in range(10)]
+
+            self.canvas.axes.cla()
+            # self.canvas.axes.plot(data, '*-')
+            PTH.plot_graph(self.aux_metrics_dir, self.canvas)
+            self.canvas.update_figure()
+
+        self.t_showingResults_to_waitingFrame.emit()
+
 
 
     #
@@ -808,6 +828,7 @@ class SpecificWorker(GenericWorker):
             for p in patients:
                 patients_list.append(p.username)
 
+            # patients_list = ["AlbertoSerrano","SergioBarroso"]
             completer2 = QCompleter(patients_list)
 
             self.ui.selpatient_combobox.addItems(patients_list)
@@ -860,8 +881,10 @@ class SpecificWorker(GenericWorker):
         self.ui.finish_game_button.setEnabled(False)
         self.ui.reset_game_button.setEnabled(False)
 
+        self.ui.date_label.setText("-")
+        self.ui.timeplayed_label.setText("-")
+
         self.video_writer = None
-        self.aux_firstMetricReceived = True
 
         self.aux_therapy_started = True
 
@@ -880,7 +903,7 @@ class SpecificWorker(GenericWorker):
         self.ui.start_game_button.setEnabled(True)
         self.ui.end_session_button.setEnabled(True)
         self.ui.status_label.setText(self.aux_currentStatus)
-        self.ui.date_label.setText("-")
+
 
         therapy = self.aux_therapy_name.replace(" ", "").strip()
         self.aux_therapy_dir = os.path.join(self.aux_session_dir, therapy)
@@ -912,8 +935,6 @@ class SpecificWorker(GenericWorker):
         self.ui.end_session_button.setEnabled(False)
 
         self.aux_firstTherapyInSession = True
-
-        self.ui.timeplayed_label.setText("-")
 
         QMessageBox().information(self.focusWidget(), 'Info',
                                   'Asegurese que el paciente está dentro del rango de visión de la cámara',
@@ -960,12 +981,13 @@ class SpecificWorker(GenericWorker):
     # newDataObtained
     #
     def newDataObtained(self, data):
-        print("New Data received")
-
         if data.rgbImage.height == 0 or data.rgbImage.width == 0:
             return
         else:
             self.received_data_queue.put(data)
+
+        self.aux_timePlayed = data.metricsObtained["Time"]
+        self.updateUISig.emit()
 
 
     #
@@ -1028,3 +1050,4 @@ class SpecificWorker(GenericWorker):
             self.ui.shoulderdev_lcd.display(self.current_metrics ["ShoulderDeviation"])
             self.ui.hipsdev_lcd.display(self.current_metrics ["HipDeviation"])
             self.ui.kneesdev_lcd.display(self.current_metrics ["KneeDeviation"])
+

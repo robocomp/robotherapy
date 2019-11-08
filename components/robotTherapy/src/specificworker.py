@@ -244,7 +244,8 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def sm_initializingTherapy(self):
         print("Entered state initializingTherapy")
-
+        self.aux_firstMetric = True
+        self.aux_firstTime_metric = None
         self.player.setMedia(QUrl.fromLocalFile("/home/robolab/robocomp/components/robotherapy/components/robotTherapy"
                                                 "/resources/examples/ejercicio_correcto2.avi"))
 

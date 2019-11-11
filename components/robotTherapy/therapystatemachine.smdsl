@@ -2,7 +2,15 @@
 /* CHANGE THE NAME OF THE MACHINE IF YOU MAKE
    ANY CHANGE TO THE DEFAULT STATES OR TRANSITIONS */
 
-robotTherapyMachine{
+main_machine{
+    initial_state main;
+    end_state appEnd;
+    transitions{
+    main => appEnd;
+    };
+};
+
+:main{
     states waitSession, initializingSession, waitTherapy,initializingTherapy, loopTherapy, resetTherapy, pauseTherapy, finalizeTherapy,finalizeSession;
     initial_state initialize;
     transitions{

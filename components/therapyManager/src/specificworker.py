@@ -25,6 +25,7 @@ import math
 import random
 from datetime import datetime
 from Queue import Queue, Empty
+from shutil import rmtree
 
 import PySide2
 import matplotlib
@@ -222,6 +223,7 @@ class SpecificWorker(GenericWorker):
         self.canvas = None
         self.skip_frames = 10
         self.total_frames = 0
+        self.to_represent = []
 
         self.manager_machine.start()
 
@@ -286,7 +288,10 @@ class SpecificWorker(GenericWorker):
         self.ui.end_session_button.clicked.connect(self.end_session_clicked)
         self.ui.visualize_check.stateChanged.connect(self.change_visualize_state)
 
-        self.ui.metrics_gbox.hide()
+        self.ui.deviations_check.stateChanged.connect(self.change_values_to_plot)
+        self.ui.lower_trunk_check.stateChanged.connect(self.change_values_to_plot)
+        self.ui.upper_trunk_check.stateChanged.connect(self.change_values_to_plot)
+
         self.ui.visualize_gbox.hide()
 
     def ddbb_status_changed(self, string):
@@ -298,7 +303,6 @@ class SpecificWorker(GenericWorker):
         print ("[INFO] Checking login ...")
 
         username = unicode(self.ui.username_lineedit.text())
-        # username = username.strip().lower() ##The username is stored and checked in lower case
         password = unicode(self.ui.password_lineedit.text())
 
         if self.user_ddbb_connector.check_user_password(username, password):
@@ -458,21 +462,26 @@ class SpecificWorker(GenericWorker):
         if state == QtCore.Qt.Checked:
             self.visualize_therapy = True
             self.ui.visualize_gbox.show()
-            # self.ui.metrics_gbox.show()
             self.ui.video_lb.show()
             if self.canvas is not None:
                 self.canvas.show()
 
         else:
             self.visualize_therapy = False
-            self.ui.metrics_gbox.hide()
             self.ui.visualize_gbox.hide()
             self.ui.video_lb.hide()
             if self.canvas is not None:
                 self.canvas.hide()
 
+    def change_values_to_plot(self):
+        self.to_represent = []
 
-
+        if self.ui.upper_trunk_check.isChecked():
+            self.to_represent.append("upper_trunk")
+        if self.ui.lower_trunk_check.isChecked():
+            self.to_represent.append("lower_trunk")
+        if self.ui.deviations_check.isChecked():
+            self.to_represent.append("deviations")
 
     def start_clicked(self):
         self.admintherapy_proxy.adminStartTherapy(self.list_therapies_todo[0])
@@ -791,7 +800,7 @@ class SpecificWorker(GenericWorker):
 
         if self.canvas is None:
             print ("creating canvas")
-            self.canvas = DynamicCanvas(self.ui,dpi = 50)
+            self.canvas = DynamicCanvas(self.ui,dpi = 80)
             self.canvas.setStyleSheet("background-color:transparent;")
             self.ui.result_layout.addWidget(self.canvas)
 
@@ -800,7 +809,7 @@ class SpecificWorker(GenericWorker):
 
             self.canvas.axes.cla()
             # self.canvas.axes.plot(data, '*-')
-            PTH.plot_graph(self.aux_metrics_dir, self.canvas)
+            PTH.plot_graph(self.aux_metrics_dir, self.to_represent, self.canvas)
             self.canvas.update_figure()
 
         self.t_showingResults_to_waitingFrame.emit()
@@ -857,36 +866,55 @@ class SpecificWorker(GenericWorker):
 
         if self.aux_firstTherapyInSession or self.aux_reseted:
 
-            therapy = self.list_therapies_todo[0]
-            self.aux_therapy_name = therapy
-            self.ui.info_game_label.setText(therapy)
+            self.aux_therapy_name = self.list_therapies_todo[0]
+            self.ui.info_game_label.setText(self.aux_therapy_name)
 
             self.aux_firstTherapyInSession = False
             self.aux_reseted = False
-
         else:
             self.list_therapies_todo.pop(0)
 
             if len(self.list_therapies_todo) == 0:
                 print("No quedan terapias")
                 self.admintherapy_proxy.adminEndSession()
-
             else:
-                therapy = self.list_therapies_todo[0]
-                self.aux_therapy_name = therapy
-                self.ui.info_game_label.setText(therapy)
+                self.aux_therapy_name = self.list_therapies_todo[0]
+                self.ui.info_game_label.setText(self.aux_therapy_name)
 
-        self.ui.pause_game_button.setEnabled(False)
-        self.ui.continue_game_button.setEnabled(False)
-        self.ui.finish_game_button.setEnabled(False)
-        self.ui.reset_game_button.setEnabled(False)
 
-        self.ui.date_label.setText("-")
-        self.ui.timeplayed_label.setText("-")
+
+        therapy = self.aux_therapy_name.replace(" ", "").strip()
+        self.aux_therapy_dir = os.path.join(self.aux_session_dir, therapy)
+
+        if os.path.isdir(self.aux_therapy_dir):
+            rmtree(self.aux_therapy_dir)
+
+        print ("[CREATING] " + self.aux_therapy_dir)
+        os.mkdir(self.aux_therapy_dir)
+
+        video_name = therapy.lower() + ".avi"
+        joints_name = therapy.lower() + ".txt"
+        metrics_name = therapy.lower() + ".csv"
+
+        self.aux_video_dir = os.path.join(self.aux_therapy_dir, video_name)
+        self.aux_joints_dir = os.path.join(self.aux_therapy_dir, joints_name)
+        self.aux_metrics_dir = os.path.join(self.aux_therapy_dir, metrics_name)
+
 
         self.video_writer = None
-
         self.aux_therapy_started = True
+        self.ui.visualize_check.setCheckState(QtCore.Qt.Unchecked)
+        self.ui.upper_trunk_check.setCheckState(QtCore.Qt.Unchecked)
+        self.ui.lower_trunk_check.setCheckState(QtCore.Qt.Unchecked)
+        self.ui.deviations_check.setCheckState(QtCore.Qt.Unchecked)
+
+        #Resultados
+        if self.canvas is not None:
+            self.ui.result_layout.removeWidget(self.canvas)
+            self.canvas = None
+
+        img = QImage()
+        self.ui.video_lb.setPixmap(QPixmap.fromImage(img).scaled(320, 240, Qt.KeepAspectRatio))
 
         # TODO: FIX
         if self.__waitingTherapyReceived:
@@ -905,21 +933,6 @@ class SpecificWorker(GenericWorker):
         self.ui.status_label.setText(self.aux_currentStatus)
 
 
-        therapy = self.aux_therapy_name.replace(" ", "").strip()
-        self.aux_therapy_dir = os.path.join(self.aux_session_dir, therapy)
-
-        if not os.path.isdir(self.aux_therapy_dir):
-            print ("[CREATING] " + self.aux_therapy_dir)
-            os.mkdir(self.aux_therapy_dir)
-
-        video_name = therapy.lower() + ".avi"
-        joints_name = therapy.lower() + ".txt"
-        metrics_name = therapy.lower() + ".csv"
-
-        self.aux_video_dir = os.path.join(self.aux_therapy_dir, video_name)
-        self.aux_joints_dir = os.path.join(self.aux_therapy_dir, joints_name)
-        self.aux_metrics_dir = os.path.join(self.aux_therapy_dir, metrics_name)
-
     #
     # sm_wait_ready
     #
@@ -933,6 +946,8 @@ class SpecificWorker(GenericWorker):
         self.ui.finish_game_button.setEnabled(False)
         self.ui.reset_game_button.setEnabled(False)
         self.ui.end_session_button.setEnabled(False)
+        self.ui.date_label.setText("-")
+        self.ui.timeplayed_label.setText("-")
 
         self.aux_firstTherapyInSession = True
 
@@ -1036,18 +1051,4 @@ class SpecificWorker(GenericWorker):
         self.ui.status_label.setText(self.aux_currentStatus)
         if self.aux_timePlayed is not None:
             self.ui.timeplayed_label.setText(str("{:.3f}".format(self.aux_timePlayed)) + " s")
-        if self.current_metrics is not None:
-            self.ui.angle1_lcd.display(self.current_metrics["LeftArmFlexion"])
-            self.ui.angle2_lcd.display(self.current_metrics ["RightArmFlexion"])
-            self.ui.height1_lcd.display(self.current_metrics ["LeftArmElevation"])
-            self.ui.height2_lcd.display(self.current_metrics ["RightArmElevation"])
-            self.ui.legflex1_lcd.display(self.current_metrics ["LeftLegFlexion"])
-            self.ui.legflex2_lcd.display(self.current_metrics ["RightLegFlexion"])
-            self.ui.legelevation1_lcd.display(self.current_metrics ["LeftLegElevation"])
-            self.ui.legelevation2_lcd.display(self.current_metrics ["RightLegElevation"])
-
-            self.ui.spinedev_lcd.display(self.current_metrics ["SpineDeviation"])
-            self.ui.shoulderdev_lcd.display(self.current_metrics ["ShoulderDeviation"])
-            self.ui.hipsdev_lcd.display(self.current_metrics ["HipDeviation"])
-            self.ui.kneesdev_lcd.display(self.current_metrics ["KneeDeviation"])
 

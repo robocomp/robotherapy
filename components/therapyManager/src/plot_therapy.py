@@ -23,11 +23,8 @@ dict_label_color = {"LeftArmFlexion": ["Flexion brazo izquierdo", "yellowgreen"]
                     "KneeDeviation": ["Desviacion rodillas ", "palegreen"],
                     }
 
-to_represent = ["upper_trunk"]
 
-
-def plot_graph(csvPath, canvas=None):
-
+def plot_graph(csvPath, to_represent=[], canvas=None):
     try:
         df = pd.read_csv(csvPath, delimiter=';')
     except:
@@ -38,6 +35,7 @@ def plot_graph(csvPath, canvas=None):
         return
 
     canvas.axes.cla()
+
     for id in to_represent:
         for part in dict_parts[id]:
             try:
@@ -46,16 +44,15 @@ def plot_graph(csvPath, canvas=None):
             except:
                 "No se pudo representar", str(part)
 
-    # canvas.axes.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    # canvas.axes.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),
-    #       fancybox=True, shadow=True, ncol=3)
-
     canvas.axes.legend(loc='upper center', bbox_to_anchor=(0.5, 1.25),
-              ncol=3, fancybox=True, shadow=True)
+                       ncol=3, fancybox=True, shadow=True, prop={'size': 6})
     return
 
 
-def save_graph(csvPath, visualization = False):
+to_save = ["upper_trunk", "lower_trunk", "deviations"]
+
+
+def save_graph(csvPath, visualization=False):
     dir = os.path.dirname(csvPath)
     try:
         df = pd.read_csv(csvPath, delimiter=';')
@@ -64,7 +61,7 @@ def save_graph(csvPath, visualization = False):
         return
     else:
 
-        for id in to_represent:
+        for id in to_save:
             # for id, rep in dict_parts.items():
             fig = plt.figure(str(id))
             plt.subplot2grid((5, 5), (0, 0), colspan=5, rowspan=4)

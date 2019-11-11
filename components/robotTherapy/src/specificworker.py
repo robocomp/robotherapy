@@ -23,7 +23,7 @@ from datetime import datetime
 
 import numpy as np
 import vg
-from PySide2.QtCore import QTimer, QUrl
+from PySide2.QtCore import QTimer, QUrl, qApp
 from PySide2.QtMultimedia import QMediaPlayer
 from PySide2.QtMultimediaWidgets import QVideoWidget
 
@@ -60,7 +60,7 @@ class SpecificWorker(GenericWorker):
 
         self.current_metrics = {}
 
-        self.robotTherapyMachine.start()
+        self.main_machine.start()
 
     def __del__(self):
         print 'SpecificWorker destructor'
@@ -185,8 +185,25 @@ class SpecificWorker(GenericWorker):
 
             self.current_metrics[part + "Deviation"] = round(get_AngleBetweenVectors(v1, v2), 4)
 
-    # =============== Slots methods for State Machine ===================
-    # ===================================================================
+        # =============== Slots methods for State Machine ===================
+        # ===================================================================
+
+    #
+    # sm_main
+    #
+    @QtCore.Slot()
+    def sm_main(self):
+        print("Entered state main")
+        pass
+
+    #
+    # sm_appEnd
+    #
+    @QtCore.Slot()
+    def sm_appEnd(self):
+        print("Entered state appEnd")
+        qApp.quit()
+
     #
     # sm_initialize
     #
@@ -224,7 +241,7 @@ class SpecificWorker(GenericWorker):
         print("Entered state initializingSession")
         self.send_status_change(StatusType.initializingSession)
 
-        #TODO comprobar que se detectan todos los joints
+        # TODO comprobar que se detectan todos los joints
 
         self.send_status_change(StatusType.readySession)
         QTimer.singleShot(200, self.t_initializingSession_to_waitTherapy)
@@ -307,7 +324,6 @@ class SpecificWorker(GenericWorker):
         self.current_metrics["Time"] = round((self.data_to_record.timeStamp - self.aux_firstTime_metric) / 1000., 4)
 
         if self.aux_current_joints is not None:
-
             self.get_armFlexion("Left")
             self.get_armFlexion("Right")
             self.get_armElevation("Left")
@@ -390,7 +406,7 @@ class SpecificWorker(GenericWorker):
     # newPersonListAndRGB
     #
     def newPersonListAndRGB(self, mixedData):
-        if self.recording: #and len(mixedData.persons) > 0:
+        if self.recording:  # and len(mixedData.persons) > 0:
             self.received_data_queue.put(mixedData)
 
     # =============== Methods for Component Implements ==================
@@ -409,7 +425,7 @@ class SpecificWorker(GenericWorker):
     #
     def adminStopApp(self):
         print("adminStopApp")
-        qApp.quit()
+        self.t_main_to_appEnd.emit()
 
     #
     # adminContinueTherapy

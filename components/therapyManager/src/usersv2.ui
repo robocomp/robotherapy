@@ -38,7 +38,7 @@
        </item>
        <item>
         <property name="text">
-         <string>Nuevo jugador...</string>
+         <string>Nuevo paciente...</string>
         </property>
        </item>
       </widget>

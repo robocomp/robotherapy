@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>522</width>
-    <height>291</height>
+    <width>544</width>
+    <height>504</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -22,45 +22,173 @@
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
        <layout class="QFormLayout" name="formLayout">
+        <property name="fieldGrowthPolicy">
+         <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+        </property>
         <item row="0" column="0">
-         <widget class="QLabel" name="name_player_label">
+         <widget class="QLabel" name="label_2">
           <property name="text">
-           <string>Nombre</string>
+           <string>Username:</string>
           </property>
          </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="username_patient_lineedit"/>
         </item>
         <item row="1" column="0">
-         <widget class="QLabel" name="surname1_player_label">
+         <widget class="QLabel" name="name_player_label">
           <property name="text">
-           <string>Primer apellido</string>
+           <string>Nombre y apellidos:   </string>
           </property>
          </widget>
         </item>
+        <item row="1" column="1">
+         <widget class="QLineEdit" name="name_patient_lineedit"/>
+        </item>
         <item row="2" column="0">
-         <widget class="QLabel" name="surname2_player_label">
+         <widget class="QLabel" name="label">
           <property name="text">
-           <string>Segundo apellido</string>
+           <string>Sexo:</string>
           </property>
          </widget>
         </item>
         <item row="3" column="0">
          <widget class="QLabel" name="age_player_label">
           <property name="text">
-           <string>Edad</string>
+           <string>Edad:</string>
           </property>
          </widget>
         </item>
-        <item row="0" column="1">
-         <widget class="QLineEdit" name="name_player_lineedit"/>
-        </item>
-        <item row="1" column="1">
-         <widget class="QLineEdit" name="surname1_player_lineedit"/>
-        </item>
-        <item row="2" column="1">
-         <widget class="QLineEdit" name="surname2_player_lineedit"/>
-        </item>
         <item row="3" column="1">
          <widget class="QLineEdit" name="age_player_lineedit"/>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="label_6">
+          <property name="text">
+           <string>Centro:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="QLineEdit" name="centro_lineedit"/>
+        </item>
+        <item row="5" column="0">
+         <widget class="QLabel" name="label_3">
+          <property name="text">
+           <string>Nivel Fisico:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1">
+         <widget class="QComboBox" name="nfisico_combobox">
+          <item>
+           <property name="text">
+            <string/>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>5</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>4</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>3</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>2</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>1</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QLabel" name="label_5">
+          <property name="text">
+           <string>Nivel Cognitivo:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1">
+         <widget class="QComboBox" name="ncognitivo_lineedit">
+          <item>
+           <property name="text">
+            <string/>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>5</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>4</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>3</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>2</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>1</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="7" column="0">
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>Observaciones:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="0" colspan="2">
+         <widget class="QPlainTextEdit" name="observaciones_patient_plaintext">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>60</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QComboBox" name="sexo_combobox">
+          <item>
+           <property name="text">
+            <string/>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Hombre</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Mujer</string>
+           </property>
+          </item>
+         </widget>
         </item>
        </layout>
       </item>

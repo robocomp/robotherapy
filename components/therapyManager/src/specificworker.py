@@ -20,38 +20,26 @@
 #
 
 import csv
-import json
-import math
-import random
-from datetime import datetime
 from Queue import Queue, Empty
+from datetime import datetime
 from shutil import rmtree
 
-import PySide2
 import matplotlib
-
-from PySide2 import QtCore, QtWidgets
-# Make sure that we are using QT5
 matplotlib.use('Qt5Agg')
-# Uncomment this line before running, it breaks sphinx-gallery builds
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-
-from matplotlib import pyplot as plt
 
 import cv2
 import numpy as np
 
 from PySide2.QtGui import QKeySequence, QImage, QPixmap
-from passlib.hash import pbkdf2_sha256
-from pprint import pprint
 
 import passwordmeter
-from PySide2.QtCore import Signal, QObject, Qt, QTimer
-from PySide2.QtWidgets import QMessageBox, QCompleter, QAction, qApp, QApplication, QShortcut
+from PySide2.QtCore import Signal, Qt, QTimer
+from PySide2.QtWidgets import QMessageBox, QCompleter, QAction, qApp, QShortcut
 
 from admin_widgets import *
 from genericworker import *
 
+from userManager import QUserManager
 from canvas import DynamicCanvas
 
 import plot_therapy as PTH
@@ -60,100 +48,14 @@ try:
     from bbdd import BBDD
 except:
     print ("Database module not found")
+    sys.path.append("/home/robolab/robocomp/components/robotherapy/components/bbdd")
+    from bbdd import BBDD
 
 FILE_PATH = os.path.abspath(__file__)
 CURRENT_PATH = os.path.dirname(__file__)
 
-print(FILE_PATH)
-# DATABASE_PATH = "resources/users_db.sqlite"
-USERS_FILE_PATH = "src/passwords.json"
-SHADOWS_FILE_PATH = "src/shadows.json"
-# print FILE_PATH
-# print os.getcwd()
 
-list_of_users = []
 list_of_therapies = ["Levantar los brazos"]
-
-
-class DDBBStatus:
-    connected = 1
-    disconneted = 2
-
-
-class Singleton(type(QObject), type):
-    def __init__(cls, name, bases, dict):
-        super(Singleton, cls).__init__(name, bases, dict)
-        cls.instance = None
-
-    def __call__(cls, *args, **kw):
-        if cls.instance is None:
-            cls.instance = super(Singleton, cls).__call__(*args, **kw)
-        return cls.instance
-
-
-class QUserManager(QObject):
-    __metaclass__ = Singleton
-
-    status_changed = Signal(str)
-
-    def __init__(self, parent=None, **kwargs):
-        super(QUserManager, self).__init__(parent, **kwargs)
-        # self.users_db = QSqlDatabase.addDatabase("QSQLITE")
-        # self.users_db.setDatabaseName(DATABASE_PATH)
-        # self.status = DDBBStatus.disconneted
-        self.users_data = {}
-
-    def load_users(self):
-        with open(USERS_FILE_PATH) as f:
-            print ("[INFO] Loading users ...")
-            self.users_data = json.load(f)
-            for user, algo in self.users_data.items():
-                list_of_users.append(user)
-        pprint(self.users_data)
-
-    def check_user_password(self, username, password_to_check):
-        print ("[INFO] Checking password ...")
-        if len(self.users_data) > 0:
-            with open(SHADOWS_FILE_PATH) as f:
-                stored_passwords = json.load(f)
-                if username in stored_passwords:
-                    if username in self.users_data:
-                        if self.users_data[username][2] == '_':
-                            hash = stored_passwords[username]
-                            if pbkdf2_sha256.verify(password_to_check, hash):
-
-                                return True
-                            else:
-                                print ("WARNING: check_user_password: password mismatch")
-                                return False
-                        else:
-                            print ("ERROR: check_user_password: Password should be shadowed")
-                    else:
-                        print ("ERROR: check_user_password: username does't exist")
-                else:
-                    print ("ERROR: check_user_password: username does't exist")
-        else:
-            print ("ERROR: check_user_password: No user load.")
-            return False
-
-    def set_username_password(self, username, plain_password, role='admin'):
-        with open(SHADOWS_FILE_PATH, "r") as f:
-            stored_passwords = json.load(f)
-        with open(SHADOWS_FILE_PATH, "w") as f:
-            stored_passwords[username] = pbkdf2_sha256.hash(plain_password)
-            json.dump(stored_passwords, f)
-        self.users_data[username] = [username, role, '_']
-        with open(USERS_FILE_PATH, "w") as f:
-            json.dump(self.users_data, f)
-
-    def check_user(self, username):  # Return true when the user is found
-        if len(self.users_data) > 0:
-            if username in self.users_data:
-                return True
-            else:
-                return False
-        else:
-            return False
 
 
 class SpecificWorker(GenericWorker):
@@ -166,18 +68,18 @@ class SpecificWorker(GenericWorker):
         self.Period = 2000
         self.timer.start(self.Period)
 
-        self.user_ddbb_connector = QUserManager()
-        self.user_ddbb_connector.status_changed.connect(self.ddbb_status_changed)
-        self.user_ddbb_connector.load_users()
+        self.bbdd = BBDD()
+        self.bbdd.open_database("/home/robolab/robocomp/components/robotherapy/components/bbdd/prueba_therapy.db")
+        self.user_login_manager = QUserManager(ddbb=self.bbdd)
+
+        self.list_of_users = self.user_login_manager.load_therapists()
 
         self.init_ui()
         self.setCentralWidget(self.ui)
 
-        # self.sessions = []
-        # self.currentSession = Session()
+        self.__current_therapist = None
+        self.current_session = None
 
-        # self.currentGame = Game()
-        # self.game_metrics = []
 
         self.aux_sessionInit = False
         self.aux_datePaused = None
@@ -185,11 +87,8 @@ class SpecificWorker(GenericWorker):
         self.aux_currentStatus = None
         self.aux_firstTherapyInSession = True
         self.aux_reseted = False
-        self.aux_firstMetricReceived = True
         self.aux_savedGames = False
 
-        self.selected_patient_incombo = ""
-        self.selected_game_inlist = ""
         self.list_therapies_todo = []
 
         self.__readySessionReceived = False
@@ -202,10 +101,7 @@ class SpecificWorker(GenericWorker):
         self.received_data_queue = Queue()
         self.video_writer = None
 
-        self.aux_therapy_name = None
-        self.aux_patient_name = None
         self.aux_session_dir = None
-        self.aux_therapy_dir = None
         self.aux_video_dir = None
         self.aux_joints_dir = None
         self.aux_metrics_dir = None
@@ -226,6 +122,35 @@ class SpecificWorker(GenericWorker):
         self.to_represent = []
 
         self.manager_machine.start()
+
+    def __del__(self):
+        print 'SpecificWorker destructor'
+
+    def setParams(self, params):
+        return True
+
+    @property
+    def current_therapist(self):
+        """
+        Getter for the current therapis of the current session
+        Current Therapist can exists without a current session while this is being created.
+        :return: therapist of the current session
+        """
+        if self.current_session is not None:
+            return self.current_session.therapist
+        else:
+            return self.__current_therapist
+
+    @current_therapist.setter
+    def current_therapist(self, therapist):
+        """
+        Setter for the current therapist of the current session
+        :return: game of the current session
+        """
+        if self.current_session is not None:
+            self.current_session.therapist = therapist
+        else:
+            self.__current_therapist = therapist
 
     def init_ui(self):
         loader = QUiLoader()
@@ -266,7 +191,6 @@ class SpecificWorker(GenericWorker):
         self.ui.back_button_reg.clicked.connect(self.t_createUser_to_userLogin.emit)
 
         ## User window
-        self.ui.therapies_list.currentItemChanged.connect(self.selectediteminlist_changed)
         self.ui.selpatient_combobox.currentIndexChanged.connect(self.selectedplayer_changed)
         self.ui.addTh_button.clicked.connect(self.addgametolist)
         self.ui.deleteTh_button.clicked.connect(self.deleteTherapyFromList)
@@ -294,18 +218,15 @@ class SpecificWorker(GenericWorker):
 
         self.ui.visualize_gbox.hide()
 
-    def ddbb_status_changed(self, string):
-        self.ui.login_status.setText(string)
-
     # Login window functions
-
     def check_login(self):
         print ("[INFO] Checking login ...")
 
         username = unicode(self.ui.username_lineedit.text())
         password = unicode(self.ui.password_lineedit.text())
 
-        if self.user_ddbb_connector.check_user_password(username, password):
+        if self.user_login_manager.check_user_password(username, password):
+            self.current_therapist = username
             self.loginShortcut.activated.disconnect(self.check_login)
             self.login_executed.emit(True)
             self.t_userLogin_to_adminSessions.emit()
@@ -328,7 +249,7 @@ class SpecificWorker(GenericWorker):
         repeated_password = unicode(self.ui.password_2_lineedit_reg.text())
         strength, improvements = passwordmeter.test(password)
 
-        if strength < 0.5:
+        if strength < 0.6:
             message = ""
             for improve in improvements.values():
                 if message != "":
@@ -347,23 +268,28 @@ class SpecificWorker(GenericWorker):
 
         if self.password_strength_check():
             username = unicode(self.ui.username_lineedit_reg.text())
-            # username = username.strip().lower()
             password = unicode(self.ui.password_lineedit_reg.text())
+            nombre = unicode(self.ui.name_lineedit_reg.text())
+            telefono = unicode(self.ui.telefono_lineedit.text())
+            centro = unicode(self.ui.centro_lineedit_reg.text())
+            profesion = unicode(self.ui.profesion_lineedit.text())
+            observaciones = unicode(self.ui.observaciones_plaintext.toPlainText())
 
-            if self.user_ddbb_connector.check_user(username):  # The user already exist
+            if not self.user_login_manager.set_username_password(username, password, nombre, telefono, centro,
+                                                                 profesion, observaciones):
                 QMessageBox().information(self.focusWidget(), 'Error',
                                           'El nombre de usuario ya existe',
                                           QMessageBox.Ok)
                 return False
             else:
-                self.user_ddbb_connector.set_username_password(username, password)
+
                 QMessageBox().information(self.focusWidget(), '',
                                           'Usuario creado correctamente',
                                           QMessageBox.Ok)
 
-                self.user_ddbb_connector.load_users()  ##Reload the users
+                self.list_of_users = self.user_login_manager.load_therapists()  ##Reload the users
 
-                completer = QCompleter(list_of_users)
+                completer = QCompleter(self.list_of_users)
                 self.ui.username_lineedit.setCompleter(completer)
 
                 self.t_createUser_to_userLogin.emit()
@@ -372,12 +298,12 @@ class SpecificWorker(GenericWorker):
             print ("[ERROR] No se pudo crear el usuario ")
             return False
 
+    # Session window
     def deleteTherapyFromList(self):
         item_to_delete = self.ui.therapies_list.currentRow()
         self.ui.therapies_list.takeItem(item_to_delete)
 
     def selectedplayer_changed(self):
-        self.selected_patient_incombo = self.ui.selpatient_combobox.currentText()
         if self.ui.selpatient_combobox.currentIndex() == 1:  # New player selected
             reply = QMessageBox.question(self.focusWidget(), '',
                                          ' Quiere añadir a un nuevo paciente?', QMessageBox.Yes, QMessageBox.No)
@@ -388,10 +314,6 @@ class SpecificWorker(GenericWorker):
             else:
                 self.t_adminSessions_to_createPatient.emit()
                 return True
-
-    def selectediteminlist_changed(self):
-        self.selected_game_inlist = self.ui.therapies_list.currentItem().text()
-        print (self.ui.therapies_list.currentRow())
 
     def addgametolist(self):
         selected_game_incombo = self.ui.selTh_combobox.currentText()
@@ -438,26 +360,32 @@ class SpecificWorker(GenericWorker):
     # New player
     def create_patient(self):
 
-        name = unicode(self.ui.name_player_lineedit.text())
-        s1 = unicode(self.ui.surname1_player_lineedit.text())
-        s2 = unicode(self.ui.surname2_player_lineedit.text())
-        age = float(self.ui.age_player_lineedit.text())
+        username = unicode(self.ui.username_patient_lineedit.text())
+        nombre = unicode(self.ui.name_patient_lineedit.text())
+        sexo = str(self.ui.sexo_combobox.currentText())
+        edad = float(self.ui.age_player_lineedit.text())
+        centro = unicode(self.ui.centro_lineedit.text())
+        nfisico = float(self.ui.nfisico_combobox.currentText())
+        ncognitivo = float(self.ui.ncognitivo_lineedit.currentText())
+        observaciones = unicode(self.ui.observaciones_patient_plaintext.toPlainText())
 
-        self.bbdd.new_patient(name, s1 + " " + s2)
-        patients = self.bbdd.get_all_patients()
-        patients_list = []
-        for p in patients:
-            patients_list.append(p.name + " " + p.surname)
+        result, patient = self.bbdd.new_patient(username, nombre, sexo=sexo, edad=edad, datosRegistro="", nivelCognitivo=ncognitivo, nivelFisico=nfisico,
+                             nivelJuego=5, centro=centro,  profesional=self.current_therapist, observaciones=observaciones, fechaAlta=datetime.strftime(datetime.now(), "%Y-%m-%d"))
 
-        # patients_list = ["AlbertoSerrano","SergioBarroso"]
+        if result:
+            patients = self.bbdd.get_all_patients_by_therapist(self.current_therapist)
+            completer = QCompleter([patient.username for patient in patients])
 
-        completer = QCompleter(patients_list)
-        self.ui.selpatient_combobox.addItem(patients_list[-1])
-        self.ui.selpatient_combobox.setCompleter(completer)
-        self.t_createPatient_to_adminSessions.emit()
+            self.ui.selpatient_combobox.addItem(patient.username)
+            self.ui.selpatient_combobox.setCompleter(completer)
+            self.t_createPatient_to_adminSessions.emit()
+        else:
+            QMessageBox().information(self.focusWidget(), 'Error',
+                                      'No se ha podido crear un nuevo paciente. El nombre de usuario ya existe.',
+                                      QMessageBox.Ok)
 
     # Game window functions
-    def change_visualize_state(self,state):
+    def change_visualize_state(self, state):
         print "change_visualize_state"
         if state == QtCore.Qt.Checked:
             self.visualize_therapy = True
@@ -507,13 +435,13 @@ class SpecificWorker(GenericWorker):
             self.admintherapy_proxy.adminResetTherapy()
 
     def start_session(self):
-        self.aux_patient_name = self.selected_patient_incombo
+        patient = self.ui.selpatient_combobox.currentText()
         self.list_therapies_todo = []
 
         for index in xrange(self.ui.therapies_list.count()):
             self.list_therapies_todo.append(self.ui.therapies_list.item(index).text())
 
-        if self.aux_patient_name == "":
+        if patient == "":
             QMessageBox().information(self.focusWidget(), 'Error',
                                       'No se han seleccionado ningún paciente',
                                       QMessageBox.Ok)
@@ -523,7 +451,7 @@ class SpecificWorker(GenericWorker):
                                       QMessageBox.Ok)
         else:
 
-            patient_dir = os.path.join(self.aux_saving_dir, self.aux_patient_name)
+            patient_dir = os.path.join(self.aux_saving_dir, patient)
 
             if not os.path.isdir(patient_dir):
                 os.mkdir(patient_dir)
@@ -535,7 +463,7 @@ class SpecificWorker(GenericWorker):
             if not os.path.isdir(self.aux_session_dir):
                 os.mkdir(self.aux_session_dir)
 
-            self.admintherapy_proxy.adminStartSession(self.aux_patient_name)
+            self.admintherapy_proxy.adminStartSession(patient)
 
     def end_session_clicked(self):
 
@@ -545,11 +473,11 @@ class SpecificWorker(GenericWorker):
         if reply == QMessageBox.Yes:
             self.admintherapy_proxy.adminEndSession()
 
-    def __del__(self):
-        print 'SpecificWorker destructor'
-
-    def setParams(self, params):
-        return True
+    def updateUI(self):
+        self.ui.date_label.setText(self.aux_currentDate.strftime("%c"))
+        self.ui.status_label.setText(self.aux_currentStatus)
+        if self.aux_timePlayed is not None:
+            self.ui.timeplayed_label.setText(str("{:.3f}".format(self.aux_timePlayed)) + " s")
 
     # =============== Slots methods for State Machine ===================
     # ===================================================================
@@ -579,7 +507,7 @@ class SpecificWorker(GenericWorker):
         print("Entered state userLogin")
 
         self.ui.stackedWidget.setCurrentIndex(0)
-        completer = QCompleter(list_of_users)
+        completer = QCompleter(self.list_of_users)
         self.ui.username_lineedit.setCompleter(completer)
         self.login_executed.connect(self.update_login_status)
 
@@ -598,10 +526,14 @@ class SpecificWorker(GenericWorker):
     def sm_createPatient(self):
         print("Entered state createPatient")
         self.ui.stackedWidget.setCurrentIndex(3)
-        self.ui.name_player_lineedit.clear()
-        self.ui.surname1_player_lineedit.clear()
-        self.ui.surname2_player_lineedit.clear()
+        self.ui.username_patient_lineedit.clear()
+        self.ui.name_patient_lineedit.clear()
+        self.ui.sexo_combobox.setCurrentIndex(0)
+        self.ui.nfisico_combobox.setCurrentIndex(0)
+        self.ui.ncognitivo_lineedit.setCurrentIndex(0)
         self.ui.age_player_lineedit.clear()
+        self.ui.centro_lineedit.clear()
+        self.ui.observaciones_patient_plaintext.clear()
 
         #
         # sm_consultPatient
@@ -672,7 +604,6 @@ class SpecificWorker(GenericWorker):
         self.ui.reset_game_button.setToolTip("Debe pausar la terapia para poder reiniciarla")
         self.ui.end_session_button.setEnabled(False)  # No se puede finalizar la sesion si hay un juego en marcha
         self.ui.end_session_button.setToolTip("Debe finalizar la terapia para poder terminar la sesión")
-
 
         if self.aux_datePaused is not None:
             self.ui.continue_game_button.setEnabled(False)
@@ -800,7 +731,7 @@ class SpecificWorker(GenericWorker):
 
         if self.canvas is None:
             print ("creating canvas")
-            self.canvas = DynamicCanvas(self.ui,dpi = 80)
+            self.canvas = DynamicCanvas(self.ui, dpi=80)
             self.canvas.setStyleSheet("background-color:transparent;")
             self.ui.result_layout.addWidget(self.canvas)
 
@@ -813,8 +744,6 @@ class SpecificWorker(GenericWorker):
             self.canvas.update_figure()
 
         self.t_showingResults_to_waitingFrame.emit()
-
-
 
     #
     # sm_session_init
@@ -829,10 +758,8 @@ class SpecificWorker(GenericWorker):
         self.ui.selTh_combobox.setCurrentIndex(0)
 
         if not self.aux_sessionInit:
-            self.bbdd = BBDD()
-            self.bbdd.open_database("/home/robocomp/robocomp/components/euroage-tv/components/bbdd/prueba1.db")
 
-            patients = self.bbdd.get_all_patients()
+            patients = self.bbdd.get_all_patients_by_therapist(self.current_therapist)
             patients_list = []
             for p in patients:
                 patients_list.append(p.username)
@@ -844,9 +771,10 @@ class SpecificWorker(GenericWorker):
             self.ui.selpatient_combobox.lineEdit().setCompleter(completer2)
             self.ui.selpatient_combobox.lineEdit().setPlaceholderText("Selecciona paciente...")
 
-            completer3 = QCompleter(list_of_therapies)
+            games = self.bbdd.get_all_games()
+            completer3 = QCompleter([game.name for game in games])
+            self.ui.selTh_combobox.addItems([game.name for game in games])
 
-            self.ui.selTh_combobox.addItems(list_of_therapies)
             self.ui.selTh_combobox.lineEdit().setCompleter(completer3)
             self.ui.selTh_combobox.lineEdit().setPlaceholderText("Selecciona terapia...")
 
@@ -866,8 +794,8 @@ class SpecificWorker(GenericWorker):
 
         if self.aux_firstTherapyInSession or self.aux_reseted:
 
-            self.aux_therapy_name = self.list_therapies_todo[0]
-            self.ui.info_game_label.setText(self.aux_therapy_name)
+            therapy = self.list_therapies_todo[0]
+            self.ui.info_game_label.setText(therapy)
 
             self.aux_firstTherapyInSession = False
             self.aux_reseted = False
@@ -878,37 +806,29 @@ class SpecificWorker(GenericWorker):
                 print("No quedan terapias")
                 self.admintherapy_proxy.adminEndSession()
             else:
-                self.aux_therapy_name = self.list_therapies_todo[0]
-                self.ui.info_game_label.setText(self.aux_therapy_name)
+                therapy = self.list_therapies_todo[0]
+                self.ui.info_game_label.setText(therapy)
 
+        therapy = therapy.replace(" ", "").strip()
+        therapy_dir = os.path.join(self.aux_session_dir, therapy)
 
+        if os.path.isdir(therapy_dir):
+            rmtree(therapy_dir)
 
-        therapy = self.aux_therapy_name.replace(" ", "").strip()
-        self.aux_therapy_dir = os.path.join(self.aux_session_dir, therapy)
-
-        if os.path.isdir(self.aux_therapy_dir):
-            rmtree(self.aux_therapy_dir)
-
-        print ("[CREATING] " + self.aux_therapy_dir)
-        os.mkdir(self.aux_therapy_dir)
+        print ("[CREATING] " + therapy_dir)
+        os.mkdir(therapy_dir)
 
         video_name = therapy.lower() + ".avi"
         joints_name = therapy.lower() + ".txt"
         metrics_name = therapy.lower() + ".csv"
 
-        self.aux_video_dir = os.path.join(self.aux_therapy_dir, video_name)
-        self.aux_joints_dir = os.path.join(self.aux_therapy_dir, joints_name)
-        self.aux_metrics_dir = os.path.join(self.aux_therapy_dir, metrics_name)
-
+        self.aux_video_dir = os.path.join(therapy_dir, video_name)
+        self.aux_joints_dir = os.path.join(therapy_dir, joints_name)
+        self.aux_metrics_dir = os.path.join(therapy_dir, metrics_name)
 
         self.video_writer = None
-        self.aux_therapy_started = True
-        self.ui.visualize_check.setCheckState(QtCore.Qt.Unchecked)
-        self.ui.upper_trunk_check.setCheckState(QtCore.Qt.Unchecked)
-        self.ui.lower_trunk_check.setCheckState(QtCore.Qt.Unchecked)
-        self.ui.deviations_check.setCheckState(QtCore.Qt.Unchecked)
 
-        #Resultados
+        # Reset results
         if self.canvas is not None:
             self.ui.result_layout.removeWidget(self.canvas)
             self.canvas = None
@@ -931,7 +851,10 @@ class SpecificWorker(GenericWorker):
         self.ui.start_game_button.setEnabled(True)
         self.ui.end_session_button.setEnabled(True)
         self.ui.status_label.setText(self.aux_currentStatus)
-
+        self.ui.visualize_check.setCheckState(QtCore.Qt.Unchecked)
+        self.ui.upper_trunk_check.setCheckState(QtCore.Qt.Unchecked)
+        self.ui.lower_trunk_check.setCheckState(QtCore.Qt.Unchecked)
+        self.ui.deviations_check.setCheckState(QtCore.Qt.Unchecked)
 
     #
     # sm_wait_ready
@@ -991,7 +914,6 @@ class SpecificWorker(GenericWorker):
 
     # =================================================================
     # =================================================================
-
     #
     # newDataObtained
     #
@@ -1003,7 +925,6 @@ class SpecificWorker(GenericWorker):
 
         self.aux_timePlayed = data.metricsObtained["Time"]
         self.updateUISig.emit()
-
 
     #
     # statusChanged
@@ -1044,11 +965,3 @@ class SpecificWorker(GenericWorker):
         if s.currentStatus == StatusType.endSession:
             self.t_adminTherapies_to_endSession.emit()
             self.t_waitingStart_to_endSession.emit()
-
-
-    def updateUI(self):
-        self.ui.date_label.setText(self.aux_currentDate.strftime("%c"))
-        self.ui.status_label.setText(self.aux_currentStatus)
-        if self.aux_timePlayed is not None:
-            self.ui.timeplayed_label.setText(str("{:.3f}".format(self.aux_timePlayed)) + " s")
-

@@ -9,10 +9,10 @@ if __name__ == '__main__':
     bbdd = BBDD()
 
     # create database
-    bbdd.create_database("prueba_therapy.db")
+    bbdd.create_database("prueba_therapy1.db")
     #or open an existing one
 #    bbdd.open_database("prueba.db")
-
+    exit(-1)
     #write
     result, patient = bbdd.new_patient(username='andreslopez', nombre="Andres Lopez", sexo= "Varón", edad=87, datosRegistro="", nivelCognitivo= 7, nivelFisico=4, nivelJuego=2, centro="Caceres", profesional="otro", observaciones="...", fechaAlta="20191022")
     result, patient2 = bbdd.new_patient(username='elenamartinez', nombre="'Elena Martinez'", sexo="Mujer", edad=67, datosRegistro="...", nivelCognitivo= 6, nivelFisico=8, nivelJuego=9, centro="Badajoz", profesional="este", observaciones="---", fechaAlta="20191021")

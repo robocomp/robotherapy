@@ -124,28 +124,28 @@ class BBDD(object):
             print("Therapist: ", name, " not found in database")
             return False
 
-    # GAME
-    def new_game(self, name):
-        game = Game(name=name)
+    # THERAPY
+    def new_therapy(self, name):
+        therapy = Therapy(name=name)
         try:
-            self.session.add(game)
+            self.session.add(therapy)
             self.session.commit()
-            return True, game
+            return True, therapy
         except Exception as e:
             traceback.print_stack()
             traceback.print_exc(e)
-            return False, Game()
+            return False, Therapy()
 
-    def get_game_by_name(self, name):
+    def get_therapy_by_name(self, name):
         try:
-            return True, self.session.query(Game).filter_by(name=name).first()
+            return True, self.session.query(Therapy).filter_by(name=name).first()
         except Exception as e:
             traceback.print_stack()
             traceback.print_exc(e)
-            return False, Game()
+            return False, Therapy()
 
-    def get_all_games(self):
-        return self.session.query(Game).all()
+    def get_all_therapies(self):
+        return self.session.query(Therapy).all()
 
     # SESSION
     def new_session(self, start, end, patient, therapist):
@@ -172,8 +172,8 @@ class BBDD(object):
         return self.session.query(Session).filter_by(id=id).first()
 
     # ROUND
-    def new_round(self, name, stime, etime, game_id, session_id):
-        round = Round(name=name, start_time=stime, end_time=etime, game_id=game_id, session_id=session_id)
+    def new_round(self, name, stime, etime, therapy_id, session_id):
+        round = Round(name=name, start_time=stime, end_time=etime, therapy_id=therapy_id, session_id=session_id)
 
         try:
             self.session.add(round)

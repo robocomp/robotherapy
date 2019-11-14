@@ -49,15 +49,15 @@ class Therapist(Base):
             return "<Therapist(name='None None')>"
 
 
-class Game(Base):
-    __tablename__ = 'game'
-    id = Column(Integer, Sequence('game_id_seq'), primary_key=True)
+class Therapy(Base):
+    __tablename__ = 'therapy'
+    id = Column(Integer, Sequence('therapy_id_seq'), primary_key=True)
     name = Column(String(50))
 
-    rounds = relationship("Round", back_populates="game", cascade="all, delete")
+    rounds = relationship("Round", back_populates="therapy", cascade="all, delete")
 
     def __repr__(self):
-        return "<Game(name='%s: ')>" % (self.name)
+        return "<Therapy(name='%s: ')>" % (self.name)
 
 
 class Round(Base):
@@ -67,9 +67,9 @@ class Round(Base):
     start_time = Column(DateTime)
     end_time = Column(DateTime)
     session_id = Column(Integer, ForeignKey('session.id'))
-    game_id = Column(Integer, ForeignKey('game.id'))
+    therapy_id = Column(Integer, ForeignKey('therapy.id'))
 
-    game = relationship("Game", back_populates="rounds", cascade="all, delete")
+    therapy = relationship("Therapy", back_populates="rounds", cascade="all, delete")
 
 
     def __repr__(self):

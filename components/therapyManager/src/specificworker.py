@@ -55,7 +55,102 @@ FILE_PATH = os.path.abspath(__file__)
 CURRENT_PATH = os.path.dirname(__file__)
 
 
-list_of_therapies = ["Levantar los brazos"]
+class Session:
+    def __init__(self, patient, therapist):
+        self.date = datetime.now()
+        self.patient = patient
+        self.therapist = therapist
+        self.therapies = []
+        self.current_therapy = None
+        self.directory = None
+
+        self.create_directory()
+
+    def create_directory(self):
+        saving_dir = os.path.join(CURRENT_PATH, "../savedSessions")
+
+        if not os.path.isdir(saving_dir):
+            os.mkdir(saving_dir)
+
+        patient_dir = os.path.join(saving_dir, self.patient)
+
+        if not os.path.isdir(patient_dir):
+            os.mkdir(patient_dir)
+
+        date = datetime.strftime(self.date, "%y%m%d_%H%M%S")
+        self.directory = os.path.join(patient_dir, "session_" + date)
+
+        os.mkdir(self.directory)
+
+    def save_session_to_ddbb(self, ddbb):
+        print ("Saving session in ")
+
+        result, session = ddbb.new_session(start=self.date, end=datetime.now(), patient=self.patient, therapist=self.therapist)
+        if result:
+            for therapy in self.therapies:
+                therapy.session_id = session.id
+                therapy.save_therapy_to_ddbb(ddbb=ddbb)
+
+
+class Therapy:
+    """
+    Class to encapsulate the information of a Therapy
+    """
+    def __init__(self):
+        self.therapy_id = None
+        self.name = ""
+        # self.start_time = datetime.now()
+        self.start_time = None
+        self.end_time = None
+        self.time_played = 0
+        self.time_paused = 0
+        self.metrics = []
+        self.session_id = None
+        self.directory = None
+
+        self.video_dir = None
+        self.joints_dir = None
+        self.metrics_dir = None
+
+    def create_directory(self, session_dir):
+
+        therapy = self.name.replace(" ", "").strip()
+        date = datetime.strftime(self.start_time, "%H%M%S")
+        self.directory = os.path.join(session_dir, therapy + "_" + date)
+
+        print ("[CREATING] " + self.directory)
+        os.mkdir(self.directory)
+
+        video_name = therapy.lower() + ".avi"
+        joints_name = therapy.lower() + ".txt"
+        metrics_name = therapy.lower() + ".csv"
+
+        self.video_dir = os.path.join(self.directory, video_name)
+        self.joints_dir = os.path.join(self.directory, joints_name)
+        self.metrics_dir = os.path.join(self.directory, metrics_name)
+
+
+    def save_therapy_to_ddbb(self, ddbb):
+        """
+        Save the information of a game to a ddbb
+        :param output_dir: ddbb object to save the information to
+        :return: --
+        """
+        #TODO insertar metricas
+        ddbb.new_round(name= self.name,
+                       stime=self.start_time,
+                       etime= self.end_time,
+                       therapy_id=self.therapy_id,
+                       session_id=self.session_id)
+
+    def end(self):
+        """
+        Store the time of the end of the game.
+        :return: --
+        """
+        self.end_time = datetime.now()
+
+
 
 
 class SpecificWorker(GenericWorker):
@@ -65,29 +160,28 @@ class SpecificWorker(GenericWorker):
     def __init__(self, proxy_map):
         super(SpecificWorker, self).__init__(proxy_map)
 
+        self.aux_firstTherapyInSession = True
         self.Period = 2000
         self.timer.start(self.Period)
 
         self.bbdd = BBDD()
-        self.bbdd.open_database("/home/robolab/robocomp/components/robotherapy/components/bbdd/prueba_therapy.db")
+        self.bbdd.open_database("/home/robolab/robocomp/components/robotherapy/components/bbdd/therapy_database.db")
         self.user_login_manager = QUserManager(ddbb=self.bbdd)
 
-        self.list_of_users = self.user_login_manager.load_therapists()
+        self.list_of_therapists = self.user_login_manager.load_therapists()
 
         self.init_ui()
         self.setCentralWidget(self.ui)
 
-        self.__current_therapist = None
+        self.__current_therapist = "aracelivegamagro"
         self.current_session = None
-
 
         self.aux_sessionInit = False
         self.aux_datePaused = None
         self.aux_currentDate = None
         self.aux_currentStatus = None
-        self.aux_firstTherapyInSession = True
         self.aux_reseted = False
-        self.aux_savedGames = False
+        self.aux_savedTherapies = False
 
         self.list_therapies_todo = []
 
@@ -96,21 +190,14 @@ class SpecificWorker(GenericWorker):
         self.updateUISig.connect(self.updateUI)
 
         ##For saving sessions
-        self.aux_current_joints = None
         self.data_to_record = None
         self.received_data_queue = Queue()
         self.video_writer = None
-
-        self.aux_session_dir = None
-        self.aux_video_dir = None
-        self.aux_joints_dir = None
-        self.aux_metrics_dir = None
-
         self.aux_current_frame = None
 
-        self.aux_saving_dir = "/home/robolab/robocomp/components/robotherapy/components/therapyManager/savedSessions"
-        if not os.path.isdir(self.aux_saving_dir):
-            os.mkdir(self.aux_saving_dir)
+        # self.aux_saving_dir = "/home/robolab/robocomp/components/robotherapy/components/therapyManager/savedSessions"
+        # if not os.path.isdir(self.aux_saving_dir):
+        #     os.mkdir(self.aux_saving_dir)
 
         self.aux_timePlayed = None
         self.current_metrics = None
@@ -128,6 +215,26 @@ class SpecificWorker(GenericWorker):
 
     def setParams(self, params):
         return True
+
+    @property
+    def current_therapy(self):
+        """
+        Getter for the current game of the current session
+        :return: therapy of the current session
+        """
+        if self.current_session is not None:
+            return self.current_session.current_therapy
+        else:
+            return None
+
+    @current_therapy.setter
+    def current_therapy(self, the_therapy):
+        """
+        Setter for the current therapy of the current session
+        :return: therapy of the current session
+        """
+        if self.current_session is not None:
+            self.current_session.current_therapy = the_therapy
 
     @property
     def current_therapist(self):
@@ -151,6 +258,7 @@ class SpecificWorker(GenericWorker):
             self.current_session.therapist = therapist
         else:
             self.__current_therapist = therapist
+
 
     def init_ui(self):
         loader = QUiLoader()
@@ -287,9 +395,9 @@ class SpecificWorker(GenericWorker):
                                           'Usuario creado correctamente',
                                           QMessageBox.Ok)
 
-                self.list_of_users = self.user_login_manager.load_therapists()  ##Reload the users
+                self.list_of_therapists = self.user_login_manager.load_therapists()  ##Reload the users
 
-                completer = QCompleter(self.list_of_users)
+                completer = QCompleter(self.list_of_therapists)
                 self.ui.username_lineedit.setCompleter(completer)
 
                 self.t_createUser_to_userLogin.emit()
@@ -412,6 +520,8 @@ class SpecificWorker(GenericWorker):
             self.to_represent.append("deviations")
 
     def start_clicked(self):
+        self.current_therapy.start_time = datetime.now()
+        self.current_therapy.create_directory(self.current_session.directory)
         self.admintherapy_proxy.adminStartTherapy(self.list_therapies_todo[0])
 
     def pause_clicked(self):
@@ -451,18 +561,7 @@ class SpecificWorker(GenericWorker):
                                       QMessageBox.Ok)
         else:
 
-            patient_dir = os.path.join(self.aux_saving_dir, patient)
-
-            if not os.path.isdir(patient_dir):
-                os.mkdir(patient_dir)
-
-            currentDate = datetime.now()
-            date = datetime.strftime(currentDate, "%m%d%H%M")
-            self.aux_session_dir = os.path.join(patient_dir, "session_" + date)
-
-            if not os.path.isdir(self.aux_session_dir):
-                os.mkdir(self.aux_session_dir)
-
+            self.current_session = Session(therapist=self.current_therapist, patient=str(patient))
             self.admintherapy_proxy.adminStartSession(patient)
 
     def end_session_clicked(self):
@@ -495,7 +594,8 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def sm_appEnd(self):
         print("Entered state appEnd")
-        self.admintherapy_proxy.adminStopApp()
+        #TODO DESCOMENTAR
+        # self.admintherapy_proxy.adminStopApp()
         qApp.quit()
         pass
 
@@ -507,7 +607,8 @@ class SpecificWorker(GenericWorker):
         print("Entered state userLogin")
 
         self.ui.stackedWidget.setCurrentIndex(0)
-        completer = QCompleter(self.list_of_users)
+        self.aux_sessionInit = False
+        completer = QCompleter(self.list_of_therapists)
         self.ui.username_lineedit.setCompleter(completer)
         self.login_executed.connect(self.update_login_status)
 
@@ -535,13 +636,14 @@ class SpecificWorker(GenericWorker):
         self.ui.centro_lineedit.clear()
         self.ui.observaciones_patient_plaintext.clear()
 
-        #
-        # sm_consultPatient
-        #
-        @QtCore.Slot()
-        def sm_consultPatient(self):
-            print("Entered state consultPatient")
-            pass
+    #TODO leer de la base de datos la informacion del paciente
+    #
+    # sm_consultPatient
+    #
+    @QtCore.Slot()
+    def sm_consultPatient(self):
+        print("Entered state consultPatient")
+        pass
 
     # sm_game_end
     #
@@ -552,11 +654,14 @@ class SpecificWorker(GenericWorker):
         reply = QMessageBox.question(self.focusWidget(), 'Terapia terminada',
                                      ' ¿Desea guardar los datos de la terapia?', QMessageBox.Yes, QMessageBox.No)
         if reply == QMessageBox.Yes:
-            # self.aux_savedGames = True
-            # timeplayed = self.aux_currentDate - self.currentGame.date
-            # self.currentGame.timePlayed = timeplayed.total_seconds() * 1000
-            # print "Time played =  ", self.currentGame.timePlayed, "milliseconds"
-            # self.currentSession.games.append(self.currentGame)
+
+            self.current_therapy.end()
+            self.aux_savedTherapies = True
+            timeplayed = self.aux_currentDate - self.current_therapy.start_time
+            self.current_therapy.time_played = timeplayed.total_seconds() * 1000
+            print "Time played =  ", self.current_therapy.time_played, "milliseconds"
+
+            self.current_session.therapies.append(self.current_therapy)
 
             reply2 = QMessageBox.question(self.focusWidget(), 'Terapia terminada',
                                           ' ¿Desea visualizar los datos de la terapia?', QMessageBox.Yes,
@@ -567,15 +672,13 @@ class SpecificWorker(GenericWorker):
             else:
                 visualization = False
 
-            PTH.save_graph(self.aux_metrics_dir, visualization)
+            PTH.save_graph(self.current_therapy.metrics_dir, visualization)
+
+        else:
+            rmtree(self.current_therapy.directory)
 
         if self.video_writer is not None:
             self.video_writer.release()
-
-        self.aux_datePaused = None
-
-        # self.currentGame = Game()
-        # self.game_metrics = []
 
         self.t_endTherapy_to_adminTherapies.emit()
 
@@ -620,7 +723,7 @@ class SpecificWorker(GenericWorker):
     def sm_waitingFrame(self):
         print("Entered state waitingFrame")
         self.data_to_record = None
-        self.aux_current_joints = None
+
 
         try:
             self.data_to_record = self.received_data_queue.get_nowait()
@@ -649,12 +752,12 @@ class SpecificWorker(GenericWorker):
 
         if self.video_writer is None:
             (height, width) = frame.shape[:2]
-            self.video_writer = cv2.VideoWriter(self.aux_video_dir, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 30,
+            self.video_writer = cv2.VideoWriter(self.current_therapy.video_dir, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 30,
                                                 (width, height))
         self.video_writer.write(frame)
 
         # Joints
-        joint_file = open(self.aux_joints_dir, 'a+')
+        joint_file = open(self.current_therapy.joints_dir, 'a+')
         joint_file.write(str(self.data_to_record.timeStamp))
         joint_file.write("#")
 
@@ -663,8 +766,6 @@ class SpecificWorker(GenericWorker):
 
                 joint_file.write(str(id))
                 joint_file.write("#")
-
-                self.aux_current_joints = person.joints
 
                 for id_joint, j in person.joints.items():
                     joint_file.writelines([str(id_joint), " ", str(j[0]), " ", str(j[1]), " ", str(j[2]), "#"])
@@ -676,8 +777,8 @@ class SpecificWorker(GenericWorker):
         joint_file.close()
 
         # Metrics
-        if not os.path.isfile(self.aux_metrics_dir):
-            with open(self.aux_metrics_dir, 'w') as csvFile:
+        if not os.path.isfile(self.current_therapy.metrics_dir):
+            with open(self.current_therapy.metrics_dir, 'w') as csvFile:
                 writer = csv.writer(csvFile, delimiter=';')
                 writer.writerow(
                     ["Time", "LeftArmFlexion", "RightArmFlexion", "HipDeviation", "KneeDeviation",
@@ -685,7 +786,7 @@ class SpecificWorker(GenericWorker):
                      "RightLegFlexion", "LeftLegElevation", "RightLegElevation"])
             csvFile.close()
 
-        with open(self.aux_metrics_dir, 'a') as csvFile:
+        with open(self.current_therapy.metrics_dir, 'a') as csvFile:
             writer = csv.writer(csvFile, delimiter=';')
             writer.writerow(
                 [self.data_to_record.metricsObtained["Time"],
@@ -736,11 +837,8 @@ class SpecificWorker(GenericWorker):
             self.ui.result_layout.addWidget(self.canvas)
 
         if self.total_frames % self.skip_frames == 0:
-            # data = [random.random() for i in range(10)]
-
             self.canvas.axes.cla()
-            # self.canvas.axes.plot(data, '*-')
-            PTH.plot_graph(self.aux_metrics_dir, self.to_represent, self.canvas)
+            PTH.plot_graph(self.current_therapy.metrics_dir, self.to_represent, self.canvas)
             self.canvas.update_figure()
 
         self.t_showingResults_to_waitingFrame.emit()
@@ -751,9 +849,7 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def sm_adminSessions(self):
         print("Entered state adminSessions")
-        # self.currentSession = Session()
         self.ui.stackedWidget.setCurrentIndex(2)
-
         self.ui.selpatient_combobox.setCurrentIndex(0)
         self.ui.selTh_combobox.setCurrentIndex(0)
 
@@ -764,16 +860,19 @@ class SpecificWorker(GenericWorker):
             for p in patients:
                 patients_list.append(p.username)
 
-            # patients_list = ["AlbertoSerrano","SergioBarroso"]
-            completer2 = QCompleter(patients_list)
+            if len(patients) == 0:
+                QMessageBox().information(self.focusWidget(), 'Info',
+                                          'No hay ningún paciente registrado para el actual terapeuta',
+                                          QMessageBox.Ok)
 
+            completer2 = QCompleter(patients_list)
             self.ui.selpatient_combobox.addItems(patients_list)
             self.ui.selpatient_combobox.lineEdit().setCompleter(completer2)
             self.ui.selpatient_combobox.lineEdit().setPlaceholderText("Selecciona paciente...")
 
-            games = self.bbdd.get_all_games()
-            completer3 = QCompleter([game.name for game in games])
-            self.ui.selTh_combobox.addItems([game.name for game in games])
+            therapies = self.bbdd.get_all_therapies()
+            completer3 = QCompleter([th.name for th in therapies])
+            self.ui.selTh_combobox.addItems([th.name for th in therapies])
 
             self.ui.selTh_combobox.lineEdit().setCompleter(completer3)
             self.ui.selTh_combobox.lineEdit().setPlaceholderText("Selecciona terapia...")
@@ -781,12 +880,12 @@ class SpecificWorker(GenericWorker):
             self.aux_sessionInit = True
 
         self.ui.therapies_list.clear()
-
+        self.aux_firstTherapyInSession = True
         self.mainMenu.setEnabled(True)
-        self.aux_savedGames = False
+        self.aux_savedTherapies = False
 
     #
-    # sm_admin_games
+    # sm_adminTherapies
     #
     @QtCore.Slot()
     def sm_adminTherapies(self):
@@ -794,11 +893,25 @@ class SpecificWorker(GenericWorker):
 
         if self.aux_firstTherapyInSession or self.aux_reseted:
 
+            if self.aux_reseted:
+                rmtree(self.current_therapy.directory)
+                self.aux_reseted = False
+
             therapy = self.list_therapies_todo[0]
+            self.current_therapy = Therapy()
+            result, bbdd_therapy = self.bbdd.get_therapy_by_name(therapy)
+
+            if result:
+                self.current_therapy.therapy_id = bbdd_therapy.id
+
+            self.current_therapy.name = bbdd_therapy.name
             self.ui.info_game_label.setText(therapy)
 
             self.aux_firstTherapyInSession = False
-            self.aux_reseted = False
+            self.aux_datePaused = None
+
+
+
         else:
             self.list_therapies_todo.pop(0)
 
@@ -807,30 +920,21 @@ class SpecificWorker(GenericWorker):
                 self.admintherapy_proxy.adminEndSession()
             else:
                 therapy = self.list_therapies_todo[0]
+                self.current_therapy = Therapy()
+                result, bbdd_therapy = self.bbdd.get_therapy_by_name(therapy)
+                if result:
+                    self.current_therapy.therapy_id = bbdd_therapy.id
+
+                self.current_therapy.name = bbdd_therapy.name
                 self.ui.info_game_label.setText(therapy)
-
-        therapy = therapy.replace(" ", "").strip()
-        therapy_dir = os.path.join(self.aux_session_dir, therapy)
-
-        if os.path.isdir(therapy_dir):
-            rmtree(therapy_dir)
-
-        print ("[CREATING] " + therapy_dir)
-        os.mkdir(therapy_dir)
-
-        video_name = therapy.lower() + ".avi"
-        joints_name = therapy.lower() + ".txt"
-        metrics_name = therapy.lower() + ".csv"
-
-        self.aux_video_dir = os.path.join(therapy_dir, video_name)
-        self.aux_joints_dir = os.path.join(therapy_dir, joints_name)
-        self.aux_metrics_dir = os.path.join(therapy_dir, metrics_name)
 
         self.video_writer = None
 
         # Reset results
         if self.canvas is not None:
+            print("removing widget")
             self.ui.result_layout.removeWidget(self.canvas)
+            self.canvas.deleteLater()
             self.canvas = None
 
         img = QImage()
@@ -892,19 +996,21 @@ class SpecificWorker(GenericWorker):
     def sm_endSession(self):
         print("Entered state endSession")
 
-        if self.aux_savedGames:
+        if self.aux_savedTherapies:
             reply = QMessageBox.question(self.focusWidget(), 'Terapias finalizados',
                                          ' Desea guardar los datos de la sesion actual?', QMessageBox.Yes,
                                          QMessageBox.No)
             if reply == QMessageBox.Yes:
-                pass
-                # time = self.aux_currentDate - self.currentSession.date
-                # self.currentSession.totaltime = time.total_seconds() * 1000
-                # print "Session time =  ", self.currentSession.totaltime, "milliseconds"
+                time = self.aux_currentDate - self.current_session.date
+                self.current_session.total_time = time.total_seconds() * 1000
+                print "Session time =  ", self.current_session.total_time, "milliseconds"
 
-                # self.compute_session_metrics()
-                # self.currentSession.save_session()
-                # self.sessions.append(self.currentSession)
+                self.current_session.save_session_to_ddbb(self.bbdd)
+
+            else:
+                rmtree(self.current_session.directory)
+        else:
+            rmtree(self.current_session.directory)
 
         QMessageBox().information(self.focusWidget(), 'Adios',
                                   'Se ha finalizado la sesion',

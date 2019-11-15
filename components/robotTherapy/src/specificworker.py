@@ -477,8 +477,8 @@ class SpecificWorker(GenericWorker):
     # ===================================================================
 
     def send_status_change(self, status_type):
-        initialicing_status = Status()
-        initialicing_status.currentStatus = status_type
-        initialicing_status.date = datetime.now().isoformat()
+        initializing_status = Status()
+        initializing_status.currentStatus = status_type
+        initializing_status.date = datetime.now().isoformat()
         print("Sending %s" % str(status_type))
-        self.therapymetrics_proxy.statusChanged(initialicing_status)
+        self.therapymetrics_proxy.statusChanged(initializing_status)

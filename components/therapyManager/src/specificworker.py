@@ -25,6 +25,7 @@ from datetime import datetime
 from shutil import rmtree
 
 import matplotlib
+
 matplotlib.use('Qt5Agg')
 
 import cv2
@@ -85,7 +86,8 @@ class Session:
     def save_session_to_ddbb(self, ddbb):
         print ("Saving session in ")
 
-        result, session = ddbb.new_session(start=self.date, end=datetime.now(), patient=self.patient, therapist=self.therapist)
+        result, session = ddbb.new_session(start=self.date, end=datetime.now(), patient=self.patient,
+                                           therapist=self.therapist)
         if result:
             for therapy in self.therapies:
                 therapy.session_id = session.id
@@ -99,21 +101,19 @@ class Therapy:
     def __init__(self):
         self.therapy_id = None
         self.name = ""
-        # self.start_time = datetime.now()
         self.start_time = None
         self.end_time = None
         self.time_played = 0
         self.time_paused = 0
         self.metrics = []
         self.session_id = None
-        self.directory = None
 
+        self.directory = None
         self.video_dir = None
         self.joints_dir = None
         self.metrics_dir = None
 
     def create_directory(self, session_dir):
-
         therapy = self.name.replace(" ", "").strip()
         date = datetime.strftime(self.start_time, "%H%M%S")
         self.directory = os.path.join(session_dir, therapy + "_" + date)
@@ -129,17 +129,16 @@ class Therapy:
         self.joints_dir = os.path.join(self.directory, joints_name)
         self.metrics_dir = os.path.join(self.directory, metrics_name)
 
-
     def save_therapy_to_ddbb(self, ddbb):
         """
-        Save the information of a game to a ddbb
+        Save the information of a therapy to a ddbb
         :param output_dir: ddbb object to save the information to
         :return: --
         """
-        #TODO insertar metricas
-        ddbb.new_round(name= self.name,
+        # TODO insertar metricas
+        ddbb.new_round(name=self.name,
                        stime=self.start_time,
-                       etime= self.end_time,
+                       etime=self.end_time,
                        therapy_id=self.therapy_id,
                        session_id=self.session_id)
 
@@ -149,8 +148,6 @@ class Therapy:
         :return: --
         """
         self.end_time = datetime.now()
-
-
 
 
 class SpecificWorker(GenericWorker):
@@ -187,6 +184,7 @@ class SpecificWorker(GenericWorker):
 
         self.__readySessionReceived = False
         self.__waitingTherapyReceived = False
+
         self.updateUISig.connect(self.updateUI)
 
         ##For saving sessions
@@ -195,9 +193,6 @@ class SpecificWorker(GenericWorker):
         self.video_writer = None
         self.aux_current_frame = None
 
-        # self.aux_saving_dir = "/home/robolab/robocomp/components/robotherapy/components/therapyManager/savedSessions"
-        # if not os.path.isdir(self.aux_saving_dir):
-        #     os.mkdir(self.aux_saving_dir)
 
         self.aux_timePlayed = None
         self.current_metrics = None
@@ -258,7 +253,6 @@ class SpecificWorker(GenericWorker):
             self.current_session.therapist = therapist
         else:
             self.__current_therapist = therapist
-
 
     def init_ui(self):
         loader = QUiLoader()
@@ -477,8 +471,11 @@ class SpecificWorker(GenericWorker):
         ncognitivo = float(self.ui.ncognitivo_lineedit.currentText())
         observaciones = unicode(self.ui.observaciones_patient_plaintext.toPlainText())
 
-        result, patient = self.bbdd.new_patient(username, nombre, sexo=sexo, edad=edad, datosRegistro="", nivelCognitivo=ncognitivo, nivelFisico=nfisico,
-                             nivelJuego=5, centro=centro,  profesional=self.current_therapist, observaciones=observaciones, fechaAlta=datetime.strftime(datetime.now(), "%Y-%m-%d"))
+        result, patient = self.bbdd.new_patient(username, nombre, sexo=sexo, edad=edad, datosRegistro="",
+                                                nivelCognitivo=ncognitivo, nivelFisico=nfisico,
+                                                nivelJuego=5, centro=centro, profesional=self.current_therapist,
+                                                observaciones=observaciones,
+                                                fechaAlta=datetime.strftime(datetime.now(), "%Y-%m-%d"))
 
         if result:
             patients = self.bbdd.get_all_patients_by_therapist(self.current_therapist)
@@ -573,10 +570,16 @@ class SpecificWorker(GenericWorker):
             self.admintherapy_proxy.adminEndSession()
 
     def updateUI(self):
+
         self.ui.date_label.setText(self.aux_currentDate.strftime("%c"))
         self.ui.status_label.setText(self.aux_currentStatus)
-        if self.aux_timePlayed is not None:
-            self.ui.timeplayed_label.setText(str("{:.3f}".format(self.aux_timePlayed)) + " s")
+        #
+        # if self.aux_timePlayed is not None:
+        #     self.ui.timeplayed_label.setText(str("{:.3f}".format(self.aux_timePlayed)) + " s")
+        #
+        if self.current_therapy is not None:
+            timeplayed = (self.aux_currentDate - self.current_therapy.start_time).total_seconds()
+            self.ui.timeplayed_label.setText(str("{:.3f}".format(timeplayed)) + " s")
 
     # =============== Slots methods for State Machine ===================
     # ===================================================================
@@ -594,7 +597,7 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def sm_appEnd(self):
         print("Entered state appEnd")
-        #TODO DESCOMENTAR
+        # TODO DESCOMENTAR
         # self.admintherapy_proxy.adminStopApp()
         qApp.quit()
         pass
@@ -636,7 +639,7 @@ class SpecificWorker(GenericWorker):
         self.ui.centro_lineedit.clear()
         self.ui.observaciones_patient_plaintext.clear()
 
-    #TODO leer de la base de datos la informacion del paciente
+    # TODO leer de la base de datos la informacion del paciente
     #
     # sm_consultPatient
     #
@@ -712,9 +715,9 @@ class SpecificWorker(GenericWorker):
             self.ui.continue_game_button.setEnabled(False)
             self.ui.pause_game_button.setEnabled(True)
             time = self.aux_currentDate - self.aux_datePaused
-            self.currentGame.timePaused += time.total_seconds() * 1000
+            self.current_therapy.timePaused += time.total_seconds() * 1000
             self.aux_datePaused = None
-            print "Time paused =  ", self.currentGame.timePaused, "milliseconds"
+            print "Time paused =  ", self.current_therapy.timePaused, "milliseconds"
 
     #
     # sm_waitingFrame
@@ -723,7 +726,6 @@ class SpecificWorker(GenericWorker):
     def sm_waitingFrame(self):
         print("Entered state waitingFrame")
         self.data_to_record = None
-
 
         try:
             self.data_to_record = self.received_data_queue.get_nowait()
@@ -752,7 +754,8 @@ class SpecificWorker(GenericWorker):
 
         if self.video_writer is None:
             (height, width) = frame.shape[:2]
-            self.video_writer = cv2.VideoWriter(self.current_therapy.video_dir, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 30,
+            self.video_writer = cv2.VideoWriter(self.current_therapy.video_dir,
+                                                cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 30,
                                                 (width, height))
         self.video_writer.write(frame)
 
@@ -827,9 +830,6 @@ class SpecificWorker(GenericWorker):
 
         self.ui.video_lb.setPixmap(QPixmap.fromImage(img).scaled(320, 240, Qt.KeepAspectRatio))
 
-        self.aux_timePlayed = self.current_metrics["Time"]
-        self.updateUISig.emit()
-
         if self.canvas is None:
             print ("creating canvas")
             self.canvas = DynamicCanvas(self.ui, dpi=80)
@@ -899,6 +899,7 @@ class SpecificWorker(GenericWorker):
 
             therapy = self.list_therapies_todo[0]
             self.current_therapy = Therapy()
+
             result, bbdd_therapy = self.bbdd.get_therapy_by_name(therapy)
 
             if result:
@@ -1024,12 +1025,12 @@ class SpecificWorker(GenericWorker):
     # newDataObtained
     #
     def newDataObtained(self, data):
+
         if data.rgbImage.height == 0 or data.rgbImage.width == 0:
             return
         else:
             self.received_data_queue.put(data)
 
-        self.aux_timePlayed = data.metricsObtained["Time"]
         self.updateUISig.emit()
 
     #

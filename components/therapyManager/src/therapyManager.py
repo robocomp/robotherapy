@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 #
@@ -55,7 +55,7 @@
 #
 #
 
-import sys, traceback, IceStorm, subprocess, threading, time, Queue, os, copy
+import sys, traceback, IceStorm, time, os, copy
 
 # Ctrl+c handling
 import signal
@@ -77,14 +77,14 @@ class CommonBehaviorI(RoboCompCommonBehavior.CommonBehavior):
 		try:
 			return self.handler.timeAwake()
 		except:
-			print 'Problem getting timeAwake'
+			print('Problem getting timeAwake')
 	def killYourSelf(self, current = None):
 		self.handler.killYourSelf()
 	def getAttrList(self, current = None):
 		try:
 			return self.handler.getAttrList()
 		except:
-			print 'Problem getting getAttrList'
+			print('Problem getting getAttrList')
 			traceback.print_exc()
 			status = 1
 			return
@@ -113,8 +113,8 @@ if __name__ == '__main__':
 	obj = ic.stringToProxy(proxy)
 	try:
 		topicManager = IceStorm.TopicManagerPrx.checkedCast(obj)
-	except Ice.ConnectionRefusedException, e:
-		print 'Cannot connect to IceStorm! ('+proxy+')'
+	except Ice.ConnectionRefusedException as e:
+		print('Cannot connect to IceStorm! ('+proxy+')')
 		status = 1
 
 	# Remote object connection for AdminTherapy
@@ -125,19 +125,19 @@ if __name__ == '__main__':
 			admintherapy_proxy = AdminTherapyPrx.checkedCast(basePrx)
 			mprx["AdminTherapyProxy"] = admintherapy_proxy
 		except Ice.Exception:
-			print 'Cannot connect to the remote object (AdminTherapy)', proxyString
+			print('Cannot connect to the remote object (AdminTherapy)', proxyString)
 			#traceback.print_exc()
 			status = 1
-	except Ice.Exception, e:
-		print e
-		print 'Cannot get AdminTherapyProxy property.'
+	except Ice.Exception as e:
+		print(e)
+		print('Cannot get AdminTherapyProxy property.')
 		status = 1
 
 	if status == 0:
 		worker = SpecificWorker(mprx)
 		worker.setParams(parameters)
 	else:
-		print "Error getting required connections, check config file"
+		print("Error getting required connections, check config file")
 		sys.exit(-1)
 
 	TherapyMetrics_adapter = ic.createObjectAdapter("TherapyMetricsTopic")
@@ -149,14 +149,14 @@ if __name__ == '__main__':
 		try:
 			therapymetrics_topic = topicManager.retrieve("TherapyMetrics")
 			subscribeDone = True
-		except Ice.Exception, e:
-			print "Error. Topic does not exist (creating)"
+		except Ice.Exception as e:
+			print("Error. Topic does not exist (creating)")
 			time.sleep(1)
 			try:
 				therapymetrics_topic = topicManager.create("TherapyMetrics")
 				subscribeDone = True
 			except:
-				print "Error. Topic could not be created. Exiting"
+				print("Error. Topic could not be created. Exiting")
 				status = 0
 	qos = {}
 	therapymetrics_topic.subscribeAndGetPublisher(qos, therapymetrics_proxy)

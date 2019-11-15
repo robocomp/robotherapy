@@ -20,11 +20,13 @@
 #
 
 import csv
+import time
 from Queue import Queue, Empty
 from datetime import datetime
 from shutil import rmtree
 
 import matplotlib
+import pytz
 
 matplotlib.use('Qt5Agg')
 
@@ -113,6 +115,7 @@ class Therapy:
         self.joints_dir = None
         self.metrics_dir = None
 
+
     def create_directory(self, session_dir):
         therapy = self.name.replace(" ", "").strip()
         date = datetime.strftime(self.start_time, "%H%M%S")
@@ -164,7 +167,6 @@ class SpecificWorker(GenericWorker):
         self.bbdd = BBDD()
         self.bbdd.open_database("/home/robolab/robocomp/components/robotherapy/components/bbdd/therapy_database.db")
         self.user_login_manager = QUserManager(ddbb=self.bbdd)
-
         self.list_of_therapists = self.user_login_manager.load_therapists()
 
         self.init_ui()
@@ -179,7 +181,6 @@ class SpecificWorker(GenericWorker):
         self.aux_currentStatus = None
         self.aux_reseted = False
         self.aux_savedTherapies = False
-
         self.list_therapies_todo = []
 
         self.__readySessionReceived = False
@@ -187,21 +188,18 @@ class SpecificWorker(GenericWorker):
 
         self.updateUISig.connect(self.updateUI)
 
-        ##For saving sessions
-        self.data_to_record = None
+        #----For saving sessions----
         self.received_data_queue = Queue()
+        self.data_to_record = None
         self.video_writer = None
-        self.aux_current_frame = None
+        self.current_frame = None
 
-
-        self.aux_timePlayed = None
-        self.current_metrics = None
-
+        #----For showing results----
         self.visualize_therapy = False
         self.canvas = None
         self.skip_frames = 10
         self.total_frames = 0
-        self.to_represent = []
+        self.metrics_to_represent = []
 
         self.manager_machine.start()
 
@@ -507,17 +505,17 @@ class SpecificWorker(GenericWorker):
                 self.canvas.hide()
 
     def change_values_to_plot(self):
-        self.to_represent = []
+        self.metrics_to_represent = []
 
         if self.ui.upper_trunk_check.isChecked():
-            self.to_represent.append("upper_trunk")
+            self.metrics_to_represent.append("upper_trunk")
         if self.ui.lower_trunk_check.isChecked():
-            self.to_represent.append("lower_trunk")
+            self.metrics_to_represent.append("lower_trunk")
         if self.ui.deviations_check.isChecked():
-            self.to_represent.append("deviations")
+            self.metrics_to_represent.append("deviations")
 
     def start_clicked(self):
-        self.current_therapy.start_time = datetime.now()
+        self.current_therapy.start_time = self.aux_currentDate
         self.current_therapy.create_directory(self.current_session.directory)
         self.admintherapy_proxy.adminStartTherapy(self.list_therapies_todo[0])
 
@@ -573,10 +571,7 @@ class SpecificWorker(GenericWorker):
 
         self.ui.date_label.setText(self.aux_currentDate.strftime("%c"))
         self.ui.status_label.setText(self.aux_currentStatus)
-        #
-        # if self.aux_timePlayed is not None:
-        #     self.ui.timeplayed_label.setText(str("{:.3f}".format(self.aux_timePlayed)) + " s")
-        #
+
         if self.current_therapy is not None:
             timeplayed = (self.aux_currentDate - self.current_therapy.start_time).total_seconds()
             self.ui.timeplayed_label.setText(str("{:.3f}".format(timeplayed)) + " s")
@@ -654,31 +649,40 @@ class SpecificWorker(GenericWorker):
     def sm_endTherapy(self):
         print("Entered state endTherapy")
 
-        reply = QMessageBox.question(self.focusWidget(), 'Terapia terminada',
-                                     ' ¿Desea guardar los datos de la terapia?', QMessageBox.Yes, QMessageBox.No)
-        if reply == QMessageBox.Yes:
+        # reply = QMessageBox.question(self.focusWidget(), 'Terapia terminada',
+        #                              ' ¿Desea guardar los datos de la terapia?', QMessageBox.Yes, QMessageBox.No)
+        # if reply == QMessageBox.Yes:
+        #
+        #     self.current_therapy.end()
+        #     self.aux_savedTherapies = True
+        #     timeplayed = self.aux_currentDate - self.current_therapy.start_time
+        #     self.current_therapy.time_played = timeplayed.total_seconds() * 1000
+        #     print "Time played =  ", self.current_therapy.time_played, "milliseconds"
+        #
+        #     self.current_session.therapies.append(self.current_therapy)
+        #
+        #     reply2 = QMessageBox.question(self.focusWidget(), 'Terapia terminada',
+        #                                   ' ¿Desea visualizar los datos de la terapia?', QMessageBox.Yes,
+        #                                   QMessageBox.No)
+        #
+        #     if reply2 == QMessageBox.Yes:
+        #         visualization = True
+        #     else:
+        #         visualization = False
+        #
+        #     PTH.save_graph(self.current_therapy.metrics_dir, visualization)
+        #
+        # else:
+        #     rmtree(self.current_therapy.directory)
 
-            self.current_therapy.end()
-            self.aux_savedTherapies = True
-            timeplayed = self.aux_currentDate - self.current_therapy.start_time
-            self.current_therapy.time_played = timeplayed.total_seconds() * 1000
-            print "Time played =  ", self.current_therapy.time_played, "milliseconds"
+        self.current_therapy.end()
+        self.aux_savedTherapies = True
+        timeplayed = self.aux_currentDate - self.current_therapy.start_time
+        self.current_therapy.time_played = timeplayed.total_seconds() * 1000
+        print "Time played =  ", self.current_therapy.time_played, "milliseconds"
+        PTH.save_graph(self.current_therapy.metrics_dir, False)
 
-            self.current_session.therapies.append(self.current_therapy)
-
-            reply2 = QMessageBox.question(self.focusWidget(), 'Terapia terminada',
-                                          ' ¿Desea visualizar los datos de la terapia?', QMessageBox.Yes,
-                                          QMessageBox.No)
-
-            if reply2 == QMessageBox.Yes:
-                visualization = True
-            else:
-                visualization = False
-
-            PTH.save_graph(self.current_therapy.metrics_dir, visualization)
-
-        else:
-            rmtree(self.current_therapy.directory)
+        self.current_session.therapies.append(self.current_therapy)
 
         if self.video_writer is not None:
             self.video_writer.release()
@@ -691,11 +695,12 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def sm_pausedTherapy(self):
         print("Entered state pausedTherapy")
+        self.aux_datePaused = self.aux_currentDate
+
         self.ui.continue_game_button.setEnabled(True)
         self.ui.reset_game_button.setEnabled(True)
         self.ui.pause_game_button.setEnabled(False)
 
-        self.aux_datePaused = self.aux_currentDate
 
     #
     # sm_performingTherapy
@@ -715,9 +720,9 @@ class SpecificWorker(GenericWorker):
             self.ui.continue_game_button.setEnabled(False)
             self.ui.pause_game_button.setEnabled(True)
             time = self.aux_currentDate - self.aux_datePaused
-            self.current_therapy.timePaused += time.total_seconds() * 1000
+            self.current_therapy.time_paused += time.total_seconds() * 1000
             self.aux_datePaused = None
-            print "Time paused =  ", self.current_therapy.timePaused, "milliseconds"
+            print "Time paused =  ", self.current_therapy.time_paused, "milliseconds"
 
     #
     # sm_waitingFrame
@@ -735,6 +740,15 @@ class SpecificWorker(GenericWorker):
         else:
             self.t_waitingFrame_to_savingFrame.emit()
 
+    def to_timestamp(self,a_date):
+        if a_date.tzinfo:
+            epoch = datetime(1970, 1, 1, tzinfo=pytz.UTC)
+            diff = a_date.astimezone(pytz.UTC) - epoch
+        else:
+            epoch = datetime(1970, 1, 1)
+            diff = a_date - epoch
+        return int(diff.total_seconds())
+
     #
     # sm_savingFrame
     #
@@ -750,7 +764,7 @@ class SpecificWorker(GenericWorker):
             self.data_to_record.rgbImage.height, self.data_to_record.rgbImage.width,
             self.data_to_record.rgbImage.depth)
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        self.aux_current_frame = frame
+        self.current_frame = frame
 
         if self.video_writer is None:
             (height, width) = frame.shape[:2]
@@ -807,7 +821,6 @@ class SpecificWorker(GenericWorker):
                  self.data_to_record.metricsObtained["RightLegElevation"]])
 
             csvFile.close()
-        self.current_metrics = self.data_to_record.metricsObtained
 
         self.total_frames += 1
 
@@ -824,8 +837,8 @@ class SpecificWorker(GenericWorker):
     def sm_showingResults(self):
         print("Entered state showingResults")
 
-        (height, width) = self.aux_current_frame.shape[:2]
-        frame = cv2.cvtColor(self.aux_current_frame, cv2.COLOR_BGR2RGB)
+        (height, width) = self.current_frame.shape[:2]
+        frame = cv2.cvtColor(self.current_frame, cv2.COLOR_BGR2RGB)
         img = QImage(frame, width, height, QImage.Format_RGB888)
 
         self.ui.video_lb.setPixmap(QPixmap.fromImage(img).scaled(320, 240, Qt.KeepAspectRatio))
@@ -838,7 +851,7 @@ class SpecificWorker(GenericWorker):
 
         if self.total_frames % self.skip_frames == 0:
             self.canvas.axes.cla()
-            PTH.plot_graph(self.current_therapy.metrics_dir, self.to_represent, self.canvas)
+            PTH.plot_graph(self.current_therapy.metrics_dir, self.metrics_to_represent, self.canvas)
             self.canvas.update_figure()
 
         self.t_showingResults_to_waitingFrame.emit()
@@ -910,7 +923,6 @@ class SpecificWorker(GenericWorker):
 
             self.aux_firstTherapyInSession = False
             self.aux_datePaused = None
-
 
 
         else:
@@ -1030,6 +1042,8 @@ class SpecificWorker(GenericWorker):
             return
         else:
             self.received_data_queue.put(data)
+
+        self.aux_currentDate = datetime.fromtimestamp(data.timeStamp /1000)
 
         self.updateUISig.emit()
 

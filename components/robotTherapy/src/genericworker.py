@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2019 by YOUR NAME HERE
@@ -25,7 +25,7 @@ ROBOCOMP = ''
 try:
 	ROBOCOMP = os.environ['ROBOCOMP']
 except KeyError:
-	print '$ROBOCOMP environment variable not set, using the default value /opt/robocomp'
+	print('$ROBOCOMP environment variable not set, using the default value /opt/robocomp')
 	ROBOCOMP = '/opt/robocomp'
 
 preStr = "-I/opt/robocomp/interfaces/ -I"+ROBOCOMP+"/interfaces/ --all /opt/robocomp/interfaces/"
@@ -41,33 +41,33 @@ try:
 		additionalPathStr += ' -I' + p + ' '
 	icePaths.append('/opt/robocomp/interfaces')
 except:
-	print 'SLICE_PATH environment variable was not exported. Using only the default paths'
+	print('SLICE_PATH environment variable was not exported. Using only the default paths')
 	pass
 
-ice_AdminTherapy = False
+ice_TherapyMetrics = False
 for p in icePaths:
-	if os.path.isfile(p+'/AdminTherapy.ice'):
+	if os.path.isfile(p+'/TherapyMetrics.ice'):
 		preStr = "-I/opt/robocomp/interfaces/ -I"+ROBOCOMP+"/interfaces/ " + additionalPathStr + " --all "+p+'/'
-		wholeStr = preStr+"AdminTherapy.ice"
+		wholeStr = preStr+"TherapyMetrics.ice"
 		Ice.loadSlice(wholeStr)
-		ice_AdminTherapy = True
+		ice_TherapyMetrics = True
 		break
-if not ice_AdminTherapy:
-	print 'Couln\'t load AdminTherapy'
+if not ice_TherapyMetrics:
+	print('Couln\'t load TherapyMetrics')
 	sys.exit(-1)
-from RoboCompAdminTherapy import *
-ice_AdminTherapy = False
+from RoboCompTherapyMetrics import *
+ice_HumanTrackerJointsAndRGB = False
 for p in icePaths:
-	if os.path.isfile(p+'/AdminTherapy.ice'):
+	if os.path.isfile(p+'/HumanTrackerJointsAndRGB.ice'):
 		preStr = "-I/opt/robocomp/interfaces/ -I"+ROBOCOMP+"/interfaces/ " + additionalPathStr + " --all "+p+'/'
-		wholeStr = preStr+"AdminTherapy.ice"
+		wholeStr = preStr+"HumanTrackerJointsAndRGB.ice"
 		Ice.loadSlice(wholeStr)
-		ice_AdminTherapy = True
+		ice_HumanTrackerJointsAndRGB = True
 		break
-if not ice_AdminTherapy:
-	print 'Couln\'t load AdminTherapy'
+if not ice_HumanTrackerJointsAndRGB:
+	print('Couln\'t load HumanTrackerJointsAndRGB')
 	sys.exit(-1)
-from RoboCompAdminTherapy import *
+from RoboCompHumanTrackerJointsAndRGB import *
 ice_AdminTherapy = False
 for p in icePaths:
 	if os.path.isfile(p+'/AdminTherapy.ice'):
@@ -77,7 +77,7 @@ for p in icePaths:
 		ice_AdminTherapy = True
 		break
 if not ice_AdminTherapy:
-	print 'Couln\'t load AdminTherapy'
+	print('Couln\'t load AdminTherapy')
 	sys.exit(-1)
 from RoboCompAdminTherapy import *
 
@@ -88,7 +88,7 @@ from humantrackerjointsandrgbI import *
 try:
 	from ui_mainUI import *
 except:
-	print "Can't import UI file. Did you run 'make'?"
+	print("Can't import UI file. Did you run 'make'?")
 	sys.exit(-1)
 
 
@@ -211,98 +211,78 @@ class GenericWorker(QtWidgets.QWidget):
 
 #Slots funtion State Machine
 	@QtCore.Slot()
-	def sm_n(self):
-		print "Error: lack sm_n in Specificworker"
-		sys.exit(-1)
-
-	@QtCore.Slot()
-	def sm_o(self):
-		print "Error: lack sm_o in Specificworker"
-		sys.exit(-1)
-
-	@QtCore.Slot()
-	def sm_n(self):
-		print "Error: lack sm_n in Specificworker"
-		sys.exit(-1)
-
-	@QtCore.Slot()
-	def sm_e(self):
-		print "Error: lack sm_e in Specificworker"
-		sys.exit(-1)
-
-	@QtCore.Slot()
 	def sm_main(self):
-		print "Error: lack sm_main in Specificworker"
+		print("Error: lack sm_main in Specificworker")
 		sys.exit(-1)
 
 	@QtCore.Slot()
 	def sm_appEnd(self):
-		print "Error: lack sm_appEnd in Specificworker"
+		print("Error: lack sm_appEnd in Specificworker")
 		sys.exit(-1)
 
 	@QtCore.Slot()
 	def sm_waitSession(self):
-		print "Error: lack sm_waitSession in Specificworker"
+		print("Error: lack sm_waitSession in Specificworker")
 		sys.exit(-1)
 
 	@QtCore.Slot()
 	def sm_initializingSession(self):
-		print "Error: lack sm_initializingSession in Specificworker"
+		print("Error: lack sm_initializingSession in Specificworker")
 		sys.exit(-1)
 
 	@QtCore.Slot()
 	def sm_waitTherapy(self):
-		print "Error: lack sm_waitTherapy in Specificworker"
+		print("Error: lack sm_waitTherapy in Specificworker")
 		sys.exit(-1)
 
 	@QtCore.Slot()
 	def sm_initializingTherapy(self):
-		print "Error: lack sm_initializingTherapy in Specificworker"
+		print("Error: lack sm_initializingTherapy in Specificworker")
 		sys.exit(-1)
 
 	@QtCore.Slot()
 	def sm_loopTherapy(self):
-		print "Error: lack sm_loopTherapy in Specificworker"
+		print("Error: lack sm_loopTherapy in Specificworker")
 		sys.exit(-1)
 
 	@QtCore.Slot()
 	def sm_resetTherapy(self):
-		print "Error: lack sm_resetTherapy in Specificworker"
+		print("Error: lack sm_resetTherapy in Specificworker")
 		sys.exit(-1)
 
 	@QtCore.Slot()
 	def sm_pauseTherapy(self):
-		print "Error: lack sm_pauseTherapy in Specificworker"
+		print("Error: lack sm_pauseTherapy in Specificworker")
 		sys.exit(-1)
 
 	@QtCore.Slot()
 	def sm_finalizeTherapy(self):
-		print "Error: lack sm_finalizeTherapy in Specificworker"
+		print("Error: lack sm_finalizeTherapy in Specificworker")
 		sys.exit(-1)
 
 	@QtCore.Slot()
 	def sm_finalizeSession(self):
-		print "Error: lack sm_finalizeSession in Specificworker"
+		print("Error: lack sm_finalizeSession in Specificworker")
 		sys.exit(-1)
 
 	@QtCore.Slot()
 	def sm_initialize(self):
-		print "Error: lack sm_initialize in Specificworker"
+		print("Error: lack sm_initialize in Specificworker")
 		sys.exit(-1)
 
 	@QtCore.Slot()
 	def sm_computeMetrics(self):
-		print "Error: lack sm_computeMetrics in Specificworker"
+		print("Error: lack sm_computeMetrics in Specificworker")
 		sys.exit(-1)
 
 	@QtCore.Slot()
 	def sm_updateMetrics(self):
-		print "Error: lack sm_updateMetrics in Specificworker"
+		print("Error: lack sm_updateMetrics in Specificworker")
 		sys.exit(-1)
 
 	@QtCore.Slot()
 	def sm_captureFrame(self):
-		print "Error: lack sm_captureFrame in Specificworker"
+		print("Error: lack sm_captureFrame in Specificworker")
 		sys.exit(-1)
 
 
@@ -316,6 +296,6 @@ class GenericWorker(QtWidgets.QWidget):
 	# @param per Period in ms
 	@QtCore.Slot(int)
 	def setPeriod(self, p):
-		print "Period changed", p
-		Period = p
-		timer.start(Period)
+		print("Period changed", p)
+		self.Period = p
+		self.timer.start(self.Period)

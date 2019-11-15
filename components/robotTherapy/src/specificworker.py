@@ -299,7 +299,8 @@ class SpecificWorker(GenericWorker):
 
         else:
             self.ui.info_label.setText("Recording...")
-
+            self.currentDate = datetime.now()
+            self.mix_data_to_send.currentDate = self.currentDate.isoformat()
             self.mix_data_to_send.timeStamp = self.data_to_record.timeStamp
             self.mix_data_to_send.rgbImage = self.data_to_record.rgbImage
             self.mix_data_to_send.persons = self.data_to_record.persons

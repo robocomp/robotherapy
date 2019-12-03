@@ -129,11 +129,15 @@ class SpecificWorker(GenericWorker):
 
         elbow = np.array(self.aux_current_joints[side + "Elbow"])
         shoulder = np.array(self.aux_current_joints[side + "Shoulder"])
-        # vertical = np.array([shoulder[0], 0, shoulder[2]])
-        vertical = np.array([shoulder[0], elbow[1], shoulder[2]])
+        vertical = np.array([shoulder[0], 0, shoulder[2]])
+        # vertical = np.array([shoulder[0], elbow[1], shoulder[2]])
 
         v1 = shoulder - elbow
-        v2 = shoulder - vertical
+        if shoulder[1] < 0:
+            v2 = vertical - shoulder
+        else:
+            v2 = shoulder - vertical
+        # v2 = shoulder - vertical
 
         self.current_metrics[side + "ArmElevation"] = round(get_AngleBetweenVectors(v1, v2), 4)
 
@@ -145,11 +149,15 @@ class SpecificWorker(GenericWorker):
 
         knee = np.array(self.aux_current_joints[side + "Knee"])
         hip = np.array(self.aux_current_joints[side + "Hip"])
-        # vertical = np.array([hip[0], 0, hip[2]])
-        vertical = np.array([hip[0], knee[1], hip[2]])
+        vertical = np.array([hip[0], 0, hip[2]])
+        # vertical = np.array([hip[0], knee[1], hip[2]])
 
         v1 = hip - knee
-        v2 = hip - vertical
+        if hip[1] < 0:
+            v2 = vertical - hip
+        else:
+            v2 = hip - vertical
+        # v2 = hip - vertical
 
         self.current_metrics[side + "LegElevation"] = round(get_AngleBetweenVectors(v1, v2), 4)
 

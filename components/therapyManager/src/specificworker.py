@@ -21,7 +21,7 @@
 
 import csv
 import time
-from Queue import Queue, Empty
+from queue import Queue, Empty
 from datetime import datetime
 from shutil import rmtree
 
@@ -36,26 +36,27 @@ import numpy as np
 from PySide2.QtGui import QKeySequence, QImage, QPixmap
 
 import passwordmeter
-from PySide2.QtCore import Signal, Qt, QTimer
-from PySide2.QtWidgets import QMessageBox, QCompleter, QAction, qApp, QShortcut
+from PySide2.QtCore import Signal, Qt, QTimer, QCoreApplication
+from PySide2.QtWidgets import QMessageBox, QCompleter, QAction, QShortcut
 
 from admin_widgets import *
 from genericworker import *
 
 from userManager import QUserManager
-from canvas import DynamicCanvas
+# from Tkinter import *
+from canvas import *
 
-import plot_therapy as PTH
+# import plot_therapy as PTH
+import os
+FILE_PATH = os.path.abspath(__file__)
+CURRENT_PATH = os.path.dirname(__file__)
 
 try:
     from bbdd import BBDD
 except:
-    print ("Database module not found")
+    print("Database module not found")
     sys.path.append("/home/robolab/robocomp/components/robotherapy/components/bbdd")
     from bbdd import BBDD
-
-FILE_PATH = os.path.abspath(__file__)
-CURRENT_PATH = os.path.dirname(__file__)
 
 
 class Session:
@@ -86,7 +87,7 @@ class Session:
         os.mkdir(self.directory)
 
     def save_session_to_ddbb(self, ddbb):
-        print ("Saving session in ")
+        print("Saving session in ")
 
         result, session = ddbb.new_session(start=self.date, end=datetime.now(), patient=self.patient,
                                            therapist=self.therapist)
@@ -100,6 +101,7 @@ class Therapy:
     """
     Class to encapsulate the information of a Therapy
     """
+
     def __init__(self):
         self.therapy_id = None
         self.name = ""
@@ -115,13 +117,12 @@ class Therapy:
         self.joints_dir = None
         self.metrics_dir = None
 
-
     def create_directory(self, session_dir):
         therapy = self.name.replace(" ", "").strip()
         date = datetime.strftime(self.start_time, "%H%M%S")
         self.directory = os.path.join(session_dir, therapy + "_" + date)
 
-        print ("[CREATING] " + self.directory)
+        print("[CREATING] " + self.directory)
         os.mkdir(self.directory)
 
         video_name = therapy.lower() + ".avi"
@@ -157,16 +158,21 @@ class SpecificWorker(GenericWorker):
     login_executed = Signal(bool)
     updateUISig = Signal()
 
-    def __init__(self, proxy_map):
+    def __init__(self, proxy_map, startup_check=False):
         super(SpecificWorker, self).__init__(proxy_map)
 
         self.aux_firstTherapyInSession = True
         self.Period = 2000
-        self.timer.start(self.Period)
+        if startup_check:
+            self.startup_check()
+        else:
+            self.timer.start(self.Period)
+            self.manager_machine.start()
 
         self.bbdd = BBDD()
         self.bbdd.open_database("/home/robolab/robocomp/components/robotherapy/components/bbdd/therapy_database.db")
-        self.user_login_manager = QUserManager(ddbb=self.bbdd)
+        # self.user_login_manager = QUserManager(ddbb=self.bbdd)
+        self.user_login_manager = QUserManager()
         self.list_of_therapists = self.user_login_manager.load_therapists()
 
         self.init_ui()
@@ -188,13 +194,13 @@ class SpecificWorker(GenericWorker):
 
         self.updateUISig.connect(self.updateUI)
 
-        #----For saving sessions----
+        # ----For saving sessions----
         self.received_data_queue = Queue()
         self.data_to_record = None
         self.video_writer = None
         self.current_frame = None
 
-        #----For showing results----
+        # ----For showing results----
         self.visualize_therapy = False
         self.canvas = None
         self.skip_frames = 10
@@ -204,10 +210,13 @@ class SpecificWorker(GenericWorker):
         self.manager_machine.start()
 
     def __del__(self):
-        print 'SpecificWorker destructor'
+        print('SpecificWorker destructor')
 
     def setParams(self, params):
         return True
+
+    def startup_check(self):
+        QTimer.singleShot(200, QApplication.instance().quit)
 
     @property
     def current_therapy(self):
@@ -320,7 +329,7 @@ class SpecificWorker(GenericWorker):
 
     # Login window functions
     def check_login(self):
-        print ("[INFO] Checking login ...")
+        print("[INFO] Checking login ...")
 
         username = unicode(self.ui.username_lineedit.text())
         password = unicode(self.ui.password_lineedit.text())
@@ -364,7 +373,7 @@ class SpecificWorker(GenericWorker):
         return True
 
     def create_new_user(self):
-        print ("[INFO] Trying to create new user ...")
+        print("[INFO] Trying to create new user ...")
 
         if self.password_strength_check():
             username = unicode(self.ui.username_lineedit_reg.text())
@@ -395,7 +404,7 @@ class SpecificWorker(GenericWorker):
                 self.t_createUser_to_userLogin.emit()
                 return True
         else:
-            print ("[ERROR] No se pudo crear el usuario ")
+            print("[ERROR] No se pudo crear el usuario ")
             return False
 
     # Session window
@@ -436,7 +445,7 @@ class SpecificWorker(GenericWorker):
         new_index = current_index - 1
         previous_text = self.ui.therapies_list.item(new_index).text()
 
-        print self.ui.therapies_list.item(new_index).text()
+        print(self.ui.therapies_list.item(new_index).text())
 
         self.ui.therapies_list.item(current_index).setText(previous_text)
         self.ui.therapies_list.item(new_index).setText(current_text)
@@ -451,7 +460,7 @@ class SpecificWorker(GenericWorker):
         new_index = current_index + 1
         previous_text = self.ui.therapies_list.item(new_index).text()
 
-        print self.ui.therapies_list.item(new_index).text()
+        print(self.ui.therapies_list.item(new_index).text())
 
         self.ui.therapies_list.item(current_index).setText(previous_text)
         self.ui.therapies_list.item(new_index).setText(current_text)
@@ -489,7 +498,7 @@ class SpecificWorker(GenericWorker):
 
     # Game window functions
     def change_visualize_state(self, state):
-        print "change_visualize_state"
+        print("change_visualize_state")
         if state == QtCore.Qt.Checked:
             self.visualize_therapy = True
             self.ui.visualize_gbox.show()
@@ -515,9 +524,12 @@ class SpecificWorker(GenericWorker):
             self.metrics_to_represent.append("deviations")
 
     def start_clicked(self):
+        print('start_clicked')
         self.current_therapy.start_time = self.aux_currentDate
         self.current_therapy.create_directory(self.current_session.directory)
+        print('Calling admin_terapy_proxy')
         self.admintherapy_proxy.adminStartTherapy(self.list_therapies_todo[0])
+        print('END calling admin_terapy_proxy')
 
     def pause_clicked(self):
         self.admintherapy_proxy.adminPauseTherapy()
@@ -540,10 +552,12 @@ class SpecificWorker(GenericWorker):
             self.admintherapy_proxy.adminResetTherapy()
 
     def start_session(self):
+        print('start_session')
         patient = self.ui.selpatient_combobox.currentText()
+        print('patient', patient)
         self.list_therapies_todo = []
 
-        for index in xrange(self.ui.therapies_list.count()):
+        for index in range(self.ui.therapies_list.count()):
             self.list_therapies_todo.append(self.ui.therapies_list.item(index).text())
 
         if patient == "":
@@ -555,9 +569,10 @@ class SpecificWorker(GenericWorker):
                                       'No se ha seleccionado ninguna terapia',
                                       QMessageBox.Ok)
         else:
-
             self.current_session = Session(therapist=self.current_therapist, patient=str(patient))
+            print('calling admintherapy_proxy')
             self.admintherapy_proxy.adminStartSession(patient)
+            print('Done')
 
     def end_session_clicked(self):
 
@@ -594,7 +609,7 @@ class SpecificWorker(GenericWorker):
         print("Entered state appEnd")
         # TODO DESCOMENTAR
         # self.admintherapy_proxy.adminStopApp()
-        qApp.quit()
+        QCoreApplication.quit()
         pass
 
     #
@@ -679,7 +694,7 @@ class SpecificWorker(GenericWorker):
         self.aux_savedTherapies = True
         timeplayed = self.aux_currentDate - self.current_therapy.start_time
         self.current_therapy.time_played = timeplayed.total_seconds() * 1000
-        print "Time played =  ", self.current_therapy.time_played, "milliseconds"
+        print("Time played =  ", self.current_therapy.time_played, "milliseconds")
         PTH.save_graph(self.current_therapy.metrics_dir, False)
 
         self.current_session.therapies.append(self.current_therapy)
@@ -701,7 +716,6 @@ class SpecificWorker(GenericWorker):
         self.ui.reset_game_button.setEnabled(True)
         self.ui.pause_game_button.setEnabled(False)
 
-
     #
     # sm_performingTherapy
     #
@@ -722,7 +736,7 @@ class SpecificWorker(GenericWorker):
             time = self.aux_currentDate - self.aux_datePaused
             self.current_therapy.time_paused += time.total_seconds() * 1000
             self.aux_datePaused = None
-            print "Time paused =  ", self.current_therapy.time_paused, "milliseconds"
+            print("Time paused =  ", self.current_therapy.time_paused, "milliseconds")
 
     #
     # sm_waitingFrame
@@ -740,7 +754,7 @@ class SpecificWorker(GenericWorker):
         else:
             self.t_waitingFrame_to_savingFrame.emit()
 
-    def to_timestamp(self,a_date):
+    def to_timestamp(self, a_date):
         if a_date.tzinfo:
             epoch = datetime(1970, 1, 1, tzinfo=pytz.UTC)
             diff = a_date.astimezone(pytz.UTC) - epoch
@@ -844,7 +858,8 @@ class SpecificWorker(GenericWorker):
         self.ui.video_lb.setPixmap(QPixmap.fromImage(img).scaled(320, 240, Qt.KeepAspectRatio))
 
         if self.canvas is None:
-            print ("creating canvas")
+            print("creating canvas")
+            # self.canvas = DynamicCanvas(self.ui, dpi=80)
             self.canvas = DynamicCanvas(self.ui, dpi=80)
             self.canvas.setStyleSheet("background-color:transparent;")
             self.ui.result_layout.addWidget(self.canvas)
@@ -867,7 +882,6 @@ class SpecificWorker(GenericWorker):
         self.ui.selTh_combobox.setCurrentIndex(0)
 
         if not self.aux_sessionInit:
-
             patients = self.bbdd.get_all_patients_by_therapist(self.current_therapist)
             patients_list = []
             for p in patients:
@@ -896,6 +910,7 @@ class SpecificWorker(GenericWorker):
         self.aux_firstTherapyInSession = True
         self.mainMenu.setEnabled(True)
         self.aux_savedTherapies = False
+        print('END adminSessions')
 
     #
     # sm_adminTherapies
@@ -912,8 +927,9 @@ class SpecificWorker(GenericWorker):
 
             therapy = self.list_therapies_todo[0]
             self.current_therapy = Therapy()
-
+            print('reading therapies from ddbb')
             result, bbdd_therapy = self.bbdd.get_therapy_by_name(therapy)
+            print('END reading therapies from ddbb')
 
             if result:
                 self.current_therapy.therapy_id = bbdd_therapy.id
@@ -955,7 +971,7 @@ class SpecificWorker(GenericWorker):
 
         # TODO: FIX
         if self.__waitingTherapyReceived:
-            print ("waitingTherapy already received")
+            print("waitingTherapy already received")
             self.t_adminTherapies_to_waitingStart.emit()
             self.__waitingTherapyReceived = False
 
@@ -997,7 +1013,7 @@ class SpecificWorker(GenericWorker):
 
         # TODO: FIX
         if self.__readySessionReceived:
-            print ("readySession already received")
+            print("readySession already received")
             self.t_waitSessionReady_to_adminTherapies.emit()
             self.__readySessionReceived = False
         # self.currentSession.date = self.aux_currentDate
@@ -1016,7 +1032,7 @@ class SpecificWorker(GenericWorker):
             if reply == QMessageBox.Yes:
                 time = self.aux_currentDate - self.current_session.date
                 self.current_session.total_time = time.total_seconds() * 1000
-                print "Session time =  ", self.current_session.total_time, "milliseconds"
+                print("Session time =  ", self.current_session.total_time, "milliseconds")
 
                 self.current_session.save_session_to_ddbb(self.bbdd)
 
@@ -1036,53 +1052,54 @@ class SpecificWorker(GenericWorker):
     #
     # newDataObtained
     #
-    def newDataObtained(self, data):
-
+    def TherapyMetrics_newDataObtained(self, data):
+        print('newDataObtained')
         if data.rgbImage.height == 0 or data.rgbImage.width == 0:
             return
         else:
             self.received_data_queue.put(data)
 
-        self.aux_currentDate = datetime.fromtimestamp(data.timeStamp /1000)
+        self.aux_currentDate = datetime.fromtimestamp(data.timeStamp / 1000)
 
         self.updateUISig.emit()
 
     #
     # statusChanged
     #
-    def statusChanged(self, s):
+    def TherapyMetrics_statusChanged(self, s):
+        print('statusChanged')
         self.aux_currentStatus = str(s.currentStatus.name)
-        print "ESTADO ", self.aux_currentStatus
+        print("ESTADO ", self.aux_currentStatus)
         self.aux_currentDate = datetime.strptime(s.date, "%Y-%m-%dT%H:%M:%S.%f")
-
+        print(self.aux_currentDate)
         self.updateUISig.emit()
 
-        if s.currentStatus == StatusType.initializingSession:
+        if s.currentStatus == RoboCompTherapyMetrics.StatusType.initializingSession:
             self.t_adminSessions_to_waitSessionReady.emit()
 
-        if s.currentStatus == StatusType.readySession:
+        if s.currentStatus == RoboCompTherapyMetrics.StatusType.readySession:
             self.__readySessionReceived = True
             self.t_waitSessionReady_to_adminTherapies.emit()
 
-        if s.currentStatus == StatusType.waitingTherapy:
+        if s.currentStatus == RoboCompTherapyMetrics.StatusType.waitingTherapy:
             self.__waitingTherapyReceived = True
             self.t_adminTherapies_to_waitingStart.emit()
 
-        if s.currentStatus == StatusType.playingTherapy:
+        if s.currentStatus == RoboCompTherapyMetrics.StatusType.playingTherapy:
             self.t_waitingStart_to_performingTherapy.emit()
             self.t_pausedTherapy_to_performingTherapy.emit()
 
-        if s.currentStatus == StatusType.pausedTherapy:
+        if s.currentStatus == RoboCompTherapyMetrics.StatusType.pausedTherapy:
             self.t_performingTherapy_to_pausedTherapy.emit()
 
-        if s.currentStatus == StatusType.endTherapy:
+        if s.currentStatus == RoboCompTherapyMetrics.StatusType.endTherapy:
             self.t_performingTherapy_to_endTherapy.emit()
             self.t_pausedTherapy_to_endTherapy.emit()
 
-        if s.currentStatus == StatusType.resetedTherapy:
+        if s.currentStatus == RoboCompTherapyMetrics.StatusType.resetedTherapy:
             self.aux_reseted = True
             self.t_pausedTherapy_to_adminTherapies.emit()
 
-        if s.currentStatus == StatusType.endSession:
+        if s.currentStatus == RoboCompTherapyMetrics.StatusType.endSession:
             self.t_adminTherapies_to_endSession.emit()
             self.t_waitingStart_to_endSession.emit()

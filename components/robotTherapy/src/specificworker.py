@@ -18,12 +18,14 @@
 #    You should have received a copy of the GNU General Public License
 #    along with RoboComp.  If not, see <http://www.gnu.org/licenses/>.
 #
-from Queue import Queue, Empty
+# import queue as Queue
+from queue import Queue, Empty
 from datetime import datetime
 
 import numpy as np
 import vg
-from PySide2.QtCore import QTimer, QUrl, qApp
+from PySide2.QtCore import QTimer, QUrl,QCoreApplication
+from PySide2.QtWidgets import QApplication
 from PySide2.QtMultimedia import QMediaPlayer
 from PySide2.QtMultimediaWidgets import QVideoWidget
 
@@ -35,12 +37,16 @@ def get_AngleBetweenVectors(v1, v2):
 
 
 class SpecificWorker(GenericWorker):
-    def __init__(self, proxy_map):
+    def __init__(self, proxy_map, startup_check=False):
         super(SpecificWorker, self).__init__(proxy_map)
 
         self.recording = False
         self.Period = 2000
-        self.timer.start(self.Period)
+        if startup_check:
+            self.startup_check()
+        else:
+            self.timer.start(self.Period)
+            self.main_machine.start()
 
         self.player = QMediaPlayer()
         self.videoWidget = QVideoWidget()
@@ -56,18 +62,20 @@ class SpecificWorker(GenericWorker):
         self.aux_firstTime_metric = None
         self.aux_firstMetric = True
 
-        self.mix_data_to_send = MixedData()
+        self.mix_data_to_send = RoboCompTherapyMetrics.MixedData()
 
         self.current_metrics = {}
 
         self.main_machine.start()
 
     def __del__(self):
-        print 'SpecificWorker destructor'
+        print ('SpecificWorker destructor')
 
     def setParams(self, params):
         return True
-
+    def startup_check(self):
+        QTimer.singleShot(200, QApplication.instance().quit)	
+    
     def video_state_changed(self, state):
         if state == QMediaPlayer.State.StoppedState:
             self.t_loopTherapy_to_finalizeTherapy.emit()
@@ -210,7 +218,7 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def sm_appEnd(self):
         print("Entered state appEnd")
-        qApp.quit()
+        QCoreApplication.quit()
 
     #
     # sm_initialize
@@ -239,7 +247,7 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def sm_waitSession(self):
         print("Entered state waitSession")
-        self.send_status_change(StatusType.waitingSession)
+        self.send_status_change(RoboCompTherapyMetrics.StatusType.waitingSession)
 
     #
     # sm_initializingSession
@@ -247,11 +255,11 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def sm_initializingSession(self):
         print("Entered state initializingSession")
-        self.send_status_change(StatusType.initializingSession)
+        self.send_status_change(RoboCompTherapyMetrics.StatusType.initializingSession)
 
         # TODO comprobar que se detectan todos los joints
 
-        self.send_status_change(StatusType.readySession)
+        self.send_status_change(RoboCompTherapyMetrics.StatusType.readySession)
         QTimer.singleShot(200, self.t_initializingSession_to_waitTherapy)
 
     #
@@ -261,7 +269,7 @@ class SpecificWorker(GenericWorker):
     def sm_waitTherapy(self):
         print("Entered state waitTherapy")
 
-        self.send_status_change(StatusType.waitingTherapy)
+        self.send_status_change(RoboCompTherapyMetrics.StatusType.waitingTherapy)
 
     #
     # sm_initializingTherapy
@@ -271,10 +279,10 @@ class SpecificWorker(GenericWorker):
         print("Entered state initializingTherapy")
         self.aux_firstMetric = True
         self.aux_firstTime_metric = None
-        self.player.setMedia(QUrl.fromLocalFile("/home/robolab/robocomp/components/robotherapy/components/robotTherapy"
-                                                "/resources/examples/ejercicio_correcto2.avi"))
+        self.player.setMedia(QUrl.fromLocalFile("/home/robolab/robocomp/components/robotherapy/"
+                                                "/resources/ejercicio_correcto2.avi"))
 
-        self.send_status_change(StatusType.readyTherapy)
+        self.send_status_change(RoboCompTherapyMetrics.StatusType.readyTherapy)
 
         self.t_initializingTherapy_to_loopTherapy.emit()
 
@@ -288,7 +296,7 @@ class SpecificWorker(GenericWorker):
         self.player.setMuted(True)
         self.player.play()
         self.recording = True
-        self.send_status_change(StatusType.playingTherapy)
+        self.send_status_change(RoboCompTherapyMetrics.StatusType.playingTherapy)
 
     #
     # sm_captureFrame
@@ -298,7 +306,7 @@ class SpecificWorker(GenericWorker):
         # print("Entered state captureFrame")
         self.data_to_record = None
         self.aux_current_joints = None
-        self.mix_data_to_send = MixedData()
+        self.mix_data_to_send = RoboCompTherapyMetrics.MixedData()
 
         try:
             self.data_to_record = self.received_data_queue.get_nowait()
@@ -368,7 +376,7 @@ class SpecificWorker(GenericWorker):
         print("Entered state pauseTherapy")
         self.player.pause()
         self.recording = False
-        self.send_status_change(StatusType.pausedTherapy)
+        self.send_status_change(RoboCompTherapyMetrics.StatusType.pausedTherapy)
         self.ui.info_label.setText("Paused...")
 
     #
@@ -381,7 +389,7 @@ class SpecificWorker(GenericWorker):
         self.recording = False
         self.ui.info_label.setText("Reseted...")
 
-        self.send_status_change(StatusType.resetedTherapy)
+        self.send_status_change(RoboCompTherapyMetrics.StatusType.resetedTherapy)
         self.t_resetTherapy_to_waitTherapy.emit()
 
     #
@@ -396,7 +404,7 @@ class SpecificWorker(GenericWorker):
 
         self.t_finalizeTherapy_to_waitTherapy.emit()
 
-        self.send_status_change(StatusType.endTherapy)
+        self.send_status_change(RoboCompTherapyMetrics.StatusType.endTherapy)
 
     #
     # sm_finalizeSession
@@ -405,16 +413,16 @@ class SpecificWorker(GenericWorker):
     def sm_finalizeSession(self):
 
         print("Entered state finalizeSession")
-        self.send_status_change(StatusType.endSession)
+        self.send_status_change(RoboCompTherapyMetrics.StatusType.endSession)
 
         self.t_finalizeSession_to_waitSession.emit()
 
     # =================================================================
     # =================================================================
     #
-    # newPersonListAndRGB
+    # SUBSCRIPTION to newPersonListAndRGB method from HumanTrackerJointsAndRGB interface
     #
-    def newPersonListAndRGB(self, mixedData):
+    def HumanTrackerJointsAndRGB_newPersonListAndRGB(self, mixedData):
         if self.recording:  # and len(mixedData.persons) > 0:
             self.received_data_queue.put(mixedData)
 
@@ -424,7 +432,7 @@ class SpecificWorker(GenericWorker):
     #
     # adminPauseTherapy
     #
-    def adminPauseTherapy(self):
+    def AdminTherapy_adminPauseTherapy(self):
 
         print("adminPauseTherapy")
         self.t_loopTherapy_to_pauseTherapy.emit()
@@ -432,28 +440,28 @@ class SpecificWorker(GenericWorker):
     #
     # adminStopApp
     #
-    def adminStopApp(self):
+    def AdminTherapy_adminStopApp(self):
         print("adminStopApp")
         self.t_main_to_appEnd.emit()
 
     #
     # adminContinueTherapy
     #
-    def adminContinueTherapy(self):
+    def AdminTherapy_adminContinueTherapy(self):
         print("adminContinueTherapy")
         self.t_pauseTherapy_to_loopTherapy.emit()
 
     #
     # adminEndSession
     #
-    def adminEndSession(self):
+    def AdminTherapy_adminEndSession(self):
         print("adminEndSession")
         self.t_waitTherapy_to_finalizeSession.emit()
 
     #
     # adminStartTherapy
     #
-    def adminStartTherapy(self, therapy):
+    def AdminTherapy_adminStartTherapy(self, therapy):
         print("adminStartTherapy ", therapy)
         self.aux_therapy_name = therapy
         self.t_waitTherapy_to_initializingTherapy.emit()
@@ -461,7 +469,7 @@ class SpecificWorker(GenericWorker):
     #
     # adminStartSession
     #
-    def adminStartSession(self, patient):
+    def AdminTherapy_adminStartSession(self, patient):
         print("adminStartSession ", patient)
         self.aux_patient_name = patient
         self.t_waitSession_to_initializingSession.emit()
@@ -469,7 +477,7 @@ class SpecificWorker(GenericWorker):
     #
     # adminStopTherapy
     #
-    def adminStopTherapy(self):
+    def AdminTherapy_adminStopTherapy(self):
         print("adminStopTherapy")
         self.t_loopTherapy_to_finalizeTherapy.emit()
         self.t_pauseTherapy_to_finalizeTherapy.emit()
@@ -477,7 +485,7 @@ class SpecificWorker(GenericWorker):
     #
     # adminResetTherapy
     #
-    def adminResetTherapy(self):
+    def AdminTherapy_adminResetTherapy(self):
         print("adminResetTherapy")
         self.t_loopTherapy_to_resetTherapy.emit()
         self.t_pauseTherapy_to_resetTherapy.emit()
@@ -486,8 +494,10 @@ class SpecificWorker(GenericWorker):
     # ===================================================================
 
     def send_status_change(self, status_type):
-        initializing_status = Status()
+        print('send status change')
+        initializing_status = RoboCompTherapyMetrics.Status()
         initializing_status.currentStatus = status_type
         initializing_status.date = datetime.now().isoformat()
         print("Sending %s" % str(status_type))
         self.therapymetrics_proxy.statusChanged(initializing_status)
+        print('Done')

@@ -423,7 +423,9 @@ class SpecificWorker(GenericWorker):
     # SUBSCRIPTION to newPersonListAndRGB method from HumanTrackerJointsAndRGB interface
     #
     def HumanTrackerJointsAndRGB_newPersonListAndRGB(self, mixedData):
+        # print('HumanTrackerJointsAndRGB_newPersonListAndRGB')
         if self.recording:  # and len(mixedData.persons) > 0:
+            print(mixedData.rgbImage)
             self.received_data_queue.put(mixedData)
 
     # =============== Methods for Component Implements ==================

@@ -46,7 +46,7 @@ from userManager import QUserManager
 # from Tkinter import *
 from canvas import *
 
-# import plot_therapy as PTH
+import plot_therapy as PTH
 import os
 FILE_PATH = os.path.abspath(__file__)
 CURRENT_PATH = os.path.dirname(__file__)
@@ -743,15 +743,16 @@ class SpecificWorker(GenericWorker):
     #
     @QtCore.Slot()
     def sm_waitingFrame(self):
-        print("Entered state waitingFrame")
+        # print("Entered state waitingFrame")
         self.data_to_record = None
-
         try:
             self.data_to_record = self.received_data_queue.get_nowait()
         except Empty:
+            print('Received data queue is empty')
             QTimer.singleShot(1000 / 33, self.t_waitingFrame_to_waitingFrame)
 
         else:
+            print('t_waitingFrame_to_savingFrame')
             self.t_waitingFrame_to_savingFrame.emit()
 
     def to_timestamp(self, a_date):
@@ -839,6 +840,7 @@ class SpecificWorker(GenericWorker):
         self.total_frames += 1
 
         if self.visualize_therapy:
+            print('t_savingFrame_to_showingResults')
             self.t_savingFrame_to_showingResults.emit()
 
         else:
@@ -1057,6 +1059,7 @@ class SpecificWorker(GenericWorker):
         if data.rgbImage.height == 0 or data.rgbImage.width == 0:
             return
         else:
+
             self.received_data_queue.put(data)
 
         self.aux_currentDate = datetime.fromtimestamp(data.timeStamp / 1000)

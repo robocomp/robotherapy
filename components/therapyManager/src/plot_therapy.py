@@ -2,7 +2,6 @@ import os
 
 from matplotlib import pyplot as plt
 import pandas as pd
-from pyside2uic.properties import QtWidgets
 
 dict_parts = {"upper_trunk": ["LeftArmFlexion", "RightArmFlexion", "LeftArmElevation", "RightArmElevation"],
               "lower_trunk": ["LeftLegFlexion", "RightLegFlexion", "RightLegElevation", "LeftLegElevation"],
